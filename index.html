@@ -3,8 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Adopt an Area</title>
+<meta name="description" content="Claim a street, corner or open space near you, look after it, and see everyone else doing the same — all on one platform.">
+
+<!-- Add to home screen. The manifest gives Android the name, colours and icon;
+     apple-touch-icon is what iOS uses, as Safari ignores the manifest icons. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#22945A">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Adopt an Area">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -2175,6 +2186,9 @@ function hasStoredSession(){
 }
 (function heroIntro(){
   if(hasStoredSession()) return;
+  // Opened straight to the Map or My Area from a home-screen shortcut — the hero
+  // isn't on screen, so locking the page would just feel broken.
+  if(new URLSearchParams(location.search).get('page')) return;
   // Don't trap anyone who asked their system for less animation.
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   // A refresh part-way down the page restores that scroll position — no point
@@ -2267,9 +2281,18 @@ function fireTourEvent(key){
 
 // ================= BOOTSTRAP =================
 (async function init(){
+  // Home-screen shortcuts (and any shared link) can open straight to a page.
+  const want=new URLSearchParams(location.search).get('page');
+  if(want && document.getElementById('page-'+want)) showPage(want);
   await afterAuth();
   await Promise.all([loadAreas(), loadGallery(), loadSponsors()]);
 })();
+
+// Registered only so the browser will offer to install the site to the home
+// screen — see sw.js, which caches nothing. Fails silently over file://.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 sb.auth.onAuthStateChange((event)=>{
   if(event==='SIGNED_OUT'){ currentUser=null; renderMyAreas(); renderSponsorBar(); updateGalleryAdminVisibility(); renderGallery(); }
 });
