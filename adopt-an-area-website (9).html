@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Adopt an Area</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    --bg:#FFFFFF; --soft:#F6F8F5; --soft2:#F1F4EF; --border:#EAEBE7;
+    --text:#1E211C; --text-dim:#6E7268;
+    --green:#22945A; --green-dark:#137043; --green-tint:#E7F5EC;
+    --orange:#E38B1F; --orange-tint:#FDF0DE;
+    --red:#E5484D; --red-tint:#FCE7E7;
+    --blue:#2E7DD1; --blue-tint:#E8F1FC;
+    --gray:#9A9DA0; --gray-tint:#F1F1F0;
+    --gold:#C8952A; --gold-tint:#FBF1DE;
+    --radius-lg:24px; --radius-md:16px; --radius-sm:10px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+    padding-bottom:calc(68px + var(--safe-bottom));
+  }
+  a{color:inherit;} img{max-width:100%; display:block;}
+  .wrap{max-width:680px; margin:0 auto; padding:0 20px;}
+  .wrap-wide{max-width:1080px; margin:0 auto; padding:0 20px;}
+  section{padding:32px 0;}
+  .eyebrow{font-size:12.5px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 6px 0;}
+  h1{font-size:30px; font-weight:800; letter-spacing:-0.02em; margin:0 0 10px 0; line-height:1.15;}
+  h2{font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:0 0 6px 0;}
+  p.lead{font-size:15px; line-height:1.6; color:var(--text-dim); margin:0 0 18px 0;}
+  .page{display:none;} .page.active{display:block;}
+
+  header{ position:sticky; top:0; z-index:800; background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  .headrow{ max-width:1080px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:16px; flex-shrink:0; }
+  .brand .leaf{ width:30px; height:30px; border-radius:9px; background:var(--green); display:flex; align-items:center; justify-content:center; }
+  nav{ display:flex; gap:4px; }
+  nav button{ font-size:13px; font-weight:650; color:var(--text-dim); background:none; border:none; font-family:inherit; padding:8px 12px; border-radius:10px; cursor:pointer; white-space:nowrap; }
+  nav button.active{ background:var(--green-tint); color:var(--green-dark); }
+  .nav-toggle{ display:none; background:var(--soft); border:none; border-radius:12px; width:40px; height:40px; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .signin-btn{ flex-shrink:0; background:var(--text); color:#fff; border:none; border-radius:20px; padding:9px 15px; font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer; }
+  @media (max-width:759px){
+    nav{ display:none; position:absolute; top:100%; left:0; right:0; background:#fff; flex-direction:column; gap:2px; padding:8px 20px 16px 20px; border-bottom:1px solid var(--border); box-shadow:0 12px 24px rgba(0,0,0,0.1); }
+    nav.open{ display:flex; }
+    nav button{ text-align:left; padding:13px 12px; font-size:14.5px; border-radius:12px; }
+    .nav-toggle{ display:flex; }
+  }
+
+  .hero{ padding:38px 0 30px 0; }
+  .hero-badges{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .pillstat{ background:var(--soft); border-radius:20px; padding:7px 13px; font-size:12px; font-weight:650; color:var(--text-dim); }
+  .pillstat b{color:var(--text);}
+  .btn-row{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;}
+  .btn{ border:none; border-radius:14px; padding:13px 20px; font-size:14.5px; font-weight:700; font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary{background:var(--green); color:#fff;}
+  .btn-secondary{background:var(--green-tint); color:var(--green-dark);}
+
+  .cardgrid{ display:grid; grid-template-columns:1fr; gap:12px; }
+  .infocard{ background:var(--soft); border-radius:var(--radius-md); padding:16px; display:flex; gap:12px; align-items:flex-start; }
+  .icon-badge{ width:38px; height:38px; border-radius:11px; background:var(--green-tint); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:17px; }
+  .infocard h4{margin:2px 0 4px 0; font-size:14.5px; font-weight:700;}
+  .infocard p{margin:0; font-size:13px; line-height:1.5; color:var(--text-dim);}
+
+  .steps{display:grid; grid-template-columns:1fr; gap:10px;}
+  .step{ display:flex; gap:14px; align-items:flex-start; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-md); padding:15px 16px; }
+  .step-num{ width:30px; height:30px; border-radius:50%; background:var(--green); color:#fff; font-weight:800; font-size:13.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step h4{margin:2px 0 4px 0; font-size:14.5px; font-weight:700;}
+  .step p{margin:0; font-size:13px; color:var(--text-dim); line-height:1.5;}
+
+  .colorkey{display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;}
+  .ck-chip{ display:flex; align-items:center; gap:7px; background:var(--soft); border-radius:20px; padding:8px 13px 8px 10px; font-size:12.5px; font-weight:650; }
+  .ck-chip .dot{width:10px; height:10px; border-radius:50%;}
+
+  details.faq{ background:var(--soft); border-radius:var(--radius-md); padding:4px 16px; margin-bottom:10px; }
+  details.faq summary{ padding:13px 0; font-size:13.5px; font-weight:700; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; }
+  details.faq summary::-webkit-details-marker{display:none;}
+  details.faq summary:after{content:'+'; font-size:20px; font-weight:400; color:var(--text-dim);}
+  details.faq[open] summary:after{content:'–';}
+  details.faq .faqbody{padding:0 0 14px 0; font-size:13px; color:var(--text-dim); line-height:1.55;}
+  details.faq .faqfix{margin-top:8px; background:var(--green-tint); border-radius:10px; padding:9px 11px; font-size:12.5px; color:#166B3D;}
+
+  /* Map page */
+  #page-map{background:var(--soft2);}
+  .map-layout{ display:grid; grid-template-columns:1fr; gap:20px; }
+  .town-chips{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px 0; -webkit-overflow-scrolling:touch; }
+  .town-chip{ flex-shrink:0; background:#fff; border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-size:13px; font-weight:650; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
+  .town-chip.active{ background:var(--green); border-color:var(--green); color:#fff; }
+  .map-shell{ position:relative; border-radius:var(--radius-lg); overflow:hidden; height:64vh; min-height:440px; max-height:680px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
+  #leafletMap{ position:absolute; inset:0; }
+  .leaflet-container{ font-family:inherit; background:#12261c; }
+
+  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; gap:8px; }
+  .map-search{ flex:1; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; padding:10px 13px; position:relative; }
+  .map-search input{ border:none; outline:none; font-family:inherit; font-size:13.5px; flex:1; background:none; }
+  .map-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border-radius:14px; box-shadow:0 10px 26px rgba(0,0,0,0.25); max-height:240px; overflow-y:auto; display:none; }
+  .map-search-results.show{display:block;}
+  .msr-row{padding:10px 13px; font-size:13px; font-weight:600; border-bottom:1px solid var(--border); cursor:pointer;}
+  .msr-row span{display:block; font-size:11px; font-weight:500; color:var(--text-dim);}
+  .msr-row:last-child{border-bottom:none;}
+  .map-round-btn{ width:42px; height:42px; border-radius:14px; background:#fff; border:none; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
+
+  .map-zoom{ position:absolute; right:12px; bottom:12px; z-index:500; display:flex; flex-direction:column; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); overflow:hidden; }
+  .map-zoom button{ width:42px; height:38px; border:none; background:none; font-size:18px; font-weight:700; cursor:pointer; color:var(--text); }
+  .map-zoom button:first-child{border-bottom:1px solid var(--border);}
+
+  .legend-float{ position:absolute; left:12px; bottom:12px; z-index:500; background:#fff; border-radius:14px; padding:9px 11px; box-shadow:0 4px 14px rgba(0,0,0,0.25); font-size:10.5px; }
+  .legend-float .legend-row{display:flex; align-items:center; gap:6px; margin:2px 0;}
+  .legend-float .dot{width:8px; height:8px; border-radius:50%;}
+
+  .claim-btn-wrap{ position:absolute; left:0; right:0; bottom:0; z-index:550; display:flex; justify-content:center; gap:8px; padding-bottom:12px; pointer-events:none; }
+  .claim-yard-btn{ pointer-events:auto; border:none; border-radius:24px; padding:13px 18px; font-size:13.5px; font-weight:700; font-family:inherit; box-shadow:0 6px 18px rgba(0,0,0,0.3); display:flex; align-items:center; gap:7px; cursor:pointer; }
+  .claim-yard-btn.mine{background:var(--green); color:#fff;}
+  .claim-yard-btn.helper{background:var(--blue); color:#fff;}
+  .claim-yard-btn.active{background:var(--text); color:#fff;}
+
+  .banner-msg{ position:absolute; top:60px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
+  .banner-msg.show{display:block;}
+
+  .edit-panel{ position:absolute; left:12px; right:12px; bottom:70px; z-index:550; background:#fff; border-radius:16px; padding:12px 14px; box-shadow:0 8px 22px rgba(0,0,0,0.25); display:none; }
+  .edit-panel.show{display:block;}
+  .edit-panel p{margin:0 0 10px 0; font-size:12px; color:var(--text-dim); line-height:1.4;}
+  .edit-panel .ep-actions{display:flex; gap:8px;}
+  .edit-panel .ep-actions button{flex:1; border:none; border-radius:10px; padding:9px; font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer;}
+
+  .map-caption{font-size:12px; color:var(--text-dim); text-align:center; margin-top:10px;}
+  .map-attrib-note{font-size:11px; color:var(--text-dim); text-align:center; margin-top:2px;}
+
+  .arow{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; display:flex; align-items:center; gap:11px; margin-bottom:8px; cursor:pointer; }
+  .arow .adot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .arow-name{font-size:13.5px; font-weight:700;}
+  .arow-desc{font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+  .contact-btn{ font-size:11.5px; font-weight:700; color:var(--green); background:none; border:none; font-family:inherit; margin-left:auto; }
+
+  /* My Area page */
+  .signedout-card{ background:var(--soft); border-radius:var(--radius-lg); padding:28px 22px; text-align:center; }
+  .signedout-card .bigicon{font-size:34px; margin-bottom:8px;}
+  .welcome-row{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .avatar{width:48px; height:48px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; flex-shrink:0;}
+  .admin-card{ background:var(--soft); border:1.5px dashed #C7D2C3; border-radius:var(--radius-md); padding:16px; margin-top:10px; }
+  .admin-card .fineprint{font-size:11px; color:var(--text-dim); margin-top:8px;}
+
+  /* Gallery */
+  .potw{ background:linear-gradient(155deg, var(--gold) 0%, #A8761F 100%); border-radius:var(--radius-lg); padding:4px; margin-bottom:16px; }
+  .potw-inner{ background:rgba(255,255,255,0.97); border-radius:20px; padding:16px; }
+  .potw-badge{ display:inline-flex; align-items:center; gap:6px; background:var(--gold-tint); color:#8C6212; font-size:11px; font-weight:800; padding:5px 11px; border-radius:20px; margin-bottom:10px; }
+  .potw-photo{ width:100%; aspect-ratio:16/9; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:52px; margin-bottom:10px; overflow:hidden; }
+  .potw h3{margin:0 0 4px 0; font-size:16.5px; font-weight:800;}
+  .potw p{margin:0; font-size:13px; color:var(--text-dim);}
+  .gallery-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .gcard{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+  .gphoto{ width:100%; aspect-ratio:4/3; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:36px; overflow:hidden; }
+  .gphoto img{width:100%; height:100%; object-fit:cover;}
+  .gphoto-ba{ display:flex; width:100%; aspect-ratio:4/3; }
+  .gphoto-ba > div{ flex:1; position:relative; overflow:hidden; }
+  .gphoto-ba img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .gphoto-ba .ba-label{ position:absolute; bottom:5px; left:5px; background:rgba(0,0,0,0.6); color:#fff; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
+  .gbody{padding:10px 12px;}
+  .gcaption{font-size:12.5px; font-weight:700;}
+  .gwho{font-size:11px; color:var(--text-dim); margin-top:3px;}
+  .email-card{ background:var(--soft); border:1.5px dashed #C7D2C3; border-radius:var(--radius-md); padding:18px; text-align:center; margin-top:18px; }
+  .email-card p{font-size:13px; color:var(--text-dim); margin:6px 0 14px 0; line-height:1.5;}
+  .email-card .fineprint{font-size:11.5px; color:var(--text-dim); margin-top:10px;}
+
+  /* Sponsors */
+  #page-sponsors{background:var(--soft2);}
+  .sponsor-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
+  .sponsor-slot{ background:#fff; border:1.5px dashed #D6DAD2; border-radius:var(--radius-md); height:74px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:650; color:var(--gray); text-align:center; padding:6px; }
+  .sponsor-slot input{border:none; background:none; font-family:inherit; text-align:center; font-size:11.5px; font-weight:650; color:var(--text); width:100%;}
+  .sponsor-cta{ margin-top:16px; background:var(--green); color:#fff; border-radius:var(--radius-md); padding:18px; }
+  .sponsor-cta h4{margin:0 0 6px 0; font-size:15px; font-weight:750;}
+  .sponsor-cta p{margin:0 0 12px 0; font-size:12.5px; color:rgba(255,255,255,0.9); line-height:1.5;}
+  .sponsor-cta a.btn{background:#fff; color:var(--green-dark);}
+
+  footer{padding:26px 0 10px 0;} footer p{font-size:12px; color:var(--text-dim); text-align:center;}
+
+  .sponsor-bar{ position:fixed; left:0; right:0; bottom:0; z-index:900; background:rgba(255,255,255,0.97); backdrop-filter:blur(10px); border-top:1px solid var(--border); padding:0 0 var(--safe-bottom) 0; display:flex; align-items:center; gap:12px; height:64px; }
+  .sponsor-bar .sb-label{font-size:10.5px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:0.05em; flex-shrink:0; writing-mode:vertical-rl; transform:rotate(180deg); padding-left:14px;}
+  .sponsor-bar .sb-track{flex:1; position:relative; height:100%; overflow:hidden;}
+  .sponsor-bar .sb-marquee{ position:absolute; top:0; left:0; height:100%; display:flex; align-items:center; gap:28px; white-space:nowrap; animation:sbScroll 26s linear infinite; padding-right:28px; }
+  .sponsor-bar .sb-chip{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700; color:var(--text); }
+  .sponsor-bar .sb-chip .sb-dot{ width:26px; height:26px; border-radius:8px; background:var(--green-tint); color:var(--green-dark); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  @keyframes sbScroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .sponsor-bar a.sb-link{font-size:12px; font-weight:700; color:var(--green); flex-shrink:0; text-decoration:none; padding-right:16px;}
+
+  /* Bottom sheets (claim + sign-in) */
+  .sheet-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:none; }
+  .sheet-backdrop.show{display:block;}
+  .sheet{ position:fixed; left:0; right:0; bottom:-100%; z-index:1050; background:#fff; border-radius:24px 24px 0 0; padding:10px 20px calc(20px + var(--safe-bottom)) 20px; transition:bottom 0.32s cubic-bezier(.32,.72,0,1); max-height:88%; overflow-y:auto; max-width:480px; margin:0 auto; }
+  .sheet.show{bottom:0;}
+  .sheet-handle{width:36px; height:5px; background:var(--border); border-radius:3px; margin:4px auto 14px auto;}
+  .sheet h3{margin:0 0 4px 0; font-size:19px; font-weight:800;}
+  .sheet .sub{margin:0 0 16px 0; font-size:13px; color:var(--text-dim);}
+  .field-label{font-size:12.5px; font-weight:700; margin:14px 0 6px 0; display:block;}
+  .task-opt{ display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:14px; background:var(--soft); border:2px solid transparent; cursor:pointer; margin-bottom:8px; }
+  .task-opt.sel{border-color:var(--green); background:var(--green-tint);}
+  .task-opt .dot{margin-top:4px; width:11px; height:11px; border-radius:50%;}
+  .task-opt b{font-size:14px; font-weight:700; display:block;}
+  .task-opt span.desc{font-size:12px; color:var(--text-dim);}
+  input[type=text],input[type=email],input[type=password]{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; }
+  input[type=text]:focus,input[type=email]:focus,input[type=password]:focus{outline:none; border-color:var(--green);}
+  .segctrl{display:flex; background:var(--soft); border-radius:14px; padding:4px; gap:4px;}
+  .segctrl button{flex:1; border:none; background:none; font-family:inherit; font-size:13px; font-weight:700; padding:10px 8px; border-radius:11px; cursor:pointer; color:var(--text-dim);}
+  .segctrl button.sel{background:#fff; color:var(--text); box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+  .checkrow{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); margin-top:12px;}
+
+  /* Desktop responsive */
+  @media (min-width:760px){
+    .cardgrid{grid-template-columns:1fr 1fr 1fr;}
+    .steps{grid-template-columns:1fr 1fr;}
+    .gallery-grid{grid-template-columns:1fr 1fr 1fr;}
+    .sponsor-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
+    h1{font-size:40px;}
+    .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
+    .map-shell{height:72vh; max-height:760px;}
+    .arealists{max-height:72vh; overflow-y:auto; padding-right:4px;}
+  }
+  @media (min-width:1000px){
+    .hero .wrap{display:grid; grid-template-columns:1.3fr 1fr; align-items:center; gap:40px;}
+    .hero h1{margin-top:0;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="headrow">
+    <div class="brand"><span class="leaf">🌿</span> Adopt an Area</div>
+    <nav>
+      <button data-page="home" onclick="showPage('home')" class="active">Home</button>
+      <button data-page="map" onclick="showPage('map')">Map</button>
+      <button data-page="myarea" onclick="showPage('myarea')">My Area</button>
+      <button data-page="gallery" onclick="showPage('gallery')">Gallery</button>
+      <button data-page="sponsors" onclick="showPage('sponsors')">Sponsors</button>
+    </nav>
+    <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7H20M4 12H20M4 17H20" stroke="#1E211C" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="signin-btn" id="signinBtn" onclick="openSignIn()">Sign in</button>
+  </div>
+</header>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">South Africa</p>
+        <h1>Look after what's around you.</h1>
+        <p class="lead">Adopt an Area is a simple way for neighbours to take care of the streets, corners and open spaces close to home — a bit of trash pickup here, some overgrown bush cleared there. Claim a piece near you, say what you're doing, and see everyone else doing the same, all on one map.</p>
+        <div class="hero-badges">
+          <span class="pillstat"><b>5</b> towns live</span>
+          <span class="pillstat"><b>6</b> areas adopted</span>
+          <span class="pillstat"><b>2</b> want a hand</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="showPage('map')">📍 Find my area</button>
+          <button class="btn btn-secondary" onclick="showPage('gallery')">📷 See the gallery</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Why it matters</p>
+      <h2 style="margin-bottom:14px;">A few small things make a big difference</h2>
+      <div class="cardgrid">
+        <div class="infocard"><div class="icon-badge">💧</div><div><h4>Standing water breaks the tar</h4><p>Water pooling in the road seeps into cracks. Traffic pumps it in and out until the tar breaks apart underneath — clearing a blocked drain near you is a five-minute job with a big payoff.</p></div></div>
+        <div class="infocard"><div class="icon-badge">🌿</div><div><h4>Clear paths keep people safe</h4><p>Overgrown bush along a pavement hides pedestrians from drivers. Cutting it back makes the walk to work or school safer for everyone.</p></div></div>
+        <div class="infocard"><div class="icon-badge">🤝</div><div><h4>It's a team effort</h4><p>Can't do it all yourself? Claim what you can, mark the rest as needing help, and someone with more time, tools, or a tractor can pick up the rest.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--soft2);">
+    <div class="wrap">
+      <p class="eyebrow">Getting started</p>
+      <h2 style="margin-bottom:14px;">It takes about a minute</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Find your street</h4><p>Search for it, or tap "Use my location" and we'll jump straight there.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Claim or reshape your area</h4><p>Tap the map to drop a boundary, then drag the points to match your yard exactly — add or remove points until it's right.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Pick a colour</h4><p>Green — you've got it handled. Orange — trash pickup only. Red — you'd like a hand with something.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Sign in to keep track</h4><p>See all your claimed areas in one place, and send us your before &amp; after photos.</p></div></div>
+      </div>
+      <p class="field-label" style="margin-top:20px;">What the colours mean</p>
+      <div class="colorkey">
+        <div class="ck-chip"><span class="dot" style="background:var(--green)"></span>Full control</div>
+        <div class="ck-chip"><span class="dot" style="background:var(--orange)"></span>Trash only</div>
+        <div class="ck-chip"><span class="dot" style="background:var(--red)"></span>Needs help</div>
+        <div class="ck-chip"><span class="dot" style="background:var(--gray)"></span>Available</div>
+        <div class="ck-chip"><span class="dot" style="background:var(--blue)"></span>Offering help</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Good to know</p>
+      <h2 style="margin-bottom:14px;">Common snags, and how people handle them</h2>
+      <details class="faq"><summary>Where does the trash actually go?</summary><div class="faqbody">Bagging it is only half the job — it needs to leave the area.<div class="faqfix"><b style="color:var(--green);">Fix:</b> Bag as you go and drop bags at your nearest municipal collection point, or ask your household collection to take an extra bag on collection day.</div></div></details>
+      <details class="faq"><summary>People keep dumping there again</summary><div class="faqbody">Clearing it once doesn't always keep it clear.<div class="faqfix"><b style="color:var(--green);">Fix:</b> A visible "this area is looked after" sign helps a lot. Photograph repeats and report them to your ward councillor.</div></div></details>
+      <details class="faq"><summary>Working right next to traffic</summary><div class="faqbody">Verges can be dangerous — cars don't always expect people there.<div class="faqfix"><b style="color:var(--green);">Fix:</b> Face oncoming traffic, wear something bright, and work early or in quieter hours. Work in pairs where you can.</div></div></details>
+      <details class="faq"><summary>Thick bush hides snakes and sharp junk</summary><div class="faqbody">Overgrown areas are exactly where these collect.<div class="faqfix"><b style="color:var(--green);">Fix:</b> Wear boots and gloves, clear with a long stick first, and never clear thick bush alone.</div></div></details>
+      <details class="faq"><summary>Don't have the right tools</summary><div class="faqbody">Not everyone has loppers or a wheelbarrow on hand.<div class="faqfix"><b style="color:var(--green);">Fix:</b> Claim what you can — gloves and bags are enough to start. Mark the rest red so someone with tools can help.</div></div></details>
+    </div>
+  </section>
+</div>
+
+<!-- MAP -->
+<div class="page" id="page-map">
+  <section>
+    <div class="wrap-wide">
+      <p class="eyebrow">Live map — satellite view</p>
+      <h2 style="margin-bottom:12px;">See who's doing what, anywhere in South Africa</h2>
+
+      <p class="field-label" style="margin-top:0;">Browse by province &amp; district</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <select id="provinceSelect" style="flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:11px 12px; font-size:13.5px; font-family:inherit; background:#fff;" onchange="onProvinceChange()"></select>
+        <select id="districtSelect" style="flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:11px 12px; font-size:13.5px; font-family:inherit; background:#fff;" onchange="onDistrictChange()"><option>Select a province first</option></select>
+      </div>
+
+      <div class="map-layout">
+        <div>
+          <div class="map-shell">
+            <div id="leafletMap"></div>
+            <div class="map-overlay-top">
+              <div class="map-search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)">
+                <div class="map-search-results" id="mapSearchResults"></div>
+              </div>
+              <button class="map-round-btn" onclick="locateMe()" title="Use my location">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="banner-msg" id="mapBanner"></div>
+            <div class="legend-float">
+              <div class="legend-row"><span class="dot" style="background:var(--green)"></span>Full control</div>
+              <div class="legend-row"><span class="dot" style="background:var(--orange)"></span>Trash only</div>
+              <div class="legend-row"><span class="dot" style="background:var(--red)"></span>Needs help</div>
+              <div class="legend-row"><span class="dot" style="background:var(--gray)"></span>Available</div>
+              <div class="legend-row"><span class="dot" style="background:var(--blue)"></span>Offering help</div>
+            </div>
+            <div class="map-zoom"><button onclick="leafletMap.zoomIn()">+</button><button onclick="leafletMap.zoomOut()">−</button></div>
+            <div class="edit-panel" id="editPanel">
+              <p>Drag the white dots to reshape it. Double-tap a dot to remove it.</p>
+              <div class="ep-actions">
+                <button style="background:var(--green-tint); color:var(--green-dark);" onclick="addPoint()">+ Add point</button>
+                <button style="background:var(--gray-tint); color:var(--text-dim);" onclick="cancelYard()">Cancel</button>
+                <button style="background:var(--green); color:#fff;" onclick="confirmYard()">Claim it</button>
+              </div>
+            </div>
+            <div class="claim-btn-wrap">
+              <button class="claim-yard-btn mine" id="claimBtn" onclick="toggleClaimMode('mine')">📍 Claim my yard</button>
+              <button class="claim-yard-btn helper" id="helperBtn" onclick="toggleClaimMode('helper')">🚜 Offer help</button>
+            </div>
+          </div>
+          <p class="map-caption">Real satellite imagery. Drag to pan, pinch or use +/− to zoom.</p>
+          <p class="map-attrib-note">Imagery © Esri, Maxar, Earthstar Geographics</p>
+        </div>
+
+        <div class="arealists">
+          <p class="eyebrow" style="margin-top:0;">Claimed areas</p>
+          <div id="areaListBelow"></div>
+          <p class="eyebrow" style="margin-top:20px;">People offering help</p>
+          <div id="helperListBelow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MY AREA -->
+<div class="page" id="page-myarea">
+  <section>
+    <div class="wrap">
+      <div id="myAreaSignedOut">
+        <div class="signedout-card">
+          <div class="bigicon">🔐</div>
+          <h2>Sign in to see your area</h2>
+          <p class="lead" style="margin-bottom:16px;">Once you're signed in, this page shows every area you've claimed, in one place.</p>
+          <button class="btn btn-primary" onclick="openSignIn()">Sign in</button>
+        </div>
+      </div>
+      <div id="myAreaSignedIn" style="display:none;">
+        <div class="welcome-row">
+          <div class="avatar" id="avatarInitial">?</div>
+          <div style="flex:1;"><h2 style="margin-bottom:0;" id="welcomeName">Hi there 👋</h2><p style="margin:2px 0 0 0; font-size:13px; color:var(--text-dim);" id="welcomeEmail"></p><p style="margin:2px 0 0 0; font-size:10.5px; color:var(--text-dim); font-family:monospace;" id="debugUserId"></p></div>
+          <button style="background:none; border:1.5px solid var(--border); border-radius:14px; padding:8px 14px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="signOut()">Sign out</button>
+        </div>
+        <p class="eyebrow">Your claimed areas</p>
+        <div id="myAreasList" style="margin-bottom:20px;"></div>
+
+        <p class="eyebrow">Your team</p>
+        <div id="noTeamCard">
+          <div class="admin-card">
+            <b style="font-size:14px;">Start a team</b>
+            <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress just with each other.</p>
+            <input type="text" id="newTeamName" placeholder="Team name" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <button class="btn btn-secondary" onclick="createTeam()">Create team</button>
+          </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Join a team</b>
+            <p class="fineprint" style="margin-bottom:10px;">Ask a neighbour for their team's invite code.</p>
+            <input type="text" id="joinTeamCode" placeholder="Invite code" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <button class="btn btn-secondary" onclick="joinTeam()">Join team</button>
+          </div>
+        </div>
+        <div id="hasTeamCard" style="display:none;">
+          <div class="admin-card">
+            <b style="font-size:14px;" id="myTeamName">—</b>
+            <p class="fineprint">Invite code: <b id="myTeamCode" style="color:var(--text);"></b> — share it with neighbours so they can join.</p>
+            <input type="file" id="teamPhotoInput" accept="image/*" style="display:none;" onchange="handleTeamPhoto(event)">
+            <button class="btn btn-secondary" style="margin-top:8px;" onclick="document.getElementById('teamPhotoInput').click()">+ Add team photo</button>
+            <div id="teamPhotoGrid" class="gallery-grid" style="margin-top:14px;"></div>
+          </div>
+        </div>
+
+        <div id="adminTools" style="display:none;">
+          <p class="eyebrow">Team tools (admin)</p>
+          <div class="admin-card">
+            <b style="font-size:14px;">📷 Managing gallery photos</b>
+            <p class="fineprint">Head to the Gallery page — admin upload tools live there now, right where you can see what's already posted.</p>
+          </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Rotating banner logos</b>
+            <p class="fineprint">Edit the text and choose which town(s) each one shows to.</p>
+            <div id="adminSponsorEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+            <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
+              <b style="font-size:12.5px;">+ Add to the banner</b>
+              <div style="display:flex; gap:6px; margin-top:8px;">
+                <input type="text" id="newTickerEmoji" placeholder="📣" style="width:44px; text-align:center; border:1.5px solid var(--border); border-radius:10px; padding:9px 4px; font-size:14px; font-family:inherit;">
+                <input type="text" id="newTickerText" placeholder="Sponsor name / message" style="flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+              </div>
+              <input type="file" id="newTickerLogo" accept="image/*" style="display:none;" onchange="stageLogo(event,'ticker')">
+              <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newTickerLogo').click()" id="newTickerLogoLabel">+ Logo (optional, uses emoji if skipped)</button>
+              <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addTickerSponsor()">Add</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Major sponsors</b>
+            <p class="fineprint">The bigger, permanent cards on the Sponsors page.</p>
+            <div id="adminMajorEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
+            <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
+              <b style="font-size:12.5px;">+ Add a major sponsor</b>
+              <div style="display:flex; gap:6px; margin-top:8px;">
+                <input type="text" id="newMajorEmoji" placeholder="🏢" style="width:44px; text-align:center; border:1.5px solid var(--border); border-radius:10px; padding:9px 4px; font-size:14px; font-family:inherit;">
+                <input type="text" id="newMajorName" placeholder="Business name" style="flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+              </div>
+              <input type="text" id="newMajorBlurb" placeholder="Short blurb about them" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit; margin-top:6px;">
+              <input type="file" id="newMajorLogo" accept="image/*" style="display:none;" onchange="stageLogo(event,'major')">
+              <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newMajorLogo').click()" id="newMajorLogoLabel">+ Logo (optional, uses emoji if skipped)</button>
+              <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addMajorSponsor()">Add</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Logo slot grid</b>
+            <p class="fineprint">The small "Your logo here" tiles on the Sponsors page.</p>
+            <div id="adminSlotEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+            <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
+              <input type="text" id="newSlotText" placeholder="e.g. Kruisfontein Hardware" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+              <input type="file" id="newSlotLogo" accept="image/*" style="display:none;" onchange="stageLogo(event,'slot')">
+              <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newSlotLogo').click()" id="newSlotLogoLabel">+ Logo (optional)</button>
+              <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addSponsorSlot()">Add slot</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Everyone's claimed areas</b>
+            <p class="fineprint" style="margin-bottom:10px;">Customer-service view — open anyone's area to edit or release it on their behalf.</p>
+            <div id="adminAllAreas"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- GALLERY -->
+<div class="page" id="page-gallery">
+  <section style="background:var(--soft2);">
+    <div class="wrap-wide">
+      <p class="eyebrow">Community wall</p>
+      <h2 style="margin-bottom:6px;">See what people are doing</h2>
+      <p class="lead">Curated by the team so it stays genuine.</p>
+
+      <div class="potw" id="potwCard" style="display:none;">
+        <div class="potw-inner">
+          <span class="potw-badge">🏆 Project of the week</span>
+          <div class="potw-photo" id="potwPhoto">🌳</div>
+          <h3 id="potwTitle">—</h3>
+          <p id="potwCaption"></p>
+        </div>
+      </div>
+
+      <div id="galleryAdminTools" style="display:none;">
+        <div class="admin-card" style="margin-bottom:16px;">
+          <b style="font-size:14px;">Add to the gallery</b>
+          <p class="fineprint" style="margin-bottom:10px;">Posts straight to the public wall — choose what type below.</p>
+          <div class="segctrl" style="margin-bottom:12px;">
+            <button class="sel" id="modeSingleBtn" onclick="setPhotoMode('single')">Single photo</button>
+            <button id="modeBABtn" onclick="setPhotoMode('beforeafter')">Before &amp; after</button>
+          </div>
+          <div id="singlePhotoFields">
+            <input type="file" id="adminPhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'single')">
+            <button class="btn btn-secondary" onclick="document.getElementById('adminPhotoInput').click()" id="singlePickLabel">+ Choose photo</button>
+          </div>
+          <div id="baPhotoFields" style="display:none;">
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1;">
+                <input type="file" id="beforePhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'before')">
+                <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('beforePhotoInput').click()" id="beforePickLabel">+ Before</button>
+              </div>
+              <div style="flex:1;">
+                <input type="file" id="afterPhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'after')">
+                <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('afterPhotoInput').click()" id="afterPickLabel">+ After</button>
+              </div>
+            </div>
+          </div>
+          <input type="text" id="photoCaption" placeholder="Caption — e.g. Cleared Voortrekker St corner" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:10px;">
+          <input type="text" id="photoWho" placeholder="Who did it — e.g. Marie K." style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:8px;">
+          <label class="checkrow"><input type="checkbox" id="photoBigProject"> This is a bigger project</label>
+          <label class="checkrow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
+        </div>
+      </div>
+
+      <div class="gallery-grid" id="galleryGrid"></div>
+      <div class="email-card">
+        <div style="font-size:26px;">📷</div>
+        <p>Done a clean-up? Email your before &amp; after photo and we'll add it here.</p>
+        <a class="btn btn-primary" href="mailto:adoptanareainfo@gmail.com?subject=My%20cleanup%20photo">Email your photo</a>
+        <p class="fineprint">adoptanareainfo@gmail.com</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SPONSORS -->
+<div class="page" id="page-sponsors">
+  <section>
+    <div class="wrap-wide">
+      <p class="eyebrow">Support the project</p>
+      <h2 style="margin-bottom:6px;">Local businesses can back this</h2>
+      <p class="lead">Hardware stores, dealerships, agricultural suppliers — anyone who wants their name behind a cleaner town. Email us and we'll sort out exactly what goes where, and for how long.</p>
+
+      <p class="eyebrow" style="margin-top:24px;">What you can sponsor</p>
+      <div class="cardgrid">
+        <div class="infocard"><div class="icon-badge">🎗️</div><div><h4>The rotating banner</h4><p>A small logo in the ticker that scrolls at the bottom of every page — like the boards around a rugby pitch. Can be shown everywhere, or only to people in your own town.</p></div></div>
+        <div class="infocard"><div class="icon-badge">🏢</div><div><h4>A major sponsor spot</h4><p>A bigger, permanent card on this page for businesses backing the project in a real way — helping fund equipment, bins, or a big clean-up day.</p></div></div>
+        <div class="infocard"><div class="icon-badge">🌳</div><div><h4>Sponsor a project</h4><p>Fund a specific clean-up — a tree-planting day, clearing a bad verge, bins for a busy corner — and we'll credit you on that project in the gallery.</p></div></div>
+      </div>
+
+      <p class="eyebrow" style="margin-top:26px;">Major sponsors</p>
+      <div class="cardgrid" id="majorSponsorGrid"></div>
+
+      <p class="eyebrow" style="margin-top:26px;">Banner logo slots</p>
+      <div class="sponsor-grid" id="sponsorGrid"></div>
+
+      <div class="sponsor-cta">
+        <h4>Want to sponsor Adopt an Area?</h4>
+        <p>Email us what you'd like to sponsor and where — the banner, a page spot, a specific project, or all three.</p>
+        <a class="btn" href="mailto:adoptanareainfo@gmail.com?subject=Sponsorship%20enquiry">Email to sponsor</a>
+      </div>
+    </div>
+  </section>
+  <footer><div class="wrap"><p>Adopt an Area — a community project. We're just looking after what's around us.</p></div></footer>
+</div>
+
+<div class="sponsor-bar">
+  <span class="sb-label">Sponsored</span>
+  <div class="sb-track" id="sbTrack"></div>
+  <a class="sb-link" href="#" onclick="showPage('sponsors'); return false;">Become a sponsor →</a>
+</div>
+
+<!-- Claim sheet -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="claimSheet">
+  <div class="sheet-handle"></div>
+  <h3 id="sheetTitle">Claim this area</h3>
+  <p class="sub" id="sheetSub">Give it a name and pick a colour.</p>
+  <div id="mineFields">
+    <label class="field-label">Area name</label>
+    <input type="text" id="areaNameInput" placeholder="e.g. My front yard">
+    <label class="field-label">What's your status?</label>
+    <div class="task-opt sel" data-status="green" onclick="selectTask(this)"><span class="dot" style="background:var(--green)"></span><div><b>Full control</b><span class="desc">I'll handle everything here</span></div></div>
+    <div class="task-opt" data-status="orange" onclick="selectTask(this)"><span class="dot" style="background:var(--orange)"></span><div><b>Trash only</b><span class="desc">I'll only do trash pickup</span></div></div>
+    <div class="task-opt" data-status="red" onclick="selectTask(this)"><span class="dot" style="background:var(--red)"></span><div><b>Needs help</b><span class="desc">I'd like a hand with something</span></div></div>
+    <div id="helpDetailWrap" style="display:none;"><label class="field-label">What kind of help?</label><input type="text" id="helpDetailInput" placeholder="e.g. Bush clearing, funding, manpower"></div>
+  </div>
+  <div id="helperFields" style="display:none;">
+    <label class="field-label">Your name / group</label>
+    <input type="text" id="helperNameInput" placeholder="e.g. Willing to help around Kruisfontein">
+    <label class="field-label">What can you help with?</label>
+    <input type="text" id="helperOfferInput" placeholder="e.g. Tractor + 3 workers, happy to clear bush">
+  </div>
+  <label class="field-label">Contact number (optional)</label>
+  <input type="text" id="contactInput" placeholder="082 000 0000">
+  <button class="btn btn-primary" style="width:100%; margin-top:22px; justify-content:center;" onclick="submitClaim()" id="claimSubmitBtn">Confirm</button>
+  <button style="width:100%; margin-top:8px; border:none; background:var(--soft); color:var(--text); border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="reshapeBtn" onclick="startReshape()">✎ Edit boundary shape</button>
+  <button style="width:100%; margin-top:8px; border:none; background:var(--red-tint); color:#B23338; border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="releaseBtn" onclick="releaseArea()">Release this area — no longer available</button>
+  <button style="width:100%; margin-top:8px; border:none; background:none; color:var(--red); border-radius:14px; padding:10px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; display:none;" id="deleteBtn" onclick="deleteAreaConfirm()">Delete permanently</button>
+</div>
+
+<!-- Sign-in sheet -->
+<div class="sheet-backdrop" id="signBackdrop" onclick="closeSignIn()"></div>
+<div class="sheet" id="signSheet">
+  <div class="sheet-handle"></div>
+  <div class="segctrl" style="margin-bottom:14px;">
+    <button class="sel" id="modeSignInBtn" onclick="setAuthMode('signin')">Sign in</button>
+    <button id="modeSignUpBtn" onclick="setAuthMode('signup')">Create account</button>
+  </div>
+  <h3 id="authTitle">Sign in</h3>
+  <p class="sub" id="authSub">New here? Switch to "Create account" above.</p>
+  <div id="signUpNameWrap" style="display:none;">
+    <label class="field-label">Name</label>
+    <input type="text" id="signName" placeholder="Your name">
+  </div>
+  <label class="field-label">Email</label>
+  <input type="email" id="signEmail" placeholder="you@example.com">
+  <label class="field-label">Password</label>
+  <input type="password" id="signPassword" placeholder="••••••••">
+  <div id="signUpTownWrap" style="display:none;">
+    <label class="field-label">Where do you live?</label>
+    <select id="signTown" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; background:#fff;">
+      <option value="">Prefer not to say</option>
+    </select>
+    <p class="fineprint" style="margin-top:6px;">Sponsors can choose to show ads only in your town — set this so you only see local ones.</p>
+  </div>
+  <p id="authError" style="display:none; color:var(--red); font-size:12.5px; margin:10px 0 0 0;"></p>
+  <button class="btn btn-primary" style="width:100%; margin-top:22px; justify-content:center;" onclick="submitAuth()" id="authSubmitBtn">Sign in</button>
+  <p class="fineprint" style="margin-top:10px; text-align:center;">Admin access isn't set here — it's switched on by the team directly in the database once you have an account.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ================= SUPABASE =================
+const SUPABASE_URL = 'https://hjfuhsrlwmegfevojitt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZnVoc3Jsd21lZ2Zldm9qaXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NjMwNTAsImV4cCI6MjEwMjAzOTA1MH0.244e18Jni8OUWVeXkekog6NjVgdGm92CBcMZznUv-gA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ================= TOWNS =================
+const towns = [
+  {id:'kruisfontein', name:'Kruisfontein', home:true, center:[-34.0298,24.7647], zoom:16},
+  {id:'gqeberha', name:'Gqeberha', center:[-33.9700,25.6420], zoom:14},
+  {id:'capetown', name:'Cape Town', center:[-33.9249,18.4241], zoom:13},
+  {id:'johannesburg', name:'Johannesburg', center:[-26.2041,28.0473], zoom:13},
+  {id:'durban', name:'Durban', center:[-29.8587,31.0218], zoom:13}
+];
+
+// Real South African provinces + district/metro municipalities, for the browse dropdown.
+// Where a district contains one of our pilot towns, selecting it flies straight there.
+// Other districts fly to the provincial capital as a starting point (exact town-level
+// data for all ~200 local municipalities isn't built in yet).
+const provinces = [
+  {id:'ec', name:'Eastern Cape', capital:[-32.848,27.434], districts:[
+    {name:'Sarah Baartman', townId:'kruisfontein'}, {name:'Nelson Mandela Bay Metro', townId:'gqeberha'},
+    {name:'Buffalo City Metro'}, {name:'Amathole'}, {name:'Chris Hani'}, {name:'Joe Gqabi'}, {name:'OR Tambo'}, {name:'Alfred Nzo'}
+  ]},
+  {id:'wc', name:'Western Cape', capital:[-33.9249,18.4241], districts:[
+    {name:'City of Cape Town Metro', townId:'capetown'}, {name:'Cape Winelands'}, {name:'Garden Route'}, {name:'Central Karoo'}, {name:'Overberg'}, {name:'West Coast'}
+  ]},
+  {id:'gp', name:'Gauteng', capital:[-26.2041,28.0473], districts:[
+    {name:'City of Johannesburg Metro', townId:'johannesburg'}, {name:'City of Tshwane Metro'}, {name:'City of Ekurhuleni Metro'}, {name:'Sedibeng'}, {name:'West Rand'}
+  ]},
+  {id:'kzn', name:'KwaZulu-Natal', capital:[-29.6006,30.3794], districts:[
+    {name:'eThekwini Metro', townId:'durban'}, {name:'Ugu'}, {name:'uMgungundlovu'}, {name:'Uthukela'}, {name:'Umzinyathi'}, {name:'Amajuba'}, {name:'Zululand'}, {name:'uMkhanyakude'}, {name:'King Cetshwayo'}, {name:'iLembe'}, {name:'Harry Gwala'}
+  ]},
+  {id:'fs', name:'Free State', capital:[-29.0852,26.1596], districts:[
+    {name:'Mangaung Metro'}, {name:'Fezile Dabi'}, {name:'Lejweleputswa'}, {name:'Thabo Mofutsanyana'}, {name:'Xhariep'}
+  ]},
+  {id:'mp', name:'Mpumalanga', capital:[-25.4753,30.9694], districts:[
+    {name:'Ehlanzeni'}, {name:'Gert Sibande'}, {name:'Nkangala'}
+  ]},
+  {id:'lp', name:'Limpopo', capital:[-23.9045,29.4689], districts:[
+    {name:'Capricorn'}, {name:'Mopani'}, {name:'Sekhukhune'}, {name:'Vhembe'}, {name:'Waterberg'}
+  ]},
+  {id:'nw', name:'North West', capital:[-25.8560,25.6403], districts:[
+    {name:'Bojanala Platinum'}, {name:'Dr Kenneth Kaunda'}, {name:'Dr Ruth Segomotsi Mompati'}, {name:'Ngaka Modiri Molema'}
+  ]},
+  {id:'nc', name:'Northern Cape', capital:[-28.7282,24.7499], districts:[
+    {name:'Frances Baard'}, {name:'John Taolo Gaetsewe'}, {name:'Namakwa'}, {name:'Pixley ka Seme'}, {name:'ZF Mgcawu'}
+  ]}
+];
+function initProvinceDropdown(){
+  const psel=document.getElementById('provinceSelect');
+  psel.innerHTML='<option value="">Choose a province…</option>' + provinces.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+}
+function onProvinceChange(){
+  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
+  const dsel=document.getElementById('districtSelect');
+  if(!p){ dsel.innerHTML='<option>Select a province first</option>'; return; }
+  dsel.innerHTML='<option value="">Choose a district…</option>' + p.districts.map((d,i)=>`<option value="${i}">${d.name}</option>`).join('');
+}
+function onDistrictChange(){
+  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
+  const idx=document.getElementById('districtSelect').value;
+  if(!p || idx==='') return;
+  const d=p.districts[parseInt(idx)];
+  if(d.townId){
+    const t=towns.find(x=>x.id===d.townId);
+    currentTownId=t.id;
+    leafletMap.flyTo(t.center, t.zoom);
+    showBanner('Showing '+t.name, 2200);
+  } else {
+    leafletMap.flyTo(p.capital, 10.5);
+    showBanner('Showing the general area — zoom and pan to find your street', 3200);
+  }
+}
+
+const statusMeta = {
+  green:{color:'#22945A', label:'Full control'},
+  orange:{color:'#E38B1F', label:'Trash only'},
+  red:{color:'#E5484D', label:'Needs help'},
+  gray:{color:'#9A9DA0', label:'Available'},
+  helper:{color:'#2E7DD1', label:'Offering help'}
+};
+
+let seedAreas = [];
+let helperAreas = [];
+
+function mapAreaRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townName:r.town_name, status:r.status, help:r.help_detail, phone:r.phone, by:r.owner_name, ownerId:r.owner_id, coords:r.coords}; }
+function mapHelperRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townName:r.town_name, offer:r.offer, phone:r.phone, by:r.owner_name, ownerId:r.owner_id, coords:r.coords}; }
+
+function centroid(coords){ let lat=0,lng=0; coords.forEach(c=>{lat+=c[0]; lng+=c[1];}); return [lat/coords.length, lng/coords.length]; }
+
+// ================= LEAFLET MAP =================
+const leafletMap = L.map('leafletMap', {zoomControl:false, attributionControl:false, zoomSnap:0.25, zoomDelta:0.5, wheelPxPerZoomLevel:80, maxZoom:20}).setView(towns[0].center, towns[0].zoom);
+// maxNativeZoom keeps Leaflet from requesting tiles the imagery server doesn't have —
+// past that zoom it just upscales the closest available tile (like Google Maps does)
+// instead of showing a "map data not available" placeholder.
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:17}).addTo(leafletMap);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:16, opacity:0.9}).addTo(leafletMap);
+L.control.attribution({position:'bottomleft', prefix:false}).addTo(leafletMap);
+
+const polyLayer = L.layerGroup().addTo(leafletMap);
+function drawAllAreas(){
+  polyLayer.clearLayers();
+  seedAreas.forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta[a.status].color, weight:2.5, fillOpacity:0.32}).addTo(polyLayer); });
+  helperAreas.forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta.helper.color, weight:2.5, dashArray:'10,6', fillOpacity:0.14}).addTo(polyLayer); });
+}
+
+let currentTownId='kruisfontein';
+initProvinceDropdown();
+
+async function loadAreas(){
+  const {data:areas} = await sb.from('areas').select('*').order('created_at');
+  const {data:helpers} = await sb.from('helper_areas').select('*').order('created_at');
+  seedAreas = (areas||[]).map(mapAreaRow);
+  helperAreas = (helpers||[]).map(mapHelperRow);
+  drawAllAreas();
+  renderAreaListBelow();
+  renderMyAreas();
+}
+
+function renderAreaListBelow(){
+  const list=document.getElementById('areaListBelow');
+  if(seedAreas.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">Nothing claimed yet.</p>'; return; }
+  list.innerHTML='';
+  seedAreas.forEach(a=>{
+    const desc = a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label;
+    const div=document.createElement('div');
+    div.className='arow';
+    div.onclick=()=>flashArea(a);
+    div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span>
+      <div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · ${a.by}</div></div>
+      ${a.phone?`<button class="contact-btn" onclick="event.stopPropagation(); window.location.href='tel:${a.phone}'">Contact</button>`:''}`;
+    list.appendChild(div);
+  });
+  const hlist=document.getElementById('helperListBelow');
+  if(helperAreas.length===0){ hlist.innerHTML='<p style="font-size:13px; color:var(--text-dim);">Nobody offering help yet.</p>'; }
+  else{
+    hlist.innerHTML='';
+    helperAreas.forEach(a=>{
+      const div=document.createElement('div');
+      div.className='arow';
+      div.onclick=()=>flashArea(a);
+      div.innerHTML=`<span class="adot" style="background:${statusMeta.helper.color}"></span>
+        <div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${a.offer}</div></div>
+        ${a.phone?`<button class="contact-btn" onclick="event.stopPropagation(); window.location.href='tel:${a.phone}'">Contact</button>`:''}`;
+      hlist.appendChild(div);
+    });
+  }
+}
+
+function flashArea(a){
+  leafletMap.flyTo(centroid(a.coords), 16);
+  setTimeout(()=>{
+    a._layer.setStyle({weight:6});
+    setTimeout(()=>a._layer.setStyle({weight:2.5}), 900);
+  }, 550);
+}
+
+// ================= SEARCH =================
+function onMapSearch(q){
+  const box=document.getElementById('mapSearchResults');
+  q=q.trim().toLowerCase();
+  if(q.length<2){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const all=[...seedAreas, ...helperAreas];
+  const matches=all.filter(a=>a.name.toLowerCase().includes(q)||a.townName.toLowerCase().includes(q)).slice(0,6);
+  box.innerHTML = matches.length ? matches.map((a,i)=>`<div class="msr-row" onclick="goSearchResult(${i})">${a.name}<span>${a.townName}</span></div>`).join('') : '<div class="msr-row">No matches</div>';
+  window._msr=matches;
+  box.classList.add('show');
+}
+function goSearchResult(i){
+  const a=window._msr[i];
+  document.getElementById('mapSearchResults').classList.remove('show');
+  document.getElementById('mapSearchInput').value=a.name;
+  flashArea(a);
+}
+document.addEventListener('click', e=>{
+  const wrap=document.querySelector('.map-search');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('mapSearchResults').classList.remove('show');
+});
+
+// ================= LOCATE ME =================
+let youMarker=null, youCircle=null;
+function showBanner(msg, ms){
+  const b=document.getElementById('mapBanner');
+  b.textContent=msg; b.classList.add('show');
+  if(ms) setTimeout(()=>b.classList.remove('show'), ms);
+}
+function locateMe(){
+  showBanner('Finding you…');
+  if(!navigator.geolocation){ showBanner('Location not available on this device', 2600); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude,longitude,accuracy}=pos.coords;
+      leafletMap.flyTo([latitude,longitude], 17);
+      if(youMarker) leafletMap.removeLayer(youMarker);
+      if(youCircle) leafletMap.removeLayer(youCircle);
+      youMarker = L.circleMarker([latitude,longitude], {radius:8, color:'#fff', weight:3, fillColor:'#2E9BFF', fillOpacity:1}).addTo(leafletMap);
+      youCircle = L.circle([latitude,longitude], {radius:accuracy, color:'#2E9BFF', weight:1, fillOpacity:0.08}).addTo(leafletMap);
+      showBanner('This is you — now try "Claim my yard"', 2600);
+    },
+    ()=>{ showBanner('Location off — enable it in your browser to jump to your street', 3000); },
+    {enableHighAccuracy:true, timeout:6000}
+  );
+}
+
+// ================= CLAIM / OFFER-HELP (editable polygon) =================
+let claimMode=null; // 'mine' | 'helper' | null
+let yardPoints=null, yardCenter=null, yardLayer=null, yardHandles=[];
+function toggleClaimMode(mode){
+  if(!currentUser){ showBanner('Sign in first to claim or offer help', 2600); openSignIn(); return; }
+  if(claimMode===mode){ claimMode=null; }
+  else { claimMode=mode; }
+  document.getElementById('claimBtn').classList.toggle('active', claimMode==='mine');
+  document.getElementById('helperBtn').classList.toggle('active', claimMode==='helper');
+  if(claimMode){ showBanner(mode==='mine' ? 'Tap the map to drop your boundary' : 'Tap the map to mark the area you can help in'); }
+  else { document.getElementById('mapBanner').classList.remove('show'); }
+}
+leafletMap.on('click', function(e){
+  if(!claimMode || yardPoints) return;
+  const {lat,lng}=e.latlng;
+  yardCenter=[lat,lng];
+  const dLat = claimMode==='helper' ? 0.006 : 0.00035;
+  const dLng = claimMode==='helper' ? 0.008 : 0.00045;
+  yardPoints=[[lat+dLat,lng-dLng*0.6],[lat+dLat*0.3,lng-dLng],[lat-dLat*0.8,lng-dLng*0.4],[lat-dLat*0.6,lng+dLng*0.7],[lat+dLat*0.5,lng+dLng]];
+  buildHandles();
+  drawYardPreview();
+  document.getElementById('editPanel').classList.add('show');
+  showBanner('Drag the dots to reshape it', 2400);
+});
+function drawYardPreview(){
+  if(yardLayer) leafletMap.removeLayer(yardLayer);
+  const color = claimMode==='helper' ? '#2E7DD1' : '#22945A';
+  yardLayer = L.polygon(yardPoints, {color:color, weight:3, dashArray:'8,6', fillOpacity:0.3}).addTo(leafletMap);
+}
+function buildHandles(){
+  yardHandles.forEach(h=>leafletMap.removeLayer(h));
+  yardHandles=[];
+  yardPoints.forEach((p,idx)=>{
+    const icon=L.divIcon({className:'', html:'<div style="width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid '+(claimMode==='helper'?'#2E7DD1':'#22945A')+';box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>', iconSize:[16,16], iconAnchor:[8,8]});
+    const marker=L.marker(p, {icon:icon, draggable:true}).addTo(leafletMap);
+    marker.on('drag', ()=>{ const ll=marker.getLatLng(); yardPoints[idx]=[ll.lat,ll.lng]; drawYardPreview(); });
+    marker.on('dblclick', ()=>{ if(yardPoints.length>3){ yardPoints.splice(idx,1); buildHandles(); drawYardPreview(); } });
+    yardHandles.push(marker);
+  });
+}
+function addPoint(){
+  if(!yardPoints) return;
+  let longest=0, insertAt=1;
+  for(let i=0;i<yardPoints.length;i++){
+    const a=yardPoints[i], b=yardPoints[(i+1)%yardPoints.length];
+    const d=Math.hypot(a[0]-b[0], a[1]-b[1]);
+    if(d>longest){ longest=d; insertAt=i+1; }
+  }
+  const a=yardPoints[insertAt-1], b=yardPoints[insertAt % yardPoints.length];
+  const mid=[(a[0]+b[0])/2, (a[1]+b[1])/2];
+  yardPoints.splice(insertAt, 0, mid);
+  buildHandles();
+  drawYardPreview();
+}
+function cancelYard(){
+  if(yardLayer){ leafletMap.removeLayer(yardLayer); yardLayer=null; }
+  yardHandles.forEach(h=>leafletMap.removeLayer(h)); yardHandles=[];
+  document.getElementById('editPanel').classList.remove('show');
+  yardPoints=null; yardCenter=null;
+  claimMode=null; reshaping=false; editingArea=null; editingType=null;
+  document.getElementById('claimBtn').classList.remove('active');
+  document.getElementById('helperBtn').classList.remove('active');
+  document.getElementById('mapBanner').classList.remove('show');
+}
+function confirmYard(){
+  if(!yardPoints) return;
+  document.getElementById('editPanel').classList.remove('show');
+  const isHelper = (editingArea ? editingType : claimMode)==='helper';
+  if(editingArea && reshaping){
+    // Saving a reshaped boundary for an existing area — geometry only, skip the details form
+    saveReshape();
+    return;
+  }
+  document.getElementById('sheetTitle').textContent = isHelper ? 'Offer help in this area' : 'Claim this area';
+  document.getElementById('sheetSub').textContent = 'Your boundary is set — a few details and you\u2019re done.';
+  document.getElementById('mineFields').style.display = isHelper ? 'none' : 'block';
+  document.getElementById('helperFields').style.display = isHelper ? 'block' : 'none';
+  document.getElementById('releaseBtn').style.display='none';
+  document.getElementById('reshapeBtn').style.display='none';
+  document.getElementById('deleteBtn').style.display='none';
+  document.getElementById('claimSubmitBtn').textContent='Confirm';
+  document.getElementById('sheetBackdrop').classList.add('show');
+  document.getElementById('claimSheet').classList.add('show');
+}
+
+// ================= CLAIM SHEET SUBMIT (also handles editing an existing area) =================
+let selectedStatus='green';
+let editingArea=null, editingType=null, reshaping=false;
+function closeSheet(){
+  document.getElementById('sheetBackdrop').classList.remove('show');
+  document.getElementById('claimSheet').classList.remove('show');
+  editingArea=null; editingType=null; reshaping=false;
+  document.getElementById('releaseBtn').style.display='none';
+  document.getElementById('reshapeBtn').style.display='none';
+  document.getElementById('deleteBtn').style.display='none';
+}
+function selectTask(el){
+  document.querySelectorAll('#mineFields .task-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedStatus=el.dataset.status;
+  document.getElementById('helpDetailWrap').style.display = selectedStatus==='red' ? 'block' : 'none';
+}
+function openEditSheet(area, type){
+  editingArea=area; editingType=type; reshaping=false; claimMode=null; yardPoints=null;
+  document.getElementById('sheetTitle').textContent='Edit this area';
+  document.getElementById('sheetSub').textContent='Change what\u2019s here, reshape its boundary, or remove it.';
+  document.getElementById('mineFields').style.display = type==='helper' ? 'none' : 'block';
+  document.getElementById('helperFields').style.display = type==='helper' ? 'block' : 'none';
+  document.getElementById('releaseBtn').style.display = type==='helper' ? 'none' : 'block';
+  document.getElementById('reshapeBtn').style.display='block';
+  document.getElementById('deleteBtn').style.display='block';
+  document.getElementById('claimSubmitBtn').textContent='Save changes';
+  if(type==='helper'){
+    document.getElementById('helperNameInput').value=area.name;
+    document.getElementById('helperOfferInput').value=area.offer;
+  } else {
+    document.getElementById('areaNameInput').value=area.name;
+    document.querySelectorAll('#mineFields .task-opt').forEach(o=>o.classList.toggle('sel', o.dataset.status===area.status));
+    selectedStatus=area.status;
+    document.getElementById('helpDetailWrap').style.display = area.status==='red' ? 'block' : 'none';
+    document.getElementById('helpDetailInput').value=area.help||'';
+  }
+  document.getElementById('contactInput').value=area.phone||'';
+  document.getElementById('sheetBackdrop').classList.add('show');
+  document.getElementById('claimSheet').classList.add('show');
+}
+// Re-opens the map with this area's existing boundary loaded as draggable points
+function startReshape(){
+  if(!editingArea) return;
+  const area=editingArea, type=editingType;
+  closeSheet();
+  editingArea=area; editingType=type; reshaping=true;
+  claimMode = type==='helper' ? 'helper' : 'mine';
+  yardPoints = area.coords.map(p=>[p[0],p[1]]);
+  yardCenter = centroid(yardPoints);
+  showPage('map');
+  setTimeout(()=>{
+    leafletMap.flyTo(yardCenter, 17);
+    setTimeout(()=>{
+      buildHandles();
+      drawYardPreview();
+      document.getElementById('editPanel').classList.add('show');
+      showBanner('Drag the dots to reshape, then tap "Claim it" above to save', 3600);
+    }, 500);
+  }, 100);
+}
+async function saveReshape(){
+  const table = editingType==='helper' ? 'helper_areas' : 'areas';
+  await sb.from(table).update({coords: yardPoints}).eq('id', editingArea._id);
+  reshaping=false;
+  await finishClaimFlow();
+}
+async function releaseArea(){
+  if(!editingArea) return;
+  await sb.from('areas').update({status:'gray', owner_name:'Unclaimed', owner_id:null, phone:'', help_detail:''}).eq('id', editingArea._id);
+  await finishClaimFlow();
+}
+async function deleteAreaConfirm(){
+  if(!editingArea) return;
+  if(!confirm('Delete "'+editingArea.name+'" permanently? This can\u2019t be undone.')) return;
+  const table = editingType==='helper' ? 'helper_areas' : 'areas';
+  await sb.from(table).delete().eq('id', editingArea._id);
+  await finishClaimFlow();
+}
+async function submitClaim(){
+  if(editingArea && !reshaping){
+    if(editingType==='helper'){
+      await sb.from('helper_areas').update({
+        name: document.getElementById('helperNameInput').value || editingArea.name,
+        offer: document.getElementById('helperOfferInput').value || editingArea.offer,
+        phone: document.getElementById('contactInput').value
+      }).eq('id', editingArea._id);
+    } else {
+      await sb.from('areas').update({
+        name: document.getElementById('areaNameInput').value || editingArea.name,
+        status: selectedStatus,
+        help_detail: document.getElementById('helpDetailInput').value,
+        phone: document.getElementById('contactInput').value
+      }).eq('id', editingArea._id);
+    }
+    await finishClaimFlow();
+    return;
+  }
+  if(!yardPoints){ closeSheet(); return; }
+  const t=towns.find(x=>x.id===currentTownId);
+  const isHelper = claimMode==='helper';
+  if(isHelper){
+    await sb.from('helper_areas').insert({
+      name: document.getElementById('helperNameInput').value || 'Willing to help',
+      town_id: currentTownId, town_name: t.name,
+      offer: document.getElementById('helperOfferInput').value || 'Happy to help out',
+      phone: document.getElementById('contactInput').value,
+      owner_id: currentUser.id, owner_name: currentUser.name,
+      coords: yardPoints
+    });
+  } else {
+    await sb.from('areas').insert({
+      name: document.getElementById('areaNameInput').value || 'My yard',
+      town_id: currentTownId, town_name: t.name,
+      status: selectedStatus,
+      help_detail: document.getElementById('helpDetailInput').value,
+      phone: document.getElementById('contactInput').value,
+      owner_id: currentUser.id, owner_name: currentUser.name,
+      coords: yardPoints
+    });
+  }
+  await finishClaimFlow();
+}
+async function finishClaimFlow(){
+  if(yardLayer){ leafletMap.removeLayer(yardLayer); yardLayer=null; }
+  yardHandles.forEach(h=>leafletMap.removeLayer(h)); yardHandles=[];
+  yardPoints=null; yardCenter=null; claimMode=null; reshaping=false; editingArea=null; editingType=null;
+  document.getElementById('editPanel').classList.remove('show');
+  document.getElementById('claimBtn').classList.remove('active');
+  document.getElementById('helperBtn').classList.remove('active');
+  document.getElementById('claimSubmitBtn').textContent='Confirm';
+  document.getElementById('areaNameInput').value=''; document.getElementById('contactInput').value=''; document.getElementById('helpDetailInput').value='';
+  document.getElementById('helperNameInput').value=''; document.getElementById('helperOfferInput').value='';
+  closeSheet();
+  document.getElementById('mapBanner').classList.remove('show');
+  await loadAreas();
+}
+
+// ================= AUTH (real Supabase accounts) =================
+let currentUser=null;
+let authMode='signin';
+function initSignTownSelect(){
+  const sel=document.getElementById('signTown');
+  towns.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); });
+}
+initSignTownSelect();
+function setAuthMode(mode){
+  authMode=mode;
+  document.getElementById('modeSignInBtn').classList.toggle('sel', mode==='signin');
+  document.getElementById('modeSignUpBtn').classList.toggle('sel', mode==='signup');
+  document.getElementById('signUpNameWrap').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('signUpTownWrap').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('authTitle').textContent = mode==='signup' ? 'Create account' : 'Sign in';
+  document.getElementById('authSub').textContent = mode==='signup' ? 'Just an email and password — takes a few seconds.' : 'Already have an account? Sign in below.';
+  document.getElementById('authSubmitBtn').textContent = mode==='signup' ? 'Create account' : 'Sign in';
+  document.getElementById('authError').style.display='none';
+}
+function openSignIn(){ document.getElementById('signBackdrop').classList.add('show'); document.getElementById('signSheet').classList.add('show'); }
+function closeSignIn(){ document.getElementById('signBackdrop').classList.remove('show'); document.getElementById('signSheet').classList.remove('show'); }
+async function submitAuth(){
+  const email=document.getElementById('signEmail').value.trim();
+  const password=document.getElementById('signPassword').value;
+  const errEl=document.getElementById('authError');
+  errEl.style.display='none';
+  if(!email || !password){ errEl.textContent='Email and password are both needed.'; errEl.style.display='block'; return; }
+  if(authMode==='signup'){
+    const name=document.getElementById('signName').value.trim() || 'Neighbour';
+    const town=document.getElementById('signTown').value;
+    const {data, error} = await sb.auth.signUp({email, password, options:{data:{name, town_id:town}}});
+    if(error){ errEl.textContent=error.message; errEl.style.display='block'; return; }
+    if(!data.session){
+      errEl.style.display='none';
+      showBanner('Check your email to confirm your account, then sign in', 4000);
+      setAuthMode('signin');
+      return;
+    }
+  } else {
+    const {error} = await sb.auth.signInWithPassword({email, password});
+    if(error){ errEl.textContent=error.message; errEl.style.display='block'; return; }
+  }
+  await afterAuth();
+  closeSignIn();
+  showPage('myarea');
+}
+async function afterAuth(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ currentUser=null; return; }
+  let {data:profile} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if(!profile){
+    // trigger hasn't caught up yet — try once more shortly
+    await new Promise(r=>setTimeout(r,600));
+    ({data:profile} = await sb.from('profiles').select('*').eq('id', session.user.id).single());
+  }
+  currentUser={id:session.user.id, email:session.user.email, name:(profile&&profile.name)||'Neighbour', town:(profile&&profile.town_id)||'', admin:(profile&&profile.is_admin)||false};
+  document.getElementById('signinBtn').textContent='Hi, '+currentUser.name.split(' ')[0];
+  document.getElementById('signinBtn').onclick=()=>showPage('myarea');
+  await loadMyTeam();
+  renderMyAreas();
+  renderSponsorBar();
+  updateGalleryAdminVisibility();
+  renderGallery();
+}
+async function signOut(){
+  await sb.auth.signOut();
+  currentUser=null;
+  document.getElementById('signinBtn').textContent='Sign in';
+  document.getElementById('signinBtn').onclick=openSignIn;
+  renderMyAreas();
+  renderSponsorBar();
+  updateGalleryAdminVisibility();
+  renderGallery();
+  showPage('home');
+}
+function renderMyAreas(){
+  const out=document.getElementById('myAreaSignedOut');
+  const inn=document.getElementById('myAreaSignedIn');
+  if(!currentUser){ out.style.display='block'; inn.style.display='none'; return; }
+  out.style.display='none'; inn.style.display='block';
+  document.getElementById('avatarInitial').textContent=currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('welcomeName').textContent='Hi '+currentUser.name.split(' ')[0]+' 👋';
+  const townName = currentUser.town ? (towns.find(t=>t.id===currentUser.town)||{}).name : '';
+  document.getElementById('welcomeEmail').textContent=[currentUser.email, townName].filter(Boolean).join(' · ');
+  document.getElementById('debugUserId').textContent='Account ID: '+currentUser.id+(currentUser.admin?' (admin ✓)':' (admin ✗ — profile not matched)');
+  const list=document.getElementById('myAreasList');
+  const mine=seedAreas.filter(a=>a.ownerId===currentUser.id);
+  if(mine.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">You haven\u2019t claimed an area yet — head to the map to add one.</p>'; }
+  else{
+    list.innerHTML='';
+    mine.forEach(a=>{
+      const div=document.createElement('div');
+      div.className='arow';
+      div.onclick=()=>openEditSheet(a,'mine');
+      div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span><div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${statusMeta[a.status].label}</div></div><span class="contact-btn">Edit</span>`;
+      list.appendChild(div);
+    });
+  }
+  document.getElementById('adminTools').style.display = currentUser.admin ? 'block' : 'none';
+  if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); }
+}
+function renderAdminAllAreas(){
+  const list=document.getElementById('adminAllAreas');
+  const all=[...seedAreas, ...helperAreas];
+  if(all.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">Nothing claimed yet.</p>'; return; }
+  list.innerHTML='';
+  all.forEach(a=>{
+    const isHelper = helperAreas.includes(a);
+    const div=document.createElement('div');
+    div.className='arow';
+    div.onclick=()=>openEditSheet(a, isHelper?'helper':'mine');
+    const desc = isHelper ? a.offer : (a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label);
+    div.innerHTML=`<span class="adot" style="background:${isHelper?statusMeta.helper.color:statusMeta[a.status].color}"></span><div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · by ${a.by}</div></div><span class="contact-btn">Edit</span>`;
+    list.appendChild(div);
+  });
+}
+
+// ================= TEAMS =================
+let myTeam=null;
+async function loadMyTeam(){
+  if(!currentUser){ return; }
+  const {data:membership} = await sb.from('team_members').select('team_id').eq('user_id', currentUser.id).maybeSingle();
+  if(!membership){ myTeam=null; document.getElementById('noTeamCard').style.display='block'; document.getElementById('hasTeamCard').style.display='none'; return; }
+  const {data:team} = await sb.from('teams').select('*').eq('id', membership.team_id).single();
+  myTeam=team;
+  document.getElementById('noTeamCard').style.display='none';
+  document.getElementById('hasTeamCard').style.display='block';
+  document.getElementById('myTeamName').textContent=team.name;
+  document.getElementById('myTeamCode').textContent=team.invite_code;
+  await renderTeamPhotos();
+}
+async function createTeam(){
+  const name=document.getElementById('newTeamName').value.trim();
+  if(!name) return;
+  const {data:team, error} = await sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id}).select().single();
+  if(error){ showBanner(error.message, 3000); return; }
+  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name});
+  document.getElementById('newTeamName').value='';
+  await loadMyTeam();
+}
+async function joinTeam(){
+  const code=document.getElementById('joinTeamCode').value.trim();
+  if(!code) return;
+  const {data:team, error} = await sb.from('teams').select('*').eq('invite_code', code).maybeSingle();
+  if(error || !team){ showBanner('No team found with that code', 2600); return; }
+  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name});
+  document.getElementById('joinTeamCode').value='';
+  await loadMyTeam();
+}
+async function renderTeamPhotos(){
+  const grid=document.getElementById('teamPhotoGrid');
+  if(!myTeam){ grid.innerHTML=''; return; }
+  const {data:photos} = await sb.from('team_photos').select('*').eq('team_id', myTeam.id).order('created_at',{ascending:false});
+  grid.innerHTML='';
+  (photos||[]).forEach(p=>{
+    const card=document.createElement('div');
+    card.className='gcard';
+    card.innerHTML=`<div class="gphoto"><img src="${p.image_url}"></div><div class="gbody"><div class="gcaption">${p.caption}</div><div class="gwho">${p.posted_by_name}</div></div>`;
+    grid.appendChild(card);
+  });
+}
+async function handleTeamPhoto(evt){
+  const file=evt.target.files[0];
+  if(!file || !myTeam) return;
+  const path=`${myTeam.id}/${Date.now()}_${file.name}`;
+  const {error:upErr} = await sb.storage.from('team-photos').upload(path, file);
+  if(upErr){ showBanner(upErr.message, 3000); return; }
+  const {data:urlData} = sb.storage.from('team-photos').getPublicUrl(path);
+  await sb.from('team_photos').insert({team_id:myTeam.id, image_url:urlData.publicUrl, caption:'Progress update', posted_by_name:currentUser.name});
+  evt.target.value='';
+  await renderTeamPhotos();
+}
+
+// ================= GALLERY =================
+let galleryPhotos=[];
+let photoMode='single';
+function setPhotoMode(mode){
+  photoMode=mode;
+  document.getElementById('modeSingleBtn').classList.toggle('sel', mode==='single');
+  document.getElementById('modeBABtn').classList.toggle('sel', mode==='beforeafter');
+  document.getElementById('singlePhotoFields').style.display = mode==='single' ? 'block' : 'none';
+  document.getElementById('baPhotoFields').style.display = mode==='beforeafter' ? 'block' : 'none';
+}
+function stagePhoto(evt, kind){
+  const file=evt.target.files[0];
+  if(!file) return;
+  const labelId = kind==='single' ? 'singlePickLabel' : kind==='before' ? 'beforePickLabel' : 'afterPickLabel';
+  document.getElementById(labelId).textContent = '✓ '+file.name.slice(0,18);
+}
+function updateGalleryAdminVisibility(){
+  document.getElementById('galleryAdminTools').style.display = (currentUser && currentUser.admin) ? 'block' : 'none';
+}
+async function uploadToGallery(file){
+  const path=`${Date.now()}_${file.name}`;
+  const {error} = await sb.storage.from('gallery').upload(path, file);
+  if(error){ showBanner(error.message, 3000); return null; }
+  const {data} = sb.storage.from('gallery').getPublicUrl(path);
+  return data.publicUrl;
+}
+async function submitGalleryPhoto(){
+  const caption=document.getElementById('photoCaption').value.trim() || 'Just added by the team';
+  const who=document.getElementById('photoWho').value.trim() || currentUser.name;
+  const isBig=document.getElementById('photoBigProject').checked;
+  const isFeatured=document.getElementById('photoFeatured').checked;
+  let image_url='', before_url='', after_url='';
+  if(photoMode==='single'){
+    const file=document.getElementById('adminPhotoInput').files[0];
+    if(!file){ showBanner('Choose a photo first', 2200); return; }
+    image_url = await uploadToGallery(file);
+    if(!image_url) return;
+  } else {
+    const bf=document.getElementById('beforePhotoInput').files[0];
+    const af=document.getElementById('afterPhotoInput').files[0];
+    if(!bf || !af){ showBanner('Choose both a before and after photo', 2400); return; }
+    before_url = await uploadToGallery(bf);
+    if(!before_url) return;
+    after_url = await uploadToGallery(af);
+    if(!after_url) return;
+  }
+  if(isFeatured){ await sb.from('gallery_photos').update({is_featured:false}).eq('is_featured', true); }
+  await sb.from('gallery_photos').insert({image_url, before_url, after_url, caption, who, is_big_project:isBig, is_featured:isFeatured});
+  document.getElementById('adminPhotoInput').value=''; document.getElementById('beforePhotoInput').value=''; document.getElementById('afterPhotoInput').value='';
+  document.getElementById('singlePickLabel').textContent='+ Choose photo';
+  document.getElementById('beforePickLabel').textContent='+ Before';
+  document.getElementById('afterPickLabel').textContent='+ After';
+  document.getElementById('photoCaption').value=''; document.getElementById('photoWho').value='';
+  document.getElementById('photoBigProject').checked=false; document.getElementById('photoFeatured').checked=false;
+  await loadGallery();
+}
+async function deleteGalleryPhoto(id){
+  if(!confirm('Delete this gallery photo?')) return;
+  await sb.from('gallery_photos').delete().eq('id', id);
+  await loadGallery();
+}
+async function loadGallery(){
+  const {data:photos} = await sb.from('gallery_photos').select('*').order('created_at',{ascending:false});
+  galleryPhotos = photos||[];
+  renderFeatured();
+  renderGallery();
+}
+function renderFeatured(){
+  const featured = galleryPhotos.find(p=>p.is_featured);
+  const card=document.getElementById('potwCard');
+  if(!featured){ card.style.display='none'; return; }
+  card.style.display='block';
+  const heroImg = featured.after_url || featured.image_url;
+  document.getElementById('potwPhoto').innerHTML = heroImg ? `<img src="${heroImg}" style="width:100%; height:100%; object-fit:cover;">` : '📷';
+  document.getElementById('potwTitle').textContent = featured.caption;
+  document.getElementById('potwCaption').textContent = featured.who;
+}
+function renderGallery(){
+  const grid=document.getElementById('galleryGrid');
+  grid.innerHTML='';
+  galleryPhotos.forEach(g=>{
+    const card=document.createElement('div');
+    card.className='gcard';
+    let photoHtml;
+    if(g.before_url && g.after_url){
+      photoHtml = `<div class="gphoto-ba"><div><img src="${g.before_url}"><span class="ba-label">Before</span></div><div><img src="${g.after_url}"><span class="ba-label">After</span></div></div>`;
+    } else if(g.image_url){
+      photoHtml = `<div class="gphoto"><img src="${g.image_url}"></div>`;
+    } else {
+      photoHtml = `<div class="gphoto">📷</div>`;
+    }
+    const delBtn = (currentUser && currentUser.admin) ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
+    card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${delBtn}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ================= SPONSORS =================
+let tickerSponsors=[], majorSponsors=[], sponsorSlots=[];
+let stagedLogos={ticker:null, major:null, slot:null};
+function stageLogo(evt, kind){
+  const file=evt.target.files[0];
+  if(!file) return;
+  stagedLogos[kind]=file;
+  document.getElementById('new'+kind.charAt(0).toUpperCase()+kind.slice(1)+'LogoLabel').textContent='✓ '+file.name.slice(0,18);
+}
+async function uploadSponsorLogo(file){
+  const path=`${Date.now()}_${file.name}`;
+  const {error} = await sb.storage.from('sponsor-logos').upload(path, file);
+  if(error){ showBanner(error.message, 3000); return null; }
+  const {data} = sb.storage.from('sponsor-logos').getPublicUrl(path);
+  return data.publicUrl;
+}
+async function loadSponsors(){
+  const {data:ticker} = await sb.from('sponsor_ticker').select('*').order('created_at');
+  const {data:major} = await sb.from('major_sponsors').select('*').order('created_at');
+  const {data:slots} = await sb.from('sponsor_slots').select('*').order('created_at');
+  tickerSponsors=(ticker||[]).map(t=>({id:t.id, emoji:t.emoji, text:t.text, logoUrl:t.logo_url, targetTowns:t.target_towns||['all']}));
+  majorSponsors=major||[];
+  sponsorSlots=slots||[];
+  renderMajorSponsors();
+  renderSponsorGrid();
+  renderSponsorBar();
+}
+function renderMajorSponsors(){
+  const grid=document.getElementById('majorSponsorGrid');
+  if(!grid) return;
+  grid.innerHTML='';
+  majorSponsors.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='infocard';
+    const icon = s.logo_url ? `<img src="${s.logo_url}" style="width:100%; height:100%; object-fit:contain; border-radius:11px;">` : s.emoji;
+    d.innerHTML=`<div class="icon-badge">${icon}</div><div><h4>${s.name}</h4><p>${s.blurb}</p></div>`;
+    grid.appendChild(d);
+  });
+}
+function renderSponsorGrid(){
+  const grid=document.getElementById('sponsorGrid');
+  grid.innerHTML='';
+  sponsorSlots.forEach(s=>{
+    const d=document.createElement('div'); d.className='sponsor-slot';
+    d.innerHTML = s.logo_url ? `<img src="${s.logo_url}" style="max-width:100%; max-height:100%; object-fit:contain;">` : s.text;
+    grid.appendChild(d);
+  });
+}
+function renderAdminSponsorEditor(){
+  const wrap=document.getElementById('adminSponsorEditor');
+  wrap.innerHTML='';
+  tickerSponsors.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px;';
+    const townChecks=towns.map(t=>`<label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-right:8px;"><input type="checkbox" data-i="${i}" data-town="${t.id}" ${s.targetTowns.includes(t.id)?'checked':''} onchange="onTickerTownToggle(this)">${t.name}</label>`).join('');
+    const thumb = s.logoUrl ? `<img src="${s.logoUrl}" style="width:26px; height:26px; object-fit:contain; border-radius:6px; flex-shrink:0;">` : '';
+    row.innerHTML=`
+      <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
+        ${thumb}
+        <input type="text" value="${s.text}" style="flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;" oninput="tickerSponsors[${i}].text=this.value; renderSponsorBar(); saveTickerRow(${i});">
+        <button style="background:var(--red-tint); color:var(--red); border:none; border-radius:10px; padding:0 12px; font-family:inherit; font-weight:700; cursor:pointer;" onclick="deleteTickerSponsor(${i})">✕</button>
+      </div>
+      <label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-bottom:4px; font-weight:700;"><input type="checkbox" ${s.targetTowns.includes('all')?'checked':''} onchange="onTickerAllToggle(${i}, this.checked)">Show in all towns</label>
+      <div style="display:flex; flex-wrap:wrap;">${townChecks}</div>
+    `;
+    wrap.appendChild(row);
+  });
+  const mwrap=document.getElementById('adminMajorEditor');
+  if(mwrap){
+    mwrap.innerHTML='';
+    majorSponsors.forEach((s,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; align-items:center; gap:8px;';
+      const icon = s.logo_url ? `<img src="${s.logo_url}" style="width:26px; height:26px; object-fit:contain; border-radius:6px;">` : `<span style="font-size:18px;">${s.emoji}</span>`;
+      row.innerHTML=`${icon}<div style="flex:1;"><b style="font-size:12.5px;">${s.name}</b><div style="font-size:11px; color:var(--text-dim);">${s.blurb}</div></div><button style="background:var(--red-tint); color:var(--red); border:none; border-radius:10px; padding:6px 10px; font-family:inherit; font-weight:700; cursor:pointer;" onclick="deleteMajorSponsor(${i})">✕</button>`;
+      mwrap.appendChild(row);
+    });
+  }
+  const swrap=document.getElementById('adminSlotEditor');
+  if(swrap){
+    swrap.innerHTML='';
+    sponsorSlots.forEach((s,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; align-items:center; gap:8px;';
+      const thumb = s.logo_url ? `<img src="${s.logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:5px;">` : '';
+      row.innerHTML=`${thumb}<span style="flex:1; font-size:12.5px;">${s.text}</span><button style="background:var(--red-tint); color:var(--red); border:none; border-radius:8px; padding:5px 9px; font-family:inherit; font-weight:700; cursor:pointer;" onclick="deleteSponsorSlot(${i})">✕</button>`;
+      swrap.appendChild(row);
+    });
+  }
+}
+async function saveTickerRow(i){
+  const s=tickerSponsors[i];
+  await sb.from('sponsor_ticker').update({text:s.text, target_towns:s.targetTowns}).eq('id', s.id);
+}
+function onTickerAllToggle(i, checked){
+  tickerSponsors[i].targetTowns = checked ? ['all'] : [];
+  renderAdminSponsorEditor();
+  renderSponsorBar();
+  saveTickerRow(i);
+}
+function onTickerTownToggle(el){
+  const i=parseInt(el.dataset.i), townId=el.dataset.town;
+  let tt=tickerSponsors[i].targetTowns.filter(x=>x!=='all');
+  if(el.checked){ tt.push(townId); } else { tt=tt.filter(x=>x!==townId); }
+  tickerSponsors[i].targetTowns = tt.length ? tt : ['all'];
+  renderSponsorBar();
+  saveTickerRow(i);
+}
+async function addTickerSponsor(){
+  const emoji=document.getElementById('newTickerEmoji').value.trim() || '📣';
+  const text=document.getElementById('newTickerText').value.trim();
+  if(!text) return;
+  let logo_url=null;
+  if(stagedLogos.ticker){ logo_url = await uploadSponsorLogo(stagedLogos.ticker); }
+  await sb.from('sponsor_ticker').insert({emoji, text, logo_url, target_towns:['all']});
+  document.getElementById('newTickerEmoji').value=''; document.getElementById('newTickerText').value='';
+  document.getElementById('newTickerLogoLabel').textContent='+ Logo (optional, uses emoji if skipped)';
+  stagedLogos.ticker=null;
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function deleteTickerSponsor(i){
+  const s=tickerSponsors[i];
+  await sb.from('sponsor_ticker').delete().eq('id', s.id);
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function addMajorSponsor(){
+  const emoji=document.getElementById('newMajorEmoji').value.trim() || '🏢';
+  const name=document.getElementById('newMajorName').value.trim();
+  const blurb=document.getElementById('newMajorBlurb').value.trim();
+  if(!name) return;
+  let logo_url=null;
+  if(stagedLogos.major){ logo_url = await uploadSponsorLogo(stagedLogos.major); }
+  await sb.from('major_sponsors').insert({emoji, name, blurb, logo_url});
+  document.getElementById('newMajorEmoji').value=''; document.getElementById('newMajorName').value=''; document.getElementById('newMajorBlurb').value='';
+  document.getElementById('newMajorLogoLabel').textContent='+ Logo (optional, uses emoji if skipped)';
+  stagedLogos.major=null;
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function deleteMajorSponsor(i){
+  const s=majorSponsors[i];
+  await sb.from('major_sponsors').delete().eq('id', s.id);
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function addSponsorSlot(){
+  const text=document.getElementById('newSlotText').value.trim();
+  if(!text) return;
+  let logo_url=null;
+  if(stagedLogos.slot){ logo_url = await uploadSponsorLogo(stagedLogos.slot); }
+  await sb.from('sponsor_slots').insert({text, logo_url});
+  document.getElementById('newSlotText').value='';
+  document.getElementById('newSlotLogoLabel').textContent='+ Logo (optional)';
+  stagedLogos.slot=null;
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function deleteSponsorSlot(i){
+  const s=sponsorSlots[i];
+  await sb.from('sponsor_slots').delete().eq('id', s.id);
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+function visibleTickerSponsors(){
+  if(currentUser && currentUser.town){
+    const local = tickerSponsors.filter(s=>s.targetTowns.includes('all') || s.targetTowns.includes(currentUser.town));
+    return local.length ? local : tickerSponsors;
+  }
+  return tickerSponsors;
+}
+function renderSponsorBar(){
+  const track=document.getElementById('sbTrack');
+  const visible=visibleTickerSponsors();
+  const chips = visible.map(s=>{
+    const icon = s.logoUrl ? `<img src="${s.logoUrl}" style="width:100%; height:100%; object-fit:contain;">` : s.emoji;
+    return `<span class="sb-chip"><span class="sb-dot">${icon}</span>${s.text}</span>`;
+  }).join('');
+  track.innerHTML = `<div class="sb-marquee">${chips}${chips}</div>`;
+}
+
+// ================= PAGE NAV =================
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
+  document.querySelector('nav').classList.remove('open');
+  window.scrollTo(0,0);
+  if(name==='map') setTimeout(()=>leafletMap.invalidateSize(), 80);
+}
+function toggleNav(){
+  document.querySelector('nav').classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  const nav=document.querySelector('nav'), toggle=document.querySelector('.nav-toggle');
+  if(nav.classList.contains('open') && !nav.contains(e.target) && !toggle.contains(e.target)) nav.classList.remove('open');
+});
+
+// ================= BOOTSTRAP =================
+(async function init(){
+  await afterAuth();
+  await Promise.all([loadAreas(), loadGallery(), loadSponsors()]);
+})();
+sb.auth.onAuthStateChange((event)=>{
+  if(event==='SIGNED_OUT'){ currentUser=null; renderMyAreas(); renderSponsorBar(); updateGalleryAdminVisibility(); renderGallery(); }
+});
+</script>
+</body>
+</html>
