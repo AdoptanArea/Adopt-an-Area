@@ -725,14 +725,15 @@
   <section>
     <div class="wrap-wide">
       <p class="eyebrow">Live map — satellite view</p>
-      <h2>See who's doing what, anywhere in South Africa</h2>
+      <!-- Rewritten by setMapHeading() to name the local government once you pick a town. -->
+      <h2 id="mapHeading">See who's doing what, anywhere in South Africa</h2>
 
       <!-- No label above these: both dropdowns already say what they're for, and the
            line it saves is the difference between the filter button clearing the
            sponsor bar on a phone and not. -->
       <div class="prov-row">
         <select id="provinceSelect" onchange="onProvinceChange()"></select>
-        <select id="districtSelect" onchange="onDistrictChange()"><option>Select a province first</option></select>
+        <select id="townSelect" onchange="onTownChange()"><option value="">Select a province first</option></select>
       </div>
 
       <div class="map-layout">
@@ -1161,73 +1162,161 @@ const SUPABASE_URL = 'https://hjfuhsrlwmegfevojitt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZnVoc3Jsd21lZ2Zldm9qaXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NjMwNTAsImV4cCI6MjEwMjAzOTA1MH0.244e18Jni8OUWVeXkekog6NjVgdGm92CBcMZznUv-gA';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ================= TOWNS =================
-const towns = [
-  {id:'kruisfontein', name:'Kruisfontein', home:true, center:[-34.0298,24.7647], zoom:16},
-  {id:'gqeberha', name:'Gqeberha', center:[-33.9700,25.6420], zoom:14},
-  {id:'capetown', name:'Cape Town', center:[-33.9249,18.4241], zoom:13},
-  {id:'johannesburg', name:'Johannesburg', center:[-26.2041,28.0473], zoom:13},
-  {id:'durban', name:'Durban', center:[-29.8587,31.0218], zoom:13}
-];
-
-// Real South African provinces + district/metro municipalities, for the browse dropdown.
-// Where a district contains one of our pilot towns, selecting it flies straight there.
-// Other districts fly to the provincial capital as a starting point (exact town-level
-// data for all ~200 local municipalities isn't built in yet).
+// ================= WHERE =================
+// Province → district / metro (the "local government") → town. You pick a province
+// and then a town; the district comes along with the town and is what the heading
+// above the map names, because that's who you'd phone about a neglected space.
+// Towns are names only — coordinates are looked up on demand (see flyToTown), which
+// beats hand-keying 350 lat/lng pairs and getting some of them quietly wrong.
 const provinces = [
   {id:'ec', name:'Eastern Cape', capital:[-32.848,27.434], districts:[
-    {name:'Sarah Baartman', townId:'kruisfontein'}, {name:'Nelson Mandela Bay Metro', townId:'gqeberha'},
-    {name:'Buffalo City Metro'}, {name:'Amathole'}, {name:'Chris Hani'}, {name:'Joe Gqabi'}, {name:'OR Tambo'}, {name:'Alfred Nzo'}
+    {name:'Buffalo City Metro', towns:['East London','Gonubie','Mdantsane',"Qonce (King William's Town)",'Zwelitsha']},
+    {name:'Nelson Mandela Bay Metro', towns:['Colchester','Despatch','Gqeberha (Port Elizabeth)','Kariega (Uitenhage)','KwaNobuhle']},
+    {name:'Alfred Nzo District', towns:['Matatiele','Mbizana','Mount Ayliff','Mount Frere','Ntabankulu']},
+    {name:'Amathole District', towns:['Adelaide','Alice','Butterworth','Cathcart','Dutywa','Fort Beaufort','Keiskammahoek','Komga','Peddie','Stutterheim']},
+    {name:'Chris Hani District', towns:['Cala','Cofimvaba','Cradock','Engcobo','Hofmeyr','Komani (Queenstown)','Middelburg','Sterkstroom','Tarkastad']},
+    {name:'Joe Gqabi District', towns:['Aliwal North','Barkly East','Burgersdorp','Lady Grey','Maclear','Rhodes','Sterkspruit','Steynsburg','Ugie']},
+    {name:'OR Tambo District', towns:['Flagstaff','Libode','Lusikisiki','Mthatha','Ngqeleni','Port St Johns','Qumbu','Tsolo']},
+    {name:'Sarah Baartman District', towns:['Aberdeen','Addo','Alexandria','Alicedale','Cookhouse','Graaff-Reinet','Humansdorp','Jansenville','Jeffreys Bay','Joubertina','Kareedouw','Kirkwood','Makhanda (Grahamstown)','Oyster Bay','Patensie','Pearston','Port Alfred','Riebeek East','Somerset East (KwaNojoli)','St Francis Bay','Storms River']}
   ]},
   {id:'wc', name:'Western Cape', capital:[-33.9249,18.4241], districts:[
-    {name:'City of Cape Town Metro', townId:'capetown'}, {name:'Cape Winelands'}, {name:'Garden Route'}, {name:'Central Karoo'}, {name:'Overberg'}, {name:'West Coast'}
-  ]},
-  {id:'gp', name:'Gauteng', capital:[-26.2041,28.0473], districts:[
-    {name:'City of Johannesburg Metro', townId:'johannesburg'}, {name:'City of Tshwane Metro'}, {name:'City of Ekurhuleni Metro'}, {name:'Sedibeng'}, {name:'West Rand'}
-  ]},
-  {id:'kzn', name:'KwaZulu-Natal', capital:[-29.6006,30.3794], districts:[
-    {name:'eThekwini Metro', townId:'durban'}, {name:'Ugu'}, {name:'uMgungundlovu'}, {name:'Uthukela'}, {name:'Umzinyathi'}, {name:'Amajuba'}, {name:'Zululand'}, {name:'uMkhanyakude'}, {name:'King Cetshwayo'}, {name:'iLembe'}, {name:'Harry Gwala'}
-  ]},
-  {id:'fs', name:'Free State', capital:[-29.0852,26.1596], districts:[
-    {name:'Mangaung Metro'}, {name:'Fezile Dabi'}, {name:'Lejweleputswa'}, {name:'Thabo Mofutsanyana'}, {name:'Xhariep'}
-  ]},
-  {id:'mp', name:'Mpumalanga', capital:[-25.4753,30.9694], districts:[
-    {name:'Ehlanzeni'}, {name:'Gert Sibande'}, {name:'Nkangala'}
-  ]},
-  {id:'lp', name:'Limpopo', capital:[-23.9045,29.4689], districts:[
-    {name:'Capricorn'}, {name:'Mopani'}, {name:'Sekhukhune'}, {name:'Vhembe'}, {name:'Waterberg'}
-  ]},
-  {id:'nw', name:'North West', capital:[-25.8560,25.6403], districts:[
-    {name:'Bojanala Platinum'}, {name:'Dr Kenneth Kaunda'}, {name:'Dr Ruth Segomotsi Mompati'}, {name:'Ngaka Modiri Molema'}
+    {name:'City of Cape Town Metro', towns:['Bellville','Cape Town','Durbanville','Goodwood','Hout Bay','Khayelitsha','Mitchells Plain',"Simon's Town",'Somerset West','Strand']},
+    {name:'Cape Winelands District', towns:['Ashton','Ceres','Franschhoek','McGregor','Montagu','Paarl','Robertson','Stellenbosch','Tulbagh','Wellington','Worcester']},
+    {name:'Central Karoo District', towns:['Beaufort West','Laingsburg','Leeu-Gamka','Merweville','Murraysburg','Prince Albert']},
+    {name:'Garden Route District', towns:['Albertinia','Calitzdorp','George','Great Brak River','Knysna','Mossel Bay','Oudtshoorn','Plettenberg Bay','Riversdale','Uniondale']},
+    {name:'Overberg District', towns:['Bredasdorp','Caledon','Gansbaai','Grabouw','Hermanus','Napier','Riviersonderend','Stanford','Swellendam','Villiersdorp']},
+    {name:'West Coast District', towns:['Citrusdal','Clanwilliam','Darling','Lamberts Bay','Langebaan','Malmesbury','Piketberg','Porterville','Saldanha','Vredenburg','Vredendal']}
   ]},
   {id:'nc', name:'Northern Cape', capital:[-28.7282,24.7499], districts:[
-    {name:'Frances Baard'}, {name:'John Taolo Gaetsewe'}, {name:'Namakwa'}, {name:'Pixley ka Seme'}, {name:'ZF Mgcawu'}
+    {name:'Frances Baard District', towns:['Barkly West','Hartswater','Jan Kempdorp','Kimberley','Warrenton']},
+    {name:'John Taolo Gaetsewe District', towns:['Hotazel','Kathu','Kuruman','Mothibistad','Severn','Van Zylsrus']},
+    {name:'Namakwa District', towns:['Aggeneys','Alexander Bay','Calvinia','Garies','Kamieskroon','Okiep','Pofadder','Port Nolloth','Springbok']},
+    {name:'Pixley ka Seme District', towns:['Britstown','Colesberg','De Aar','Hanover','Hopetown','Noupoort','Philipstown','Prieska','Victoria West']},
+    {name:'ZF Mgcawu District', towns:['Augrabies','Groblershoop','Kakamas','Keimoes','Postmasburg','Rietfontein','Upington']}
+  ]},
+  {id:'fs', name:'Free State', capital:[-29.0852,26.1596], districts:[
+    {name:'Mangaung Metro', towns:['Bloemfontein','Botshabelo','Dewetsdorp','Thaba Nchu']},
+    {name:'Fezile Dabi District', towns:['Heilbron','Kroonstad','Oranjeville','Parys','Sasolburg','Villiers','Vredefort']},
+    {name:'Lejweleputswa District', towns:['Bothaville','Hennenman','Odendaalsrus','Ventersburg','Virginia','Welkom','Wesselsbron']},
+    {name:'Thabo Mofutsanyana District', towns:['Bethlehem','Clarens','Ficksburg','Fouriesburg','Harrismith','Ladybrand','Phuthaditjhaba','Reitz','Senekal']},
+    {name:'Xhariep District', towns:['Bethulie','Fauresmith','Jagersfontein','Koffiefontein','Philippolis','Reddersburg','Smithfield','Trompsburg']}
+  ]},
+  {id:'gp', name:'Gauteng', capital:[-26.2041,28.0473], districts:[
+    {name:'City of Johannesburg Metro', towns:['Alexandra','Johannesburg','Lenasia','Midrand','Randburg','Roodepoort','Sandton','Soweto']},
+    {name:'City of Tshwane Metro', towns:['Akasia','Bronkhorstspruit','Centurion','Cullinan','Hammanskraal','Mamelodi','Pretoria','Soshanguve']},
+    {name:'Ekurhuleni Metro', towns:['Alberton','Benoni','Boksburg','Brakpan','Edenvale','Germiston','Kempton Park','Nigel','Springs','Vosloorus']},
+    {name:'Sedibeng District', towns:['Heidelberg','Meyerton','Vanderbijlpark','Vereeniging','Walkerville']},
+    {name:'West Rand District', towns:['Carletonville','Krugersdorp','Magaliesburg','Randfontein','Westonaria']}
+  ]},
+  {id:'kzn', name:'KwaZulu-Natal', capital:[-29.6006,30.3794], districts:[
+    {name:'eThekwini Metro', towns:['Amanzimtoti','Chatsworth','Durban','KwaMashu','Phoenix','Pinetown','Umhlanga','Umlazi']},
+    {name:'Amajuba District', towns:['Dannhauser','Madadeni','Newcastle','Utrecht']},
+    {name:'Harry Gwala District', towns:['Creighton','Himeville','Ixopo','Kokstad']},
+    {name:'iLembe District', towns:['Ballito','KwaDukuza (Stanger)','Mandeni','Ndwedwe']},
+    {name:'Ugu District', towns:['Harding','Hibberdene','Margate','Port Shepstone','Scottburgh','Shelly Beach']},
+    {name:'uMgungundlovu District', towns:['Camperdown','Howick','Mooi River','Pietermaritzburg','Richmond','Wartburg']},
+    {name:'uMkhanyakude District', towns:['Hlabisa','Hluhluwe','Jozini','Manguzi','Mtubatuba']},
+    {name:'uMzinyathi District', towns:['Dundee','Greytown','Nquthu','Tugela Ferry']},
+    {name:'uThukela District', towns:['Bergville','Colenso','Estcourt','Ladysmith']},
+    {name:'Zululand District', towns:['Louwsburg','Nongoma','Pongola','Ulundi','Vryheid']}
+  ]},
+  {id:'mp', name:'Mpumalanga', capital:[-25.4753,30.9694], districts:[
+    {name:'Ehlanzeni District', towns:['Barberton','Bushbuckridge','Graskop','Hazyview','Komatipoort','Lydenburg','Malelane','Mbombela (Nelspruit)','Sabie','White River']},
+    {name:'Gert Sibande District', towns:['Amersfoort','Bethal','Breyten','Carolina','Ermelo','Piet Retief','Secunda','Standerton']},
+    {name:'Nkangala District', towns:['Delmas','eMakhazeni (Belfast)','Emalahleni (Witbank)','Groblersdal','Kwamhlanga','Middelburg','Siyabuswa']}
+  ]},
+  {id:'lp', name:'Limpopo', capital:[-23.9045,29.4689], districts:[
+    {name:'Capricorn District', towns:['Dendron','Lebowakgomo','Mankweng','Mogwadi','Polokwane','Seshego']},
+    {name:'Mopani District', towns:['Giyani','Gravelotte','Hoedspruit','Modjadjiskloof','Phalaborwa','Tzaneen']},
+    {name:'Sekhukhune District', towns:['Burgersfort','Groblersdal','Jane Furse','Marble Hall','Ohrigstad','Steelpoort']},
+    {name:'Vhembe District', towns:['Louis Trichardt','Malamulele','Musina','Mutale','Sibasa','Thohoyandou']},
+    {name:'Waterberg District', towns:['Bela-Bela','Lephalale','Modimolle','Mokopane','Thabazimbi','Vaalwater']}
+  ]},
+  {id:'nw', name:'North West', capital:[-25.8560,25.6403], districts:[
+    {name:'Bojanala Platinum District', towns:['Brits','Groot Marico','Hartbeespoort','Koster','Mogwase','Rustenburg','Zeerust']},
+    {name:'Dr Kenneth Kaunda District', towns:['Klerksdorp','Orkney','Potchefstroom','Stilfontein','Ventersdorp','Wolmaransstad']},
+    {name:'Dr Ruth Segomotsi Mompati District', towns:['Bloemhof','Christiana','Schweizer-Reneke','Stella','Taung','Vryburg']},
+    {name:'Ngaka Modiri Molema District', towns:['Delareyville','Lichtenburg','Mahikeng','Mmabatho','Sannieshof','Zeerust']}
   ]}
 ];
+
+// Where the map starts, and what a claim is filed under until you pick somewhere else.
+const HOME_TOWN = {id:'kruisfontein', name:'Kruisfontein', district:'Sarah Baartman District', center:[-34.0298,24.7647], zoom:16};
+let currentTown = {id:HOME_TOWN.id, name:HOME_TOWN.name, district:HOME_TOWN.district};
+
+const slug = s => s.toLowerCase().replace(/\(.*?\)/g,'').trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+// "Gqeberha (Port Elizabeth)" → "Gqeberha". The bracketed old name helps people find
+// their town in the list, but it's noise to a geocoder.
+const plainName = s => s.replace(/\s*\(.*?\)\s*/g,' ').trim();
+
+// Flat view of every town, for the places that want a plain list rather than the
+// province → district → town walk (the sign-up "where do you live?" picker).
+const ALL_TOWNS = provinces.flatMap(p => p.districts.flatMap(d =>
+  d.towns.map(t => ({id:slug(t), name:plainName(t), district:d.name, province:p.name}))
+));
+
 function initProvinceDropdown(){
   const psel=document.getElementById('provinceSelect');
   psel.innerHTML='<option value="">Choose a province…</option>' + provinces.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
 }
+
+// The heading names the local government, because that's who you talk to about a
+// neglected space — not the province, and not the suburb.
+function setMapHeading(place){
+  const h=document.getElementById('mapHeading');
+  if(h) h.textContent = "See who's doing what, anywhere in " + (place || 'South Africa');
+}
+
 function onProvinceChange(){
   const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
-  const dsel=document.getElementById('districtSelect');
-  if(!p){ dsel.innerHTML='<option>Select a province first</option>'; return; }
-  dsel.innerHTML='<option value="">Choose a district…</option>' + p.districts.map((d,i)=>`<option value="${i}">${d.name}</option>`).join('');
-}
-function onDistrictChange(){
-  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
-  const idx=document.getElementById('districtSelect').value;
-  if(!p || idx==='') return;
-  const d=p.districts[parseInt(idx)];
-  if(d.townId){
-    const t=towns.find(x=>x.id===d.townId);
-    currentTownId=t.id;
-    leafletMap.flyTo(t.center, t.zoom);
-    showBanner('Showing '+t.name, 2200);
-  } else {
-    leafletMap.flyTo(p.capital, 10.5);
-    showBanner('Showing the general area — zoom and pan to find your street', 3200);
+  const tsel=document.getElementById('townSelect');
+  if(!p){
+    tsel.innerHTML='<option value="">Select a province first</option>';
+    setMapHeading(null);
+    return;
   }
+  // Grouped by district so the list doubles as "which local government am I under?"
+  tsel.innerHTML='<option value="">Choose a town or city…</option>' + p.districts.map((d,di)=>
+    `<optgroup label="${d.name}">`
+    + d.towns.map((t,ti)=>`<option value="${di}:${ti}">${t}</option>`).join('')
+    + '</optgroup>'
+  ).join('');
+  setMapHeading(p.name);
+  leafletMap.flyTo(p.capital, 7);
+}
+
+function onTownChange(){
+  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
+  const val=document.getElementById('townSelect').value;
+  if(!p || !val) return;
+  const [di,ti]=val.split(':').map(Number);
+  const d=p.districts[di], town=d.towns[ti];
+  currentTown={id:slug(town), name:plainName(town), district:d.name};
+  setMapHeading(d.name);
+  flyToTown(plainName(town), p, d);
+}
+
+// Looked up rather than stored. Nominatim is the right tool here — a complete,
+// well-formed place name is exactly what it's built for — and the province in the
+// query settles the towns that share a name (there's a Middelburg and an Emalahleni
+// in two provinces each).
+async function flyToTown(town, province, district){
+  showBanner('Finding ' + town + '…');
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=za&limit=1&q='
+            + encodeURIComponent(town + ', ' + province.name + ', South Africa');
+    const j=await (await fetch(url)).json();
+    const hit=(j||[])[0];
+    if(hit){
+      const bb=hit.boundingbox;
+      if(bb) leafletMap.flyToBounds([[+bb[0],+bb[2]],[+bb[1],+bb[3]]], {maxZoom:15});
+      else leafletMap.flyTo([+hit.lat,+hit.lon], 14);
+      showBanner(town + ' · ' + district.name, 2600);
+      return;
+    }
+  }catch(e){ /* offline or the service is down — fall through to the province view */ }
+  leafletMap.flyTo(province.capital, 8);
+  showBanner("Couldn't pin " + town + ' — pan and zoom to find your street', 3600);
 }
 
 const statusMeta = {
@@ -1247,7 +1336,7 @@ function mapHelperRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townN
 function centroid(coords){ let lat=0,lng=0; coords.forEach(c=>{lat+=c[0]; lng+=c[1];}); return [lat/coords.length, lng/coords.length]; }
 
 // ================= LEAFLET MAP =================
-const leafletMap = L.map('leafletMap', {zoomControl:false, attributionControl:false, zoomSnap:0.25, zoomDelta:0.5, wheelPxPerZoomLevel:80, maxZoom:20}).setView(towns[0].center, towns[0].zoom);
+const leafletMap = L.map('leafletMap', {zoomControl:false, attributionControl:false, zoomSnap:0.25, zoomDelta:0.5, wheelPxPerZoomLevel:80, maxZoom:20}).setView(HOME_TOWN.center, HOME_TOWN.zoom);
 // maxNativeZoom keeps Leaflet from requesting tiles the imagery server doesn't have —
 // past that zoom it just upscales the closest available tile (like Google Maps does)
 // instead of showing a "map data not available" placeholder.
@@ -1347,7 +1436,6 @@ function drawAllAreas(){
 
 renderMapFilters();   // fill the menu (all zeros) straight away, before areas load
 
-let currentTownId='kruisfontein';
 initProvinceDropdown();
 
 async function loadAreas(){
@@ -1769,12 +1857,11 @@ async function submitClaim(){
     return;
   }
   if(!yardPoints){ closeSheet(); return; }
-  const t=towns.find(x=>x.id===currentTownId);
   const isHelper = claimMode==='helper';
   if(isHelper){
     await sb.from('helper_areas').insert({
       name: document.getElementById('helperNameInput').value || 'Willing to help',
-      town_id: currentTownId, town_name: t.name,
+      town_id: currentTown.id, town_name: currentTown.name,
       offer: document.getElementById('helperOfferInput').value || 'Happy to help out',
       phone: document.getElementById('contactInput').value,
       owner_id: currentUser.id, owner_name: currentUser.name,
@@ -1783,7 +1870,7 @@ async function submitClaim(){
   } else {
     await sb.from('areas').insert({
       name: document.getElementById('areaNameInput').value || 'My yard',
-      town_id: currentTownId, town_name: t.name,
+      town_id: currentTown.id, town_name: currentTown.name,
       status: selectedStatus,
       help_detail: document.getElementById('helpDetailInput').value,
       phone: document.getElementById('contactInput').value,
@@ -1812,9 +1899,20 @@ async function finishClaimFlow(){
 // ================= AUTH (real Supabase accounts) =================
 let currentUser=null;
 let authMode='signin';
+// Grouped by province — a flat run of 350 towns is unusable, and the province
+// heading is how anyone finds theirs.
 function initSignTownSelect(){
   const sel=document.getElementById('signTown');
-  towns.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); });
+  provinces.forEach(p=>{
+    const g=document.createElement('optgroup');
+    g.label=p.name;
+    p.districts.forEach(d=>d.towns.forEach(t=>{
+      const o=document.createElement('option');
+      o.value=slug(t); o.textContent=plainName(t);
+      g.appendChild(o);
+    }));
+    sel.appendChild(g);
+  });
 }
 initSignTownSelect();
 function setAuthMode(mode){
@@ -1895,7 +1993,7 @@ function renderMyAreas(){
   out.style.display='none'; inn.style.display='block';
   document.getElementById('avatarInitial').textContent=currentUser.name.charAt(0).toUpperCase();
   document.getElementById('welcomeName').textContent='Hi '+currentUser.name.split(' ')[0]+' 👋';
-  const townName = currentUser.town ? (towns.find(t=>t.id===currentUser.town)||{}).name : '';
+  const townName = currentUser.town ? (ALL_TOWNS.find(t=>t.id===currentUser.town)||{}).name : '';
   document.getElementById('welcomeEmail').textContent=[currentUser.email, townName].filter(Boolean).join(' · ');
   document.getElementById('debugUserId').textContent='Account ID: '+currentUser.id+(currentUser.admin?' (admin ✓)':' (admin ✗ — profile not matched)');
   const list=document.getElementById('myAreasList');
@@ -2131,13 +2229,26 @@ function renderSponsorGrid(){
     grid.appendChild(d);
   });
 }
+// A checkbox per town would be 350 of them. Only towns where somebody has actually
+// claimed something are worth targeting an ad at, so that's the list — plus anywhere
+// this sponsor is already pointed at, so an existing choice never silently vanishes.
+function targetableTowns(sponsor){
+  const seen=new Map();
+  [...seedAreas, ...helperAreas].forEach(a=>{ if(a.townId) seen.set(a.townId, a.townName||a.townId); });
+  (sponsor.targetTowns||[]).forEach(id=>{
+    if(id!=='all' && !seen.has(id)) seen.set(id, (ALL_TOWNS.find(t=>t.id===id)||{}).name || id);
+  });
+  return [...seen].map(([id,name])=>({id,name})).sort((a,b)=>a.name.localeCompare(b.name));
+}
+
 function renderAdminSponsorEditor(){
   const wrap=document.getElementById('adminSponsorEditor');
   wrap.innerHTML='';
   tickerSponsors.forEach((s,i)=>{
     const row=document.createElement('div');
     row.style.cssText='background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px;';
-    const townChecks=towns.map(t=>`<label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-right:8px;"><input type="checkbox" data-i="${i}" data-town="${t.id}" ${s.targetTowns.includes(t.id)?'checked':''} onchange="onTickerTownToggle(this)">${t.name}</label>`).join('');
+    const townChecks=targetableTowns(s).map(t=>`<label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-right:8px;"><input type="checkbox" data-i="${i}" data-town="${t.id}" ${s.targetTowns.includes(t.id)?'checked':''} onchange="onTickerTownToggle(this)">${t.name}</label>`).join('')
+      || '<span style="font-size:11px; color:var(--text-dim);">Nothing claimed anywhere yet — this ad shows everywhere.</span>';
     const thumb = s.logoUrl ? `<img src="${s.logoUrl}" style="width:26px; height:26px; object-fit:contain; border-radius:6px; flex-shrink:0;">` : '';
     row.innerHTML=`
       <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
