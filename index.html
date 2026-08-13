@@ -277,6 +277,15 @@
 
   /* Map page */
   #page-map{background:var(--soft2);}
+  /* Vertical space is the whole fight on this page — the map, the filter button and
+     the fixed sponsor bar all have to land above the fold on a phone. Everything
+     above the map is pulled in tight so the filter button clears the sponsor bar
+     without anyone having to scroll for it. */
+  #page-map > section{ padding:14px 0 24px; }
+  #page-map .eyebrow{ margin-bottom:4px; }
+  #page-map h2{ margin-bottom:9px; }
+  .prov-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .prov-row select{ flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; }
   .map-layout{ display:grid; grid-template-columns:1fr; gap:20px; }
   .town-chips{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px 0; -webkit-overflow-scrolling:touch; }
   .town-chip{ flex-shrink:0; background:#fff; border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-size:13px; font-weight:650; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
@@ -338,7 +347,7 @@
      clutter. One full-width button, and a menu that opens upwards over the map:
      left-aligned and deliberately narrow, so most of the view stays readable while
      you're picking. It doubles as the colour key the floating legend used to be. */
-  .map-filterbar{ position:relative; margin-top:10px; }
+  .map-filterbar{ position:relative; margin-top:8px; }
   .filter-toggle{ width:100%; display:flex; align-items:center; gap:9px; background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--text); text-align:left; cursor:pointer; }
   .filter-toggle .ft-summary{ margin-left:auto; font-size:12.5px; font-weight:650; color:var(--text-dim); }
   .filter-toggle .ft-caret{ flex-shrink:0; transition:transform .18s ease; }
@@ -711,12 +720,14 @@
   <section>
     <div class="wrap-wide">
       <p class="eyebrow">Live map — satellite view</p>
-      <h2 style="margin-bottom:12px;">See who's doing what, anywhere in South Africa</h2>
+      <h2>See who's doing what, anywhere in South Africa</h2>
 
-      <p class="field-label" style="margin-top:0;">Browse by province &amp; district</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        <select id="provinceSelect" style="flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:11px 12px; font-size:13.5px; font-family:inherit; background:#fff;" onchange="onProvinceChange()"></select>
-        <select id="districtSelect" style="flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:11px 12px; font-size:13.5px; font-family:inherit; background:#fff;" onchange="onDistrictChange()"><option>Select a province first</option></select>
+      <!-- No label above these: both dropdowns already say what they're for, and the
+           line it saves is the difference between the filter button clearing the
+           sponsor bar on a phone and not. -->
+      <div class="prov-row">
+        <select id="provinceSelect" onchange="onProvinceChange()"></select>
+        <select id="districtSelect" onchange="onDistrictChange()"><option>Select a province first</option></select>
       </div>
 
       <div class="map-layout">
