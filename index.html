@@ -282,21 +282,31 @@
   .town-chip{ flex-shrink:0; background:#fff; border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-size:13px; font-weight:650; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
   .town-chip.active{ background:var(--green); border-color:var(--green); color:#fff; }
   /* --map-chrome-bottom lifts every bottom-anchored overlay (claim buttons, edit
-     panel, zoom, legend) as one, so they clear the tour bar in full screen without
-     each needing its own override — and can't end up stacked in the wrong order. */
-  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:64vh; min-height:440px; max-height:680px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
+     panel, zoom) as one, so they clear the tour bar in full screen without each
+     needing its own override — and can't end up stacked in the wrong order.
+
+     Deliberately short on a phone. The old 64vh/440px-minimum pushed the bottom of
+     the map — where the claim buttons live — below the fold, so on a phone you got
+     satellite imagery and no controls. Everything now fits between the header and
+     the sponsor bar; full screen is one tap away when you need the room. */
+  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:48vh; height:48svh; min-height:280px; max-height:420px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
   #leafletMap{ position:absolute; inset:0; }
   .leaflet-container{ font-family:inherit; background:#12261c; }
 
-  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; gap:8px; }
-  .map-search{ flex:1; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; padding:10px 13px; position:relative; }
+  /* pointer-events:none on the bands, auto on the controls themselves — otherwise
+     the empty space beside the search box and between the chips swallows drags and
+     the map won't pan there. */
+  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+  /* Above the filter row so the search suggestions drop over the chips, not behind. */
+  .map-top-row{ display:flex; gap:8px; position:relative; z-index:2; }
+  .map-search{ pointer-events:auto; flex:1; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; padding:10px 13px; position:relative; }
   .map-search input{ border:none; outline:none; font-family:inherit; font-size:13.5px; flex:1; background:none; }
   .map-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border-radius:14px; box-shadow:0 10px 26px rgba(0,0,0,0.25); max-height:240px; overflow-y:auto; display:none; }
   .map-search-results.show{display:block;}
   .msr-row{padding:10px 13px; font-size:13px; font-weight:600; border-bottom:1px solid var(--border); cursor:pointer;}
   .msr-row span{display:block; font-size:11px; font-weight:500; color:var(--text-dim);}
   .msr-row:last-child{border-bottom:none;}
-  .map-round-btn{ width:42px; height:42px; border-radius:14px; background:#fff; border:none; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
+  .map-round-btn{ pointer-events:auto; width:42px; height:42px; border-radius:14px; background:#fff; border:none; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
 
   /* Only one of the two icons shows, depending on which state the map is in. */
   .map-shell:not(.map-full) .ic-collapse{ display:none; }
@@ -304,13 +314,13 @@
 
   /* During the tour the fixed instruction bar covers the bottom of the map — where
      the claim buttons live. Shrink the map for the duration so they stay in view. */
-  body.tour-running .map-shell{ height:48vh; min-height:320px; max-height:460px; }
+  body.tour-running .map-shell{ height:44vh; height:44svh; min-height:280px; max-height:400px; }
 
   /* Full screen, for placing boundary points precisely. Sits below the tour bar
      (z-index 950) so the instructions stay readable on top of it.
      The tour selector is repeated here deliberately: `body.tour-running .map-shell`
      above is MORE specific than `.map-shell.map-full`, so without this the shrink
-     rule wins and "full screen" comes out 48vh tall. */
+     rule wins and "full screen" comes out at the shrunken tour height. */
   .map-shell.map-full,
   body.tour-running .map-shell.map-full{
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:940;
@@ -322,23 +332,40 @@
   /* Full screen mid-tour: map edge to edge, with nothing over it but the step bar
      and the controls — which all lift clear of that bar together. */
   body.tour-running .map-shell.map-full{ --map-chrome-bottom:112px; }
-  body.tour-running .map-shell.map-full .legend-float{ display:none; }
 
   .map-zoom{ position:absolute; right:12px; bottom:calc(12px + var(--map-chrome-bottom)); z-index:500; display:flex; flex-direction:column; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); overflow:hidden; }
   .map-zoom button{ width:42px; height:38px; border:none; background:none; font-size:18px; font-weight:700; cursor:pointer; color:var(--text); }
   .map-zoom button:first-child{border-bottom:1px solid var(--border);}
 
-  .legend-float{ position:absolute; left:12px; bottom:calc(12px + var(--map-chrome-bottom)); z-index:500; background:#fff; border-radius:14px; padding:9px 11px; box-shadow:0 4px 14px rgba(0,0,0,0.25); font-size:10.5px; }
-  .legend-float .legend-row{display:flex; align-items:center; gap:6px; margin:2px 0;}
-  .legend-float .dot{width:8px; height:8px; border-radius:50%;}
+  /* Filter chips. These replace the old floating legend — same colour key, but you
+     can tap it. A map with every area on it at once is unreadable, so these let you
+     cut it down to one kind: the colours ARE the filter. Kept inside the shell so
+     they're still there in full screen, and scrollable sideways on a narrow phone. */
+  .map-filters{ display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .map-filters::-webkit-scrollbar{ display:none; }
+  .mf-chip{ pointer-events:auto; flex:0 0 auto; display:flex; align-items:center; gap:6px; background:#fff; border:1.5px solid transparent; border-radius:20px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text); box-shadow:0 3px 12px rgba(0,0,0,0.24); cursor:pointer; white-space:nowrap; }
+  .mf-chip .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .mf-chip .mf-count{ font-size:11px; font-weight:700; color:var(--text-dim); }
+  /* Switched off: still legible (it's the legend too), just visibly not counted in. */
+  .mf-chip.off{ background:rgba(255,255,255,0.66); color:var(--text-dim); box-shadow:0 2px 8px rgba(0,0,0,0.16); }
+  .mf-chip.off .dot{ opacity:0.3; }
+  .mf-chip.mf-all{ border-color:var(--border); }
+  .mf-chip.mf-all.on{ background:var(--text); border-color:var(--text); color:#fff; }
+  .mf-chip.mf-all.on .mf-count{ color:rgba(255,255,255,0.7); }
 
-  .claim-btn-wrap{ position:absolute; left:0; right:0; bottom:0; z-index:550; display:flex; justify-content:center; gap:8px; padding-bottom:calc(12px + var(--map-chrome-bottom)); pointer-events:none; }
+  /* Right padding keeps the buttons clear of the zoom control on a narrow phone. */
+  .claim-btn-wrap{ position:absolute; left:0; right:0; bottom:0; z-index:550; display:flex; justify-content:center; gap:8px; padding:0 60px calc(12px + var(--map-chrome-bottom)) 12px; pointer-events:none; }
   .claim-yard-btn{ pointer-events:auto; border:none; border-radius:24px; padding:13px 18px; font-size:13.5px; font-weight:700; font-family:inherit; box-shadow:0 6px 18px rgba(0,0,0,0.3); display:flex; align-items:center; gap:7px; cursor:pointer; }
   .claim-yard-btn.mine{background:var(--green); color:#fff;}
   .claim-yard-btn.helper{background:var(--blue); color:#fff;}
   .claim-yard-btn.active{background:var(--text); color:#fff;}
+  /* Small phones: both buttons still have to fit on one line, side by side. */
+  @media (max-width:420px){
+    .claim-yard-btn{ padding:12px 14px; font-size:12.5px; gap:5px; }
+    .mf-chip{ padding:6px 10px; font-size:11.5px; }
+  }
 
-  .banner-msg{ position:absolute; top:60px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
+  .banner-msg{ position:absolute; top:104px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
   .banner-msg.show{display:block;}
 
   .edit-panel{ position:absolute; left:12px; right:12px; bottom:calc(70px + var(--map-chrome-bottom)); z-index:550; background:#fff; border-radius:16px; padding:12px 14px; box-shadow:0 8px 22px rgba(0,0,0,0.25); display:none; }
@@ -438,8 +465,9 @@
     .sponsor-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
     h1{font-size:40px;}
     .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
-    .map-shell{height:72vh; max-height:760px;}
+    .map-shell{height:72vh; height:72svh; min-height:520px; max-height:760px;}
     .arealists{max-height:72vh; overflow-y:auto; padding-right:4px;}
+    .claim-btn-wrap{ padding-left:60px; }
   }
   @media (min-width:1000px){
     /* Wide enough for all five at once, so drop the swipe row for a plain grid —
@@ -679,27 +707,24 @@
           <div class="map-shell">
             <div id="leafletMap"></div>
             <div class="map-overlay-top">
-              <div class="map-search">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
-                <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
-                <div class="map-search-results" id="mapSearchResults"></div>
+              <div class="map-top-row">
+                <div class="map-search">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
+                  <div class="map-search-results" id="mapSearchResults"></div>
+                </div>
+                <button class="map-round-btn" onclick="locateMe()" title="Use my location">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+                <button class="map-round-btn" id="mapExpandBtn" onclick="toggleMapFullscreen()" title="Enlarge map">
+                  <svg class="ic-expand" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3H5.5A2.5 2.5 0 0 0 3 5.5V9M15 3h3.5A2.5 2.5 0 0 1 21 5.5V9M9 21H5.5A2.5 2.5 0 0 1 3 18.5V15M15 21h3.5a2.5 2.5 0 0 0 2.5-2.5V15" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
+                  <svg class="ic-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9h3.5A2.5 2.5 0 0 0 9 6.5V3M21 9h-3.5A2.5 2.5 0 0 1 15 6.5V3M3 15h3.5A2.5 2.5 0 0 1 9 17.5V21M21 15h-3.5a2.5 2.5 0 0 0-2.5 2.5V21" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
+                </button>
               </div>
-              <button class="map-round-btn" onclick="locateMe()" title="Use my location">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
-              </button>
-              <button class="map-round-btn" id="mapExpandBtn" onclick="toggleMapFullscreen()" title="Enlarge map">
-                <svg class="ic-expand" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3H5.5A2.5 2.5 0 0 0 3 5.5V9M15 3h3.5A2.5 2.5 0 0 1 21 5.5V9M9 21H5.5A2.5 2.5 0 0 1 3 18.5V15M15 21h3.5a2.5 2.5 0 0 0 2.5-2.5V15" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
-                <svg class="ic-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9h3.5A2.5 2.5 0 0 0 9 6.5V3M21 9h-3.5A2.5 2.5 0 0 1 15 6.5V3M3 15h3.5A2.5 2.5 0 0 1 9 17.5V21M21 15h-3.5a2.5 2.5 0 0 0-2.5 2.5V21" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
-              </button>
+              <!-- Colour key and filter in one: tap a colour to show only that kind. -->
+              <div class="map-filters" id="mapFilters"></div>
             </div>
             <div class="banner-msg" id="mapBanner"></div>
-            <div class="legend-float">
-              <div class="legend-row"><span class="dot" style="background:var(--green)"></span>Full control</div>
-              <div class="legend-row"><span class="dot" style="background:var(--orange)"></span>Trash only</div>
-              <div class="legend-row"><span class="dot" style="background:var(--red)"></span>Needs help</div>
-              <div class="legend-row"><span class="dot" style="background:var(--gray)"></span>Available</div>
-              <div class="legend-row"><span class="dot" style="background:var(--blue)"></span>Offering help</div>
-            </div>
             <div class="map-zoom"><button onclick="leafletMap.zoomIn()">+</button><button onclick="leafletMap.zoomOut()">−</button></div>
             <div class="edit-panel" id="editPanel">
               <p>Drag the white dots to reshape it. Double-tap a dot to remove it.</p>
@@ -1194,11 +1219,58 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/Worl
 L.control.attribution({position:'bottomleft', prefix:false}).addTo(leafletMap);
 
 const polyLayer = L.layerGroup().addTo(leafletMap);
+
+// ================= MAP FILTERS =================
+// Once a town has a few dozen areas on it the map turns into a wall of colour and
+// nobody can read it. These chips narrow it down to one kind at a time — and they
+// double as the colour key, so there's only one thing to learn.
+const FILTER_KEYS = ['green','orange','red','gray','helper'];
+let mapFilter = new Set(FILTER_KEYS);
+const shownAreas   = ()=> seedAreas.filter(a=>mapFilter.has(a.status));
+const shownHelpers = ()=> mapFilter.has('helper') ? helperAreas : [];
+
+function setMapFilter(key){
+  if(key==='all'){
+    mapFilter = new Set(FILTER_KEYS);
+  }else if(mapFilter.size===FILTER_KEYS.length){
+    // Coming from "show all", the first tap means "just this one" — tapping more
+    // after that adds them back in.
+    mapFilter = new Set([key]);
+  }else{
+    mapFilter.has(key) ? mapFilter.delete(key) : mapFilter.add(key);
+    if(mapFilter.size===0) mapFilter = new Set(FILTER_KEYS);   // never leave a blank map
+  }
+  drawAllAreas();
+  renderAreaListBelow();
+}
+
+function renderMapFilters(){
+  const el = document.getElementById('mapFilters');
+  if(!el) return;
+  const counts = {green:0, orange:0, red:0, gray:0, helper:helperAreas.length};
+  seedAreas.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
+  const allOn = FILTER_KEYS.every(k=>mapFilter.has(k));
+  const total = seedAreas.length + helperAreas.length;
+  let html = `<button class="mf-chip mf-all ${allOn?'on':'off'}" onclick="setMapFilter('all')">Show all <span class="mf-count">${total}</span></button>`;
+  FILTER_KEYS.forEach(k=>{
+    html += `<button class="mf-chip ${mapFilter.has(k)?'':'off'}" onclick="setMapFilter('${k}')">`
+          + `<span class="dot" style="background:${statusMeta[k].color}"></span>${statusMeta[k].label}`
+          + ` <span class="mf-count">${counts[k]}</span></button>`;
+  });
+  el.innerHTML = html;
+}
+
 function drawAllAreas(){
   polyLayer.clearLayers();
-  seedAreas.forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta[a.status].color, weight:2.5, fillOpacity:0.32}).addTo(polyLayer); });
-  helperAreas.forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta.helper.color, weight:2.5, dashArray:'10,6', fillOpacity:0.14}).addTo(polyLayer); });
+  // _layer is cleared on anything filtered out, so flashArea knows there's nothing
+  // drawn to highlight.
+  seedAreas.forEach(a=>{ a._layer = null; });
+  helperAreas.forEach(a=>{ a._layer = null; });
+  shownAreas().forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta[a.status].color, weight:2.5, fillOpacity:0.32}).addTo(polyLayer); });
+  shownHelpers().forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta.helper.color, weight:2.5, dashArray:'10,6', fillOpacity:0.14}).addTo(polyLayer); });
 }
+
+renderMapFilters();   // draw the chips (all zeros) straight away, before areas load
 
 let currentTownId='kruisfontein';
 initProvinceDropdown();
@@ -1214,24 +1286,31 @@ async function loadAreas(){
 }
 
 function renderAreaListBelow(){
+  renderMapFilters();
+  const empty = m=>`<p style="font-size:13px; color:var(--text-dim);">${m}</p>`;
+  const areas = shownAreas(), helpers = shownHelpers();
   const list=document.getElementById('areaListBelow');
-  if(seedAreas.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">Nothing claimed yet.</p>'; return; }
-  list.innerHTML='';
-  seedAreas.forEach(a=>{
-    const desc = a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label;
-    const div=document.createElement('div');
-    div.className='arow';
-    div.onclick=()=>flashArea(a);
-    div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span>
-      <div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · ${a.by}</div></div>
-      ${a.phone?`<button class="contact-btn" onclick="event.stopPropagation(); window.location.href='tel:${a.phone}'">Contact</button>`:''}`;
-    list.appendChild(div);
-  });
+  // The list mirrors the map, so it says why it's empty: nothing there at all, or
+  // nothing left after the filters.
+  if(areas.length===0){ list.innerHTML = empty(seedAreas.length ? 'No claimed areas match the filters you’ve picked.' : 'Nothing claimed yet.'); }
+  else{
+    list.innerHTML='';
+    areas.forEach(a=>{
+      const desc = a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label;
+      const div=document.createElement('div');
+      div.className='arow';
+      div.onclick=()=>flashArea(a);
+      div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span>
+        <div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · ${a.by}</div></div>
+        ${a.phone?`<button class="contact-btn" onclick="event.stopPropagation(); window.location.href='tel:${a.phone}'">Contact</button>`:''}`;
+      list.appendChild(div);
+    });
+  }
   const hlist=document.getElementById('helperListBelow');
-  if(helperAreas.length===0){ hlist.innerHTML='<p style="font-size:13px; color:var(--text-dim);">Nobody offering help yet.</p>'; }
+  if(helpers.length===0){ hlist.innerHTML = empty(helperAreas.length ? 'Hidden by the filters you’ve picked.' : 'Nobody offering help yet.'); }
   else{
     hlist.innerHTML='';
-    helperAreas.forEach(a=>{
+    helpers.forEach(a=>{
       const div=document.createElement('div');
       div.className='arow';
       div.onclick=()=>flashArea(a);
@@ -1245,6 +1324,7 @@ function renderAreaListBelow(){
 
 function flashArea(a){
   leafletMap.flyTo(centroid(a.coords), 16);
+  if(!a._layer) return;   // filtered off the map — fly there, but there's nothing to flash
   setTimeout(()=>{
     a._layer.setStyle({weight:6});
     setTimeout(()=>a._layer.setStyle({weight:2.5}), 900);
@@ -1378,6 +1458,10 @@ function goSearchResult(i){
   const a=window._msr[i];
   document.getElementById('mapSearchResults').classList.remove('show');
   document.getElementById('mapSearchInput').value=a.name;
+  // Searching for something the filters are hiding should show it, not fly you to
+  // an empty patch of map.
+  const key = a.offer!==undefined ? 'helper' : a.status;
+  if(!mapFilter.has(key)){ mapFilter.add(key); drawAllAreas(); renderAreaListBelow(); }
   flashArea(a);
 }
 function goGeoResult(i){
@@ -1442,6 +1526,10 @@ leafletMap.on('click', function(e){
   buildHandles();
   drawYardPreview();
   document.getElementById('editPanel').classList.add('show');
+  // On a phone the edit panel and the claim buttons together fill the short map, so
+  // hand the boundary the whole screen — you can't drag a dot you can't see.
+  const shell=document.querySelector('.map-shell');
+  if(window.innerWidth<760 && shell && !shell.classList.contains('map-full')) toggleMapFullscreen();
   showBanner('Drag the dots to reshape it', 2400);
   if(claimMode==='mine') fireTourEvent('boundaryDropped');
 });
