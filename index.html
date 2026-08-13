@@ -32,7 +32,12 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html{scroll-behavior:smooth;}
+  /* Keep the scrollbar's space reserved even while .hero-hold sets overflow:hidden.
+     Without this the bar vanishes for the length of the mow and comes back as the
+     hold releases, changing the viewport width mid-animation — every centred
+     element and the fixed sponsor bar jumped sideways just as the logo finished
+     growing. Phones use overlay scrollbars, so nothing changes there. */
+  html{scroll-behavior:smooth; scrollbar-gutter:stable;}
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
