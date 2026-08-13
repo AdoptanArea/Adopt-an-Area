@@ -80,7 +80,10 @@
     background:linear-gradient(180deg, #FFFFFF 0%, var(--soft) 65%, var(--soft2) 100%);
   }
   .hero-logo{ width:100%; height:auto; display:block; }
-  .logo-reveal-wrap{ position:relative; width:min(1400px, 96vw); max-height:60vh; aspect-ratio:680/380; margin:0 auto; }
+  /* Sized against the parent, not the viewport. 96vw ignored .hero-full's 24px
+     padding, so on a phone the scene came out ~32px wider than the space it had —
+     pushing the whole page sideways and knocking everything off centre. */
+  .logo-reveal-wrap{ position:relative; width:100%; max-width:1400px; max-height:60vh; aspect-ratio:680/380; margin:0 auto; }
   .base-scene{ position:absolute; inset:0; z-index:1; overflow:hidden; border-radius:14px; }
   .base-scene svg{ width:100%; height:100%; display:block; }
   /* Same inset + preserveAspectRatio as the scene and grass layers, so all three
