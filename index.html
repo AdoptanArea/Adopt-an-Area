@@ -293,12 +293,9 @@
   #leafletMap{ position:absolute; inset:0; }
   .leaflet-container{ font-family:inherit; background:#12261c; }
 
-  /* pointer-events:none on the bands, auto on the controls themselves — otherwise
-     the empty space beside the search box and between the chips swallows drags and
-     the map won't pan there. */
-  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
-  /* Above the filter row so the search suggestions drop over the chips, not behind. */
-  .map-top-row{ display:flex; gap:8px; position:relative; z-index:2; }
+  /* pointer-events:none on the band, auto on the controls themselves — otherwise the
+     empty space beside the search box swallows drags and the map won't pan there. */
+  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; gap:8px; pointer-events:none; }
   .map-search{ pointer-events:auto; flex:1; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; padding:10px 13px; position:relative; }
   .map-search input{ border:none; outline:none; font-family:inherit; font-size:13.5px; flex:1; background:none; }
   .map-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border-radius:14px; box-shadow:0 10px 26px rgba(0,0,0,0.25); max-height:240px; overflow-y:auto; display:none; }
@@ -333,25 +330,41 @@
      and the controls — which all lift clear of that bar together. */
   body.tour-running .map-shell.map-full{ --map-chrome-bottom:112px; }
 
-  .map-zoom{ position:absolute; right:12px; bottom:calc(12px + var(--map-chrome-bottom)); z-index:500; display:flex; flex-direction:column; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); overflow:hidden; }
+  .map-zoom{ position:absolute; right:12px; bottom:calc(26px + var(--map-chrome-bottom)); z-index:500; display:flex; flex-direction:column; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); overflow:hidden; }
   .map-zoom button{ width:42px; height:38px; border:none; background:none; font-size:18px; font-weight:700; cursor:pointer; color:var(--text); }
   .map-zoom button:first-child{border-bottom:1px solid var(--border);}
 
-  /* Filter chips. These replace the old floating legend — same colour key, but you
-     can tap it. A map with every area on it at once is unreadable, so these let you
-     cut it down to one kind: the colours ARE the filter. Kept inside the shell so
-     they're still there in full screen, and scrollable sideways on a narrow phone. */
-  .map-filters{ display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-  .map-filters::-webkit-scrollbar{ display:none; }
-  .mf-chip{ pointer-events:auto; flex:0 0 auto; display:flex; align-items:center; gap:6px; background:#fff; border:1.5px solid transparent; border-radius:20px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text); box-shadow:0 3px 12px rgba(0,0,0,0.24); cursor:pointer; white-space:nowrap; }
-  .mf-chip .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-  .mf-chip .mf-count{ font-size:11px; font-weight:700; color:var(--text-dim); }
-  /* Switched off: still legible (it's the legend too), just visibly not counted in. */
-  .mf-chip.off{ background:rgba(255,255,255,0.66); color:var(--text-dim); box-shadow:0 2px 8px rgba(0,0,0,0.16); }
-  .mf-chip.off .dot{ opacity:0.3; }
-  .mf-chip.mf-all{ border-color:var(--border); }
-  .mf-chip.mf-all.on{ background:var(--text); border-color:var(--text); color:#fff; }
-  .mf-chip.mf-all.on .mf-count{ color:rgba(255,255,255,0.7); }
+  /* Filters live BELOW the map, not on it — a row of chips over the imagery read as
+     clutter. One full-width button, and a menu that opens upwards over the map:
+     left-aligned and deliberately narrow, so most of the view stays readable while
+     you're picking. It doubles as the colour key the floating legend used to be. */
+  .map-filterbar{ position:relative; margin-top:10px; }
+  .filter-toggle{ width:100%; display:flex; align-items:center; gap:9px; background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--text); text-align:left; cursor:pointer; }
+  .filter-toggle .ft-summary{ margin-left:auto; font-size:12.5px; font-weight:650; color:var(--text-dim); }
+  .filter-toggle .ft-caret{ flex-shrink:0; transition:transform .18s ease; }
+  .map-filterbar.open .filter-toggle{ border-color:var(--green); }
+  .map-filterbar.open .ft-caret{ transform:rotate(180deg); }
+
+  /* z-index has to clear the map's own overlays (claim buttons sit at 550) or the
+     menu opens up *behind* them. */
+  .filter-menu{ display:none; position:absolute; left:0; bottom:calc(100% + 8px); z-index:600; width:222px; background:#fff; border-radius:14px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+  .map-filterbar.open .filter-menu{ display:block; }
+  .fm-row{ display:flex; align-items:center; gap:8px; width:100%; background:none; border:none; border-radius:10px; padding:7px 8px; font-family:inherit; font-size:12.5px; font-weight:650; color:var(--text); text-align:left; cursor:pointer; }
+  .fm-row:hover{ background:var(--soft); }
+  .fm-row .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .fm-row .fm-count{ margin-left:auto; font-size:11.5px; font-weight:650; color:var(--text-dim); }
+  .fm-row .fm-tick{ width:11px; flex-shrink:0; color:var(--green); font-size:12px; }
+  .fm-row.off{ color:var(--text-dim); }
+  .fm-row.off .dot{ opacity:0.28; }
+  .fm-sep{ height:1px; background:var(--border); margin:4px 6px; }
+
+  /* Full screen puts the map over everything, so the bar would be buried. Pin it to
+     the bottom of the screen and push the map's own controls up clear of it — that's
+     what --map-chrome-bottom is for. Mid-tour the step bar already owns that strip,
+     so the filter bar stands down. */
+  body.map-full-open .map-shell{ --map-chrome-bottom:70px; }
+  body.map-full-open .map-filterbar{ position:fixed; left:12px; right:12px; bottom:calc(10px + var(--safe-bottom)); z-index:960; margin:0; }
+  body.tour-running.map-full-open .map-filterbar{ display:none; }
 
   /* Right padding keeps the buttons clear of the zoom control on a narrow phone. */
   .claim-btn-wrap{ position:absolute; left:0; right:0; bottom:0; z-index:550; display:flex; justify-content:center; gap:8px; padding:0 60px calc(12px + var(--map-chrome-bottom)) 12px; pointer-events:none; }
@@ -362,7 +375,6 @@
   /* Small phones: both buttons still have to fit on one line, side by side. */
   @media (max-width:420px){
     .claim-yard-btn{ padding:12px 14px; font-size:12.5px; gap:5px; }
-    .mf-chip{ padding:6px 10px; font-size:11.5px; }
   }
 
   .banner-msg{ position:absolute; top:104px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
@@ -374,8 +386,13 @@
   .edit-panel .ep-actions{display:flex; gap:8px;}
   .edit-panel .ep-actions button{flex:1; border:none; border-radius:10px; padding:9px; font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer;}
 
-  .map-caption{font-size:12px; color:var(--text-dim); text-align:center; margin-top:10px;}
-  .map-attrib-note{font-size:11px; color:var(--text-dim); text-align:center; margin-top:2px;}
+  /* Esri's terms require the imagery credit to stay somewhere, so it moved off the
+     page and into Leaflet's own corner label — shrunk right down, bottom right. The
+     zoom buttons lift to sit above it. */
+  .leaflet-control-attribution{ font-size:9px !important; line-height:1.3 !important; padding:1px 5px !important; background:rgba(255,255,255,0.65) !important; color:#54574F !important; border-radius:6px 0 0 0; }
+  /* Rides up with the rest of the map chrome, so the pinned filter bar doesn't cover
+     it in full screen. Inherits --map-chrome-bottom from .map-shell — 0px normally. */
+  .map-shell .leaflet-bottom{ bottom:var(--map-chrome-bottom); }
 
   .arow{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; display:flex; align-items:center; gap:11px; margin-bottom:8px; cursor:pointer; }
   .arow .adot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
@@ -707,22 +724,18 @@
           <div class="map-shell">
             <div id="leafletMap"></div>
             <div class="map-overlay-top">
-              <div class="map-top-row">
-                <div class="map-search">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
-                  <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
-                  <div class="map-search-results" id="mapSearchResults"></div>
-                </div>
-                <button class="map-round-btn" onclick="locateMe()" title="Use my location">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </button>
-                <button class="map-round-btn" id="mapExpandBtn" onclick="toggleMapFullscreen()" title="Enlarge map">
-                  <svg class="ic-expand" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3H5.5A2.5 2.5 0 0 0 3 5.5V9M15 3h3.5A2.5 2.5 0 0 1 21 5.5V9M9 21H5.5A2.5 2.5 0 0 1 3 18.5V15M15 21h3.5a2.5 2.5 0 0 0 2.5-2.5V15" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
-                  <svg class="ic-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9h3.5A2.5 2.5 0 0 0 9 6.5V3M21 9h-3.5A2.5 2.5 0 0 1 15 6.5V3M3 15h3.5A2.5 2.5 0 0 1 9 17.5V21M21 15h-3.5a2.5 2.5 0 0 0-2.5 2.5V21" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
-                </button>
+              <div class="map-search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
+                <div class="map-search-results" id="mapSearchResults"></div>
               </div>
-              <!-- Colour key and filter in one: tap a colour to show only that kind. -->
-              <div class="map-filters" id="mapFilters"></div>
+              <button class="map-round-btn" onclick="locateMe()" title="Use my location">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+              <button class="map-round-btn" id="mapExpandBtn" onclick="toggleMapFullscreen()" title="Enlarge map">
+                <svg class="ic-expand" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3H5.5A2.5 2.5 0 0 0 3 5.5V9M15 3h3.5A2.5 2.5 0 0 1 21 5.5V9M9 21H5.5A2.5 2.5 0 0 1 3 18.5V15M15 21h3.5a2.5 2.5 0 0 0 2.5-2.5V15" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
+                <svg class="ic-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9h3.5A2.5 2.5 0 0 0 9 6.5V3M21 9h-3.5A2.5 2.5 0 0 1 15 6.5V3M3 15h3.5A2.5 2.5 0 0 1 9 17.5V21M21 15h-3.5a2.5 2.5 0 0 0-2.5 2.5V21" stroke="#22945A" stroke-width="1.9" stroke-linecap="round"/></svg>
+              </button>
             </div>
             <div class="banner-msg" id="mapBanner"></div>
             <div class="map-zoom"><button onclick="leafletMap.zoomIn()">+</button><button onclick="leafletMap.zoomOut()">−</button></div>
@@ -739,8 +752,16 @@
               <button class="claim-yard-btn helper" id="helperBtn" onclick="toggleClaimMode('helper')">🚜 Offer help</button>
             </div>
           </div>
-          <p class="map-caption">Real satellite imagery. Drag to pan, pinch or use +/− to zoom.</p>
-          <p class="map-attrib-note">Imagery © Esri, Maxar, Earthstar Geographics</p>
+          <!-- Menu contents are built in renderMapFilters() so the counts stay live. -->
+          <div class="map-filterbar" id="mapFilterBar">
+            <button class="filter-toggle" onclick="toggleFilterMenu(event)" aria-haspopup="true" aria-expanded="false" id="filterToggle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="#22945A" stroke-width="2" stroke-linecap="round"/></svg>
+              Filter
+              <span class="ft-summary" id="filterSummary">Showing all</span>
+              <svg class="ft-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="filter-menu" id="filterMenu" role="menu"></div>
+          </div>
         </div>
 
         <div class="arealists">
@@ -1214,22 +1235,28 @@ const leafletMap = L.map('leafletMap', {zoomControl:false, attributionControl:fa
 // maxNativeZoom keeps Leaflet from requesting tiles the imagery server doesn't have —
 // past that zoom it just upscales the closest available tile (like Google Maps does)
 // instead of showing a "map data not available" placeholder.
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:17}).addTo(leafletMap);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:17, attribution:'Esri, Maxar, Earthstar Geographics'}).addTo(leafletMap);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:16, opacity:0.9}).addTo(leafletMap);
-L.control.attribution({position:'bottomleft', prefix:false}).addTo(leafletMap);
+// Bottom right, tiny — Esri's terms want the credit visible, but it doesn't need a
+// line of its own under the map.
+L.control.attribution({position:'bottomright', prefix:false}).addTo(leafletMap);
 
 const polyLayer = L.layerGroup().addTo(leafletMap);
 
 // ================= MAP FILTERS =================
 // Once a town has a few dozen areas on it the map turns into a wall of colour and
-// nobody can read it. These chips narrow it down to one kind at a time — and they
-// double as the colour key, so there's only one thing to learn.
+// nobody can read it. The filter menu narrows it to one kind at a time — and since
+// every row carries its colour, it's the colour key too.
 const FILTER_KEYS = ['green','orange','red','gray','helper'];
 let mapFilter = new Set(FILTER_KEYS);
 const shownAreas   = ()=> seedAreas.filter(a=>mapFilter.has(a.status));
 const shownHelpers = ()=> mapFilter.has('helper') ? helperAreas : [];
 
-function setMapFilter(key){
+// The event is passed through so the click doesn't reach the close-on-outside-tap
+// handler: renderMapFilters() rebuilds the rows, which detaches the element that was
+// clicked, and a detached target no longer counts as "inside" the menu.
+function setMapFilter(key, e){
+  if(e) e.stopPropagation();
   if(key==='all'){
     mapFilter = new Set(FILTER_KEYS);
   }else if(mapFilter.size===FILTER_KEYS.length){
@@ -1244,20 +1271,52 @@ function setMapFilter(key){
   renderAreaListBelow();
 }
 
+// The menu stays open while you tap through it — picking two or three kinds is one
+// visit, not one visit each. Tapping the button again, or anywhere off the menu,
+// closes it.
+function toggleFilterMenu(e){
+  if(e) e.stopPropagation();
+  const bar=document.getElementById('mapFilterBar');
+  const open=bar.classList.toggle('open');
+  document.getElementById('filterToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeFilterMenu(){
+  const bar=document.getElementById('mapFilterBar');
+  if(!bar || !bar.classList.contains('open')) return;
+  bar.classList.remove('open');
+  document.getElementById('filterToggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('click', e=>{
+  const bar=document.getElementById('mapFilterBar');
+  if(bar && bar.classList.contains('open') && !bar.contains(e.target)) closeFilterMenu();
+});
+
 function renderMapFilters(){
-  const el = document.getElementById('mapFilters');
-  if(!el) return;
+  const menu = document.getElementById('filterMenu');
+  if(!menu) return;
   const counts = {green:0, orange:0, red:0, gray:0, helper:helperAreas.length};
   seedAreas.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
   const allOn = FILTER_KEYS.every(k=>mapFilter.has(k));
   const total = seedAreas.length + helperAreas.length;
-  let html = `<button class="mf-chip mf-all ${allOn?'on':'off'}" onclick="setMapFilter('all')">Show all <span class="mf-count">${total}</span></button>`;
+  const tick = on => `<span class="fm-tick">${on?'✓':''}</span>`;
+
+  let html = `<button class="fm-row ${allOn?'':'off'}" onclick="setMapFilter('all', event)">`
+           + `<span class="dot" style="background:var(--text)"></span>Show all`
+           + `<span class="fm-count">${total}</span>${tick(allOn)}</button><div class="fm-sep"></div>`;
   FILTER_KEYS.forEach(k=>{
-    html += `<button class="mf-chip ${mapFilter.has(k)?'':'off'}" onclick="setMapFilter('${k}')">`
+    const on = mapFilter.has(k);
+    html += `<button class="fm-row ${on?'':'off'}" onclick="setMapFilter('${k}', event)">`
           + `<span class="dot" style="background:${statusMeta[k].color}"></span>${statusMeta[k].label}`
-          + ` <span class="mf-count">${counts[k]}</span></button>`;
+          + `<span class="fm-count">${counts[k]}</span>${tick(on)}</button>`;
   });
-  el.innerHTML = html;
+  menu.innerHTML = html;
+
+  // The button says what you're looking at, so the state is readable with the menu shut.
+  const shown = shownAreas().length + shownHelpers().length;
+  const sum = document.getElementById('filterSummary');
+  if(allOn)                  sum.textContent = `Showing all ${total}`;
+  else if(mapFilter.size===1) sum.textContent = `${statusMeta[[...mapFilter][0]].label} · ${shown}`;
+  else                        sum.textContent = `${mapFilter.size} kinds · ${shown}`;
 }
 
 function drawAllAreas(){
@@ -1270,7 +1329,7 @@ function drawAllAreas(){
   shownHelpers().forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta.helper.color, weight:2.5, dashArray:'10,6', fillOpacity:0.14}).addTo(polyLayer); });
 }
 
-renderMapFilters();   // draw the chips (all zeros) straight away, before areas load
+renderMapFilters();   // fill the menu (all zeros) straight away, before areas load
 
 let currentTownId='kruisfontein';
 initProvinceDropdown();
@@ -2210,6 +2269,7 @@ function toggleMapFullscreen(){
   if(!shell) return;
   const on=shell.classList.toggle('map-full');
   document.body.classList.toggle('map-full-open', on);
+  closeFilterMenu();   // the bar re-anchors to the screen edge, so don't leave it hanging open
   const btn=document.getElementById('mapExpandBtn');
   if(btn) btn.title = on ? 'Exit full screen' : 'Enlarge map';
   // Leaflet caches the container size, so it has to be told the box changed —
