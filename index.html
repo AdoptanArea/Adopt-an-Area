@@ -436,6 +436,11 @@
      it in full screen. Inherits --map-chrome-bottom from .map-shell — 0px normally. */
   .map-shell .leaflet-bottom{ bottom:var(--map-chrome-bottom); }
 
+  /* Name tag on the highlighted street. No box or arrow — it sits on the road itself,
+     so it reads like a map label rather than a popup. */
+  .leaflet-tooltip.street-label{ background:none; border:none; box-shadow:none; padding:0; font-family:inherit; font-size:12px; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7); white-space:nowrap; }
+  .leaflet-tooltip.street-label::before{ display:none; }
+
   .arow{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; display:flex; align-items:center; gap:11px; margin-bottom:8px; cursor:pointer; }
   .arow .adot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .arow-name{font-size:13.5px; font-weight:700;}
@@ -1613,7 +1618,7 @@ function onMapSearch(q){
   q=q.trim();
   lastQuery=q;
   const box=document.getElementById('mapSearchResults');
-  if(q.length<2){ box.classList.remove('show'); box.innerHTML=''; clearTimeout(searchDebounce); return; }
+  if(q.length<2){ box.classList.remove('show'); box.innerHTML=''; clearTimeout(searchDebounce); clearStreetHighlight(); return; }
   const ql=q.toLowerCase();
   const localMatches=[...seedAreas, ...helperAreas].filter(a=>a.name.toLowerCase().includes(ql)||a.townName.toLowerCase().includes(ql)).slice(0,4);
   renderSearchResults(localMatches, window._geo||[], true);
@@ -1669,6 +1674,7 @@ async function photonSearch(q, center){
       return {
         label, sub:tidySub([p.city, p.locality, p.district, p.county, p.state], label),
         lat:+c[1], lon:+c[0], num:!!p.housenumber,
+        road:p.osm_key==='highway', roadName:p.street || p.name || '',
         bbox:(e && e.length===4) ? [[+e[3], +e[0]], [+e[1], +e[2]]] : null
       };
     })
@@ -1698,6 +1704,7 @@ function mapNominatimRow(x){
   return {
     label, sub:tidySub([a.suburb, a.town, a.city, a.county, a.state], label),
     lat:+x.lat, lon:+x.lon, num:!!a.house_number,
+    road:x.category==='highway', roadName:a.road || x.name || '',
     bbox:(bb && bb.length===4) ? [[+bb[0], +bb[2]], [+bb[1], +bb[3]]] : null
   };
 }
@@ -1742,6 +1749,58 @@ function queryForms(q){
   return [...new Set(forms)];
 }
 
+// ================= STREET HIGHLIGHT =================
+// House numbers aren't in the map data (13 of them in all of Humansdorp, checked via
+// Overpass), so a search can only ever put you on the right street. Drawing that
+// street makes the difference between "somewhere around here" and "this one, count
+// the houses along it" — which is the job the number would have done.
+//
+// The geocoders return a point and a box, not a shape, so the geometry comes from
+// Overpass: every highway carrying that name inside the town. A street usually exists
+// as several ways in OSM, so this catches the whole run of it, not just the segment
+// the geocoder happened to match.
+let streetLayer=null, streetSeq=0;
+function clearStreetHighlight(){
+  if(streetLayer){ leafletMap.removeLayer(streetLayer); streetLayer=null; }
+}
+async function highlightStreet(name, within){
+  const seq=++streetSeq;
+  clearStreetHighlight();
+  if(!name || !within) return;
+  // Search a box around the matched segment, not the whole town: in a metro, "Main
+  // Road" would otherwise drag back every stretch of it for miles. Padded generously
+  // and floored at roughly 650m a side so a short matched segment still reaches the
+  // neighbouring stretches of its own street.
+  const padded=L.latLngBounds(within).pad(1.5);
+  const MIN=0.006;
+  let south=padded.getSouth(), west=padded.getWest(), north=padded.getNorth(), east=padded.getEast();
+  if(north-south < MIN*2){ const c=(north+south)/2; south=c-MIN; north=c+MIN; }
+  if(east-west < MIN*2){ const c=(east+west)/2; west=c-MIN; east=c+MIN; }
+  const area=[south,west,north,east].map(v=>v.toFixed(5)).join(',');
+  const safe=name.replace(/["\\]/g,'\\$&');
+  const q=`[out:json][timeout:20];way["highway"]["name"="${safe}"](${area});out geom;`;
+  let lines=[];
+  try{
+    const res=await fetch('https://overpass-api.de/api/interpreter',
+      {method:'POST', body:'data='+encodeURIComponent(q)});
+    const j=await res.json();
+    lines=(j.elements||[]).filter(w=>w.geometry && w.geometry.length>1)
+                          .map(w=>w.geometry.map(g=>[g.lat, g.lon]));
+  }catch(err){ /* Overpass is busy or offline — the map still flew to the street */ }
+  if(seq!==streetSeq || !lines.length) return;
+  // Amber: the one colour not already spoken for by a claim status.
+  const glow=L.polyline(lines, {color:'#FFC53D', weight:13, opacity:0.32, lineCap:'round'});
+  const core=L.polyline(lines, {color:'#FFC53D', weight:3.5, opacity:0.95, lineCap:'round'});
+  core.bindTooltip(name, {permanent:true, direction:'center', className:'street-label'});
+  streetLayer=L.layerGroup([glow, core]).addTo(leafletMap);
+  // Refit only if the street runs off the edge — the geocoder's box is often just the
+  // one segment it matched. Skipping it when it already fits avoids a second lurch.
+  const streetBounds=L.latLngBounds(lines.flat());
+  if(!leafletMap.getBounds().contains(streetBounds)){
+    leafletMap.flyToBounds(streetBounds, {maxZoom:18, padding:[60,60]});
+  }
+}
+
 // Guards against a slow early request landing after a fast later one and
 // replacing good results with stale ones.
 let searchSeq=0;
@@ -1767,7 +1826,12 @@ function renderSearchResults(localMatches, geoResults, stillSearching){
   geoResults.forEach((r,i)=>{
     html += `<div class="msr-row" onclick="goGeoResult(${i})">📍 ${escHtml(r.label)}<span>${escHtml(r.sub)}</span></div>`;
   });
-  if(!html) html = stillSearching ? '<div class="msr-row">Searching…</div>' : '<div class="msr-row">No matches</div>';
+  // Street names differ between map providers — what Bing calls Station Street in
+  // Humansdorp, OpenStreetMap calls Voortrekker Road — so "no matches" often means the
+  // name, not the place, is missing. Say what to try instead.
+  if(!html) html = stillSearching
+    ? '<div class="msr-row">Searching…</div>'
+    : '<div class="msr-row">No matches<span>Try just the street name, or pan the map to it</span></div>';
   box.innerHTML = html;
   window._msr=localMatches; window._geo=geoResults;
   box.classList.add('show');
@@ -1787,6 +1851,7 @@ function goSearchResult(i){
   // an empty patch of map.
   const key = a.offer!==undefined ? 'helper' : a.status;
   if(!mapFilter.has(key)){ mapFilter.add(key); drawAllAreas(); renderAreaListBelow(); }
+  clearStreetHighlight();
   flashArea(a);
 }
 function goGeoResult(i){
@@ -1803,8 +1868,11 @@ function goGeoResult(i){
   // house numbers simply aren't in OpenStreetMap — the street is as close as any
   // search gets, and the last few metres are yours to point at.
   if(wantedNum){
-    showBanner('No. ' + wantedNum + " isn't in the map — find it along " + r.label + ' and claim it', 5200);
+    showBanner('No. ' + wantedNum + ' isn’t in the map — it’s along the marked street', 5200);
   }
+  // Trace the street so it's obvious which one it is and where to count from.
+  if(r.road) highlightStreet(r.roadName || r.label, r.bbox || [[r.lat-0.01, r.lon-0.01],[r.lat+0.01, r.lon+0.01]]);
+  else clearStreetHighlight();
 }
 document.addEventListener('click', e=>{
   const wrap=document.querySelector('.map-search');
