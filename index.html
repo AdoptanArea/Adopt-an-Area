@@ -1790,15 +1790,21 @@ async function highlightStreet(name, within){
   const seq=++streetSeq;
   clearStreetHighlight();
   if(!name || !within) return;
-  // Search a box around the matched segment, not the whole town: in a metro, "Main
-  // Road" would otherwise drag back every stretch of it for miles. Padded generously
-  // and floored at roughly 650m a side so a short matched segment still reaches the
-  // neighbouring stretches of its own street.
-  const padded=L.latLngBounds(within).pad(1.5);
-  const MIN=0.006;
-  let south=padded.getSouth(), west=padded.getWest(), north=padded.getNorth(), east=padded.getEast();
-  if(north-south < MIN*2){ const c=(north+south)/2; south=c-MIN; north=c+MIN; }
-  if(east-west < MIN*2){ const c=(east+west)/2; west=c-MIN; east=c+MIN; }
+  // Search the whole town, not a box around the matched segment. Anything smaller
+  // truncates the highlight: Felix Street is three separate ways in OSM and a box
+  // sized to the one the geocoder matched drew only that one, which is exactly the
+  // "it's only showing a small piece" problem.
+  const box=townBox();
+  let south, west, north, east;
+  if(box){
+    ({s:south, w:west, n:north, e:east}=box);
+  }else{
+    const padded=L.latLngBounds(within).pad(1.5);
+    const MIN=0.006;   // ~650m, so a short segment still reaches the rest of its street
+    south=padded.getSouth(); west=padded.getWest(); north=padded.getNorth(); east=padded.getEast();
+    if(north-south < MIN*2){ const c=(north+south)/2; south=c-MIN; north=c+MIN; }
+    if(east-west < MIN*2){ const c=(east+west)/2; west=c-MIN; east=c+MIN; }
+  }
   const area=[south,west,north,east].map(v=>v.toFixed(5)).join(',');
   const safe=name.replace(/["\\]/g,'\\$&');
   const q=`[out:json][timeout:20];way["highway"]["name"="${safe}"](${area});out geom;`;
@@ -1824,6 +1830,35 @@ async function highlightStreet(name, within){
   }
 }
 
+// Last resort, and the thorough one: ask Overpass directly for every street in the
+// town whose name contains what was typed. The geocoders rank and cap their results,
+// so an odd or partial name can fall off the end; this is a plain substring match over
+// the raw map data, which means if OpenStreetMap has the street, this finds it. Only
+// runs when the geocoders came back empty, since it's the slowest of the three.
+async function overpassStreetSearch(q){
+  const box=townBox();
+  if(!box) return [];
+  const safe=q.replace(/[^a-zA-Z0-9\s'-]/g,'').trim();   // it goes into a regex — keep it tame
+  if(safe.length<2) return [];
+  const area=[box.s, box.w, box.n, box.e].map(v=>v.toFixed(5)).join(',');
+  const query=`[out:json][timeout:20];way["highway"]["name"~"${safe}",i](${area});out tags center;`;
+  const res=await fetch('https://overpass-api.de/api/interpreter',
+    {method:'POST', body:'data='+encodeURIComponent(query)});
+  const j=await res.json();
+  // One row per street name, not per way — a street is several ways and they'd
+  // otherwise come back as a dozen identical-looking results.
+  const byName=new Map();
+  (j.elements||[]).forEach(w=>{
+    const name=(w.tags||{}).name, c=w.center;
+    if(!name || !c || byName.has(name)) return;
+    byName.set(name, {
+      label:name, sub:[currentTown.name, currentTown.district].filter(Boolean).join(' · '),
+      lat:c.lat, lon:c.lon, num:false, road:true, roadName:name, bbox:null
+    });
+  });
+  return [...byName.values()];
+}
+
 // Guards against a slow early request landing after a fast later one and
 // replacing good results with stale ones.
 let searchSeq=0;
@@ -1838,6 +1873,10 @@ async function geocodeSearch(q, localMatches){
   }
   if(!geoResults.length){
     try{ geoResults = await nominatimSearch(forms[0], box); }catch(e){ /* both failed — local matches still show */ }
+    if(seq!==searchSeq) return;
+  }
+  if(!geoResults.length){
+    try{ geoResults = await overpassStreetSearch(forms[0]); }catch(e){}
     if(seq!==searchSeq) return;
   }
   // Nothing in your town by that name. Rather than a bare "no matches", widen out —
