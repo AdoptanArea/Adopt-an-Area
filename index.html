@@ -29,6 +29,11 @@
     --gray:#9A9DA0; --gray-tint:#F1F1F0;
     --gold:#C8952A; --gold-tint:#FBF1DE;
     --radius-lg:24px; --radius-md:16px; --radius-sm:10px;
+    /* Installed to the home screen, the page runs edge to edge under the status bar
+       (viewport-fit=cover + black-translucent), so the notch/Dynamic Island sits on
+       top of the header. In Safari the browser chrome absorbs that, and both insets
+       are 0 — the same rules are simply a no-op there. */
+    --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -59,7 +64,9 @@
   p.lead{font-size:15px; line-height:1.6; color:var(--text-dim); margin:0 0 18px 0;}
   .page{display:none;} .page.active{display:block;}
 
-  header{ position:sticky; top:0; z-index:800; background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  /* The padding, not a margin, so the blurred backdrop fills the status bar strip
+     rather than leaving a bare gap above the header. */
+  header{ position:sticky; top:0; z-index:800; background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding-top:var(--safe-top); }
   .headrow{ max-width:1080px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:16px; flex-shrink:0; }
   .brand .leaf{ width:30px; height:30px; border-radius:9px; background:var(--green); display:flex; align-items:center; justify-content:center; }
@@ -78,8 +85,9 @@
   .hero{ padding:38px 0 30px 0; }
   .hero-full{
     /* Subtract the sticky header and the fixed sponsor bar, otherwise the hero is a
-       full viewport tall but starts below the header — pushing the scroll cue off-screen. */
-    min-height:calc(100vh - 130px); min-height:calc(100dvh - 130px);
+       full viewport tall but starts below the header — pushing the scroll cue off-screen.
+       --safe-top goes with it: installed, the header is that much taller. */
+    min-height:calc(100vh - 130px - var(--safe-top)); min-height:calc(100dvh - 130px - var(--safe-top));
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; padding:24px; position:relative;
     background:linear-gradient(180deg, #FFFFFF 0%, var(--soft) 65%, var(--soft2) 100%);
@@ -291,6 +299,22 @@
   #page-map h2{ margin-bottom:9px; }
   .prov-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
   .prov-row select{ flex:1; min-width:150px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; }
+
+  /* Town picker: a text box that filters, not a select. z-index clears the map's own
+     overlays (the filter menu is 600) since the list drops down over the map. */
+  .town-picker{ position:relative; flex:1; min-width:150px; }
+  .town-picker input{ width:100%; box-sizing:border-box; border:1.5px solid var(--border); border-radius:12px; padding:10px 30px 10px 12px; font-size:13.5px; font-family:inherit; background:#fff; }
+  .town-picker input:disabled{ background:var(--soft); color:var(--text-dim); }
+  .town-picker .tp-caret{ position:absolute; right:11px; top:50%; transform:translateY(-50%); pointer-events:none; }
+  .town-list{ display:none; position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:700; background:#fff; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.24); max-height:264px; overflow-y:auto; }
+  .town-list.show{ display:block; }
+  /* Sticky so you can always see which local government you're scrolling through. */
+  .tl-group{ position:sticky; top:0; background:#fff; padding:9px 12px 4px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--green); }
+  .tl-row{ padding:9px 12px; font-size:13px; font-weight:650; cursor:pointer; border-bottom:1px solid var(--border); }
+  .tl-row:last-child{ border-bottom:none; }
+  .tl-row span{ display:block; font-size:11px; font-weight:500; color:var(--text-dim); }
+  .tl-row:hover{ background:var(--soft); }
+  .tl-empty{ padding:12px; font-size:12.5px; color:var(--text-dim); }
   .map-layout{ display:grid; grid-template-columns:1fr; gap:20px; }
   .town-chips{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px 0; -webkit-overflow-scrolling:touch; }
   .town-chip{ flex-shrink:0; background:#fff; border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-size:13px; font-weight:650; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
@@ -337,6 +361,10 @@
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:940;
     height:auto; min-height:0; max-height:none; border-radius:0;
   }
+  /* The imagery is welcome to run under the notch; the search box and the banner
+     are not — they start below it instead. */
+  .map-shell.map-full .map-overlay-top{ top:calc(12px + var(--safe-top)); }
+  .map-shell.map-full .banner-msg{ top:calc(104px + var(--safe-top)); }
   body.map-full-open{ overflow:hidden; }
   body.map-full-open .sponsor-bar{ display:none; }
 
@@ -733,7 +761,14 @@
            sponsor bar on a phone and not. -->
       <div class="prov-row">
         <select id="provinceSelect" onchange="onProvinceChange()"></select>
-        <select id="townSelect" onchange="onTownChange()"><option value="">Select a province first</option></select>
+        <!-- Type-to-filter rather than a plain select: some provinces run to 60 towns,
+             which is a long scroll on a phone. Matches district names too. -->
+        <div class="town-picker" id="townPicker">
+          <input type="text" id="townInput" placeholder="Select a province first" disabled autocomplete="off"
+                 oninput="onTownFilter(this.value)" onfocus="openTownList()" onkeydown="onTownKey(event)">
+          <svg class="tp-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="town-list" id="townList"></div>
+        </div>
       </div>
 
       <div class="map-layout">
@@ -1267,39 +1302,85 @@ function setMapHeading(place){
   if(h) h.textContent = "See who's doing what, anywhere in " + (place || 'South Africa');
 }
 
+const selectedProvince = ()=> provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
+
 function onProvinceChange(){
-  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
-  const tsel=document.getElementById('townSelect');
+  const p=selectedProvince();
+  const inp=document.getElementById('townInput');
+  inp.value=''; closeTownList();
   if(!p){
-    tsel.innerHTML='<option value="">Select a province first</option>';
+    inp.disabled=true; inp.placeholder='Select a province first';
     setMapHeading(null);
+    // Drop the search bias too, or it keeps hunting in a town you've deselected.
+    currentTown={id:currentTown.id, name:currentTown.name, district:currentTown.district};
+    document.getElementById('mapSearchInput').placeholder='Search a street or address';
     return;
   }
-  // Grouped by district so the list doubles as "which local government am I under?"
-  tsel.innerHTML='<option value="">Choose a town or city…</option>' + p.districts.map((d,di)=>
-    `<optgroup label="${d.name}">`
-    + d.towns.map((t,ti)=>`<option value="${di}:${ti}">${t}</option>`).join('')
-    + '</optgroup>'
-  ).join('');
+  inp.disabled=false; inp.placeholder='Search a town or city…';
   setMapHeading(p.name);
   leafletMap.flyTo(p.capital, 7);
 }
 
-function onTownChange(){
-  const p=provinces.find(x=>x.id===document.getElementById('provinceSelect').value);
-  const val=document.getElementById('townSelect').value;
-  if(!p || !val) return;
-  const [di,ti]=val.split(':').map(Number);
-  const d=p.districts[di], town=d.towns[ti];
-  currentTown={id:slug(town), name:plainName(town), district:d.name};
+// Matches the district name as well as the town, so typing "Sarah" brings up every
+// town in Sarah Baartman District — which is how you find yours when you know the
+// municipality but not which of its twenty towns you're nearest.
+function renderTownList(q){
+  const p=selectedProvince(), list=document.getElementById('townList');
+  if(!p) return;
+  const ql=q.trim().toLowerCase();
+  let html='';
+  p.districts.forEach((d,di)=>{
+    const districtHit = ql && d.name.toLowerCase().includes(ql);
+    const hits=d.towns.map((t,ti)=>({t,ti})).filter(x=> !ql || districtHit || x.t.toLowerCase().includes(ql));
+    if(!hits.length) return;
+    html += `<div class="tl-group">${escHtml(d.name)}</div>`
+          + hits.map(x=>`<div class="tl-row" onclick="pickTown(${di},${x.ti})">${escHtml(x.t)}<span>${escHtml(d.name)}</span></div>`).join('');
+  });
+  list.innerHTML = html || '<div class="tl-empty">Nothing matches that. Check the spelling, or try the district name.</div>';
+}
+// Reopening it means you want to change your mind, so show everything again and
+// select what's there — the next keystroke replaces the town instead of appending
+// to it.
+function openTownList(){
+  const inp=document.getElementById('townInput');
+  if(inp.disabled) return;
+  inp.select();
+  renderTownList('');
+  document.getElementById('townList').classList.add('show');
+}
+function closeTownList(){ document.getElementById('townList').classList.remove('show'); }
+function onTownFilter(v){ renderTownList(v); document.getElementById('townList').classList.add('show'); }
+function onTownKey(e){
+  if(e.key==='Escape'){ closeTownList(); return; }
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const first=document.querySelector('#townList .tl-row');
+  if(first) first.click();
+}
+document.addEventListener('click', e=>{
+  const tp=document.getElementById('townPicker');
+  if(tp && !tp.contains(e.target)) closeTownList();
+});
+
+function pickTown(di,ti){
+  const p=selectedProvince();
+  if(!p) return;
+  const d=p.districts[di], town=d.towns[ti], name=plainName(town);
+  const inp=document.getElementById('townInput');
+  inp.value=name; inp.blur();
+  closeTownList();
+  currentTown={id:slug(town), name, district:d.name, province:p.name, center:null, bbox:null};
   setMapHeading(d.name);
-  flyToTown(plainName(town), p, d);
+  // Now that we know where you are, the address search says so and searches there.
+  document.getElementById('mapSearchInput').placeholder='Search a street in ' + name;
+  flyToTown(name, p, d);
 }
 
 // Looked up rather than stored. Nominatim is the right tool here — a complete,
 // well-formed place name is exactly what it's built for — and the province in the
 // query settles the towns that share a name (there's a Middelburg and an Emalahleni
-// in two provinces each).
+// in two provinces each). The result is kept on currentTown so the address search
+// can lean on it afterwards.
 async function flyToTown(town, province, district){
   showBanner('Finding ' + town + '…');
   try{
@@ -1309,7 +1390,9 @@ async function flyToTown(town, province, district){
     const hit=(j||[])[0];
     if(hit){
       const bb=hit.boundingbox;
-      if(bb) leafletMap.flyToBounds([[+bb[0],+bb[2]],[+bb[1],+bb[3]]], {maxZoom:15});
+      currentTown.center={lat:+hit.lat, lng:+hit.lon};
+      currentTown.bbox = (bb && bb.length===4) ? [[+bb[0],+bb[2]],[+bb[1],+bb[3]]] : null;
+      if(currentTown.bbox) leafletMap.flyToBounds(currentTown.bbox, {maxZoom:15});
       else leafletMap.flyTo([+hit.lat,+hit.lon], 14);
       showBanner(town + ' · ' + district.name, 2600);
       return;
@@ -1564,13 +1647,28 @@ async function photonSearch(q, center){
     .filter(r=>isFinite(r.lat) && isFinite(r.lon));
 }
 
-// Fallback, biased to the visible map area via viewbox.
+// Once you've picked a town, that's what the address search leans on rather than
+// wherever the map happens to be pointing — you told us where you are, so a street
+// name should resolve there. Both fall back to the visible map area until then.
+const searchCenter = ()=> (currentTown && currentTown.center) ? currentTown.center : leafletMap.getCenter();
+const searchBounds = ()=> (currentTown && currentTown.bbox) ? L.latLngBounds(currentTown.bbox) : leafletMap.getBounds();
+// Nominatim wants a complete address. Pinning the town and province on the end turns
+// a bare "voortrekker" into something it can resolve, and stops it answering with a
+// Voortrekker Street on the other side of the country.
+function qualifyQuery(q){
+  if(!currentTown || !currentTown.province) return q;
+  const ql=q.toLowerCase();
+  if(ql.includes(currentTown.name.toLowerCase())) return q;
+  return q + ', ' + currentTown.name + ', ' + currentTown.province;
+}
+
+// Fallback, biased to the selected town (or the visible map area) via viewbox.
 async function nominatimSearch(q){
-  const b=leafletMap.getBounds();
+  const b=searchBounds();
   const viewbox=[b.getWest(), b.getNorth(), b.getEast(), b.getSouth()].join(',');
   const url='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=za'
           + '&addressdetails=1&limit=8&viewbox='+encodeURIComponent(viewbox)
-          + '&q='+encodeURIComponent(q);
+          + '&q='+encodeURIComponent(qualifyQuery(q));
   const j=await (await fetch(url)).json();
   return (j||[]).map(x=>{
     const a=x.address||{}, bb=x.boundingbox;
@@ -1591,7 +1689,7 @@ let searchSeq=0;
 async function geocodeSearch(q, localMatches){
   const seq=++searchSeq;
   let geoResults=[];
-  try{ geoResults = await photonSearch(q, leafletMap.getCenter()); }catch(e){}
+  try{ geoResults = await photonSearch(q, searchCenter()); }catch(e){}
   if(!geoResults.length){
     try{ geoResults = await nominatimSearch(q); }catch(e){ /* both failed — local matches still show */ }
   }
