@@ -1815,42 +1815,86 @@ let streetLayer=null, streetSeq=0;
 function clearStreetHighlight(){
   if(streetLayer){ leafletMap.removeLayer(streetLayer); streetLayer=null; }
 }
-async function highlightStreet(name, within){
-  const seq=++streetSeq;
-  clearStreetHighlight();
-  if(!name || !within) return;
-  // Search the whole town, not a box around the matched segment. Anything smaller
-  // truncates the highlight: Felix Street is three separate ways in OSM and a box
-  // sized to the one the geocoder matched drew only that one, which is exactly the
-  // "it's only showing a small piece" problem.
+// Whole town, not a box around the matched segment — anything smaller truncates the
+// highlight, since a street is several ways in OSM (Felix Street is three, Voortrekker
+// Road eight) and only the matched one would fall inside a tight box.
+function streetSearchBox(within){
   const box=townBox();
-  let south, west, north, east;
-  if(box){
-    ({s:south, w:west, n:north, e:east}=box);
-  }else{
-    const padded=L.latLngBounds(within).pad(1.5);
-    const MIN=0.006;   // ~650m, so a short segment still reaches the rest of its street
-    south=padded.getSouth(); west=padded.getWest(); north=padded.getNorth(); east=padded.getEast();
-    if(north-south < MIN*2){ const c=(north+south)/2; south=c-MIN; north=c+MIN; }
-    if(east-west < MIN*2){ const c=(east+west)/2; west=c-MIN; east=c+MIN; }
-  }
-  const area=[south,west,north,east].map(v=>v.toFixed(5)).join(',');
+  if(box) return box;
+  const padded=L.latLngBounds(within).pad(1.5);
+  const MIN=0.006;   // ~650m, so a short segment still reaches the rest of its street
+  let s=padded.getSouth(), w=padded.getWest(), n=padded.getNorth(), e=padded.getEast();
+  if(n-s < MIN*2){ const c=(n+s)/2; s=c-MIN; n=c+MIN; }
+  if(e-w < MIN*2){ const c=(e+w)/2; w=c-MIN; e=c+MIN; }
+  return {w, s, e, n};
+}
+
+// Nominatim can return the road's actual geometry, not just a point, if you ask for
+// polygon_geojson. That makes it a far better primary than Overpass: it's the same
+// service the search already talks to, so if searching works, drawing works. Verified
+// in a real browser — Overpass throws "Failed to fetch" on networks where Nominatim
+// answers 200, which is exactly why the highlight was silently drawing nothing.
+async function streetLinesFromNominatim(name, box){
+  const viewbox=[box.w, box.n, box.e, box.s].join(',');
+  const url='https://nominatim.openstreetmap.org/search?format=jsonv2&polygon_geojson=1'
+          + '&limit=20&countrycodes=za&bounded=1&viewbox='+encodeURIComponent(viewbox)
+          + '&q='+encodeURIComponent(name);
+  try{
+    const j=await (await fetch(url)).json();
+    const want=name.trim().toLowerCase();
+    const lines=[];
+    (j||[]).forEach(x=>{
+      if(x.category!=='highway' || String(x.name||'').toLowerCase()!==want) return;
+      const g=x.geojson;
+      if(!g) return;
+      if(g.type==='LineString') lines.push(g.coordinates.map(c=>[c[1], c[0]]));
+      else if(g.type==='MultiLineString') g.coordinates.forEach(l=>lines.push(l.map(c=>[c[1], c[0]])));
+    });
+    return lines;
+  }catch(e){ return []; }
+}
+
+// Overpass holds every segment, so when it does answer it draws the more complete
+// street. It only ever upgrades one that's already on screen — never the thing the
+// feature depends on.
+async function streetLinesFromOverpass(name, box){
+  const area=[box.s, box.w, box.n, box.e].map(v=>v.toFixed(5)).join(',');
   const safe=name.replace(/["\\]/g,'\\$&');
-  const q=`[out:json][timeout:20];way["highway"]["name"="${safe}"](${area});out geom;`;
-  const j=await overpass(q);
-  const lines=(j.elements||[]).filter(w=>w.geometry && w.geometry.length>1)
-                              .map(w=>w.geometry.map(g=>[g.lat, g.lon]));
-  if(seq!==streetSeq || !lines.length) return;
+  const j=await overpass(`[out:json][timeout:20];way["highway"]["name"="${safe}"](${area});out geom;`);
+  return (j.elements||[]).filter(w=>w.geometry && w.geometry.length>1)
+                         .map(w=>w.geometry.map(g=>[g.lat, g.lon]));
+}
+
+const pointCount = lines => lines.reduce((n,l)=>n+l.length, 0);
+
+function drawStreet(name, lines){
+  clearStreetHighlight();
   // Amber: the one colour not already spoken for by a claim status.
   const glow=L.polyline(lines, {color:'#FFC53D', weight:13, opacity:0.32, lineCap:'round'});
   const core=L.polyline(lines, {color:'#FFC53D', weight:3.5, opacity:0.95, lineCap:'round'});
   core.bindTooltip(name, {permanent:true, direction:'center', className:'street-label'});
   streetLayer=L.layerGroup([glow, core]).addTo(leafletMap);
-  // Refit only if the street runs off the edge — the geocoder's box is often just the
-  // one segment it matched. Skipping it when it already fits avoids a second lurch.
-  const streetBounds=L.latLngBounds(lines.flat());
-  if(!leafletMap.getBounds().contains(streetBounds)){
-    leafletMap.flyToBounds(streetBounds, {maxZoom:18, padding:[60,60]});
+  // Refit only if the street runs off the edge, so it doesn't lurch when it already fits.
+  const b=L.latLngBounds(lines.flat());
+  if(!leafletMap.getBounds().contains(b)) leafletMap.flyToBounds(b, {maxZoom:18, padding:[60,60]});
+}
+
+async function highlightStreet(name, within){
+  const seq=++streetSeq;
+  clearStreetHighlight();
+  if(!name || !within) return;
+  const box=streetSearchBox(within);
+  const first=await streetLinesFromNominatim(name, box);
+  if(seq!==streetSeq) return;
+  if(first.length) drawStreet(name, first);
+  let better=[];
+  try{ better=await streetLinesFromOverpass(name, box); }catch(e){}
+  if(seq!==streetSeq) return;
+  if(pointCount(better) > pointCount(first)) drawStreet(name, better);
+  // Both sources silent. Say so — drawing nothing and explaining nothing is what made
+  // this look broken rather than merely unavailable.
+  else if(!first.length && !better.length){
+    showBanner('Couldn’t draw ' + name + ' — the map service didn’t answer', 3400);
   }
 }
 
