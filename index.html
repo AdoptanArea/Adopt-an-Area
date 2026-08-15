@@ -1718,9 +1718,29 @@ async function nominatimSearch(q){
 // (the only one that can resolve a number) for Humansdorp, Stellenbosch, central
 // Johannesburg and Adderley Street in Cape Town: every one comes back as a road with
 // no number attached. Asking for it would spend a rate-limited request per search to
-// return nothing. The `num` flag below still handles a numbered hit if one ever turns
+// return nothing. The `num` flag above still handles a numbered hit if one ever turns
 // up; until then a number in the query lands you on the street, zoomed in, and says
 // so — see goGeoResult.
+
+// A house number in the query doesn't just fail to help, it actively breaks the
+// search: "siebert street 12" finds nothing, "siebert street" finds it. Written
+// either way round, since people put the number in front or on the end.
+const HOUSE_NUM = /^\s*(\d+[a-zA-Z]?)\s+|[\s,]+(\d+[a-zA-Z]?)\s*$/;
+function houseNumberIn(q){
+  const m=q.match(HOUSE_NUM);
+  return m ? (m[1]||m[2]) : null;
+}
+// Progressively looser forms of what was typed, tried in order until something hits.
+// Dropping the last word is what rescues a misspelling — "siebert steet" finds
+// nothing, but "siebert" finds Siebert Street, and nobody spells the word "street"
+// carefully. The street is as close as the map data goes anyway.
+function queryForms(q){
+  const bare=q.replace(HOUSE_NUM,' ').trim() || q.trim();
+  const words=bare.split(/\s+/);
+  const forms=[bare];
+  if(words.length>1) forms.push(words.slice(0,-1).join(' '));
+  return [...new Set(forms)];
+}
 
 // Guards against a slow early request landing after a fast later one and
 // replacing good results with stale ones.
@@ -1728,9 +1748,14 @@ let searchSeq=0;
 async function geocodeSearch(q, localMatches){
   const seq=++searchSeq;
   let geoResults=[];
-  try{ geoResults = await photonSearch(q, searchCenter()); }catch(e){}
+  const forms=queryForms(q);
+  for(const form of forms){
+    try{ geoResults = await photonSearch(form, searchCenter()); }catch(e){}
+    if(seq!==searchSeq) return;
+    if(geoResults.length) break;
+  }
   if(!geoResults.length){
-    try{ geoResults = await nominatimSearch(q); }catch(e){ /* both failed — local matches still show */ }
+    try{ geoResults = await nominatimSearch(forms[0]); }catch(e){ /* both failed — local matches still show */ }
   }
   if(seq!==searchSeq) return;
   renderSearchResults(localMatches, dedupeResults(geoResults).slice(0,6), false);
@@ -1770,15 +1795,15 @@ function goGeoResult(i){
   document.getElementById('mapSearchInput').value=r.label;
   // Asked for a house number? Go in close enough to pick the roof out, since you're
   // going to have to find it by eye.
-  const wantedHouse = /^\s*\d/.test(lastQuery) && !r.num;
+  const wantedNum = r.num ? null : houseNumberIn(lastQuery);
   if(r.num) leafletMap.flyTo([r.lat, r.lon], 19);
-  else if(r.bbox) leafletMap.flyToBounds(r.bbox, {maxZoom:wantedHouse?19:18, padding:[50,50]});
-  else leafletMap.flyTo([r.lat, r.lon], wantedHouse?19:18);
+  else if(r.bbox) leafletMap.flyToBounds(r.bbox, {maxZoom:wantedNum?19:18, padding:[50,50]});
+  else leafletMap.flyTo([r.lat, r.lon], wantedNum?19:18);
   // Say why it stopped at the street rather than leaving you wondering. South African
   // house numbers simply aren't in OpenStreetMap — the street is as close as any
   // search gets, and the last few metres are yours to point at.
-  if(wantedHouse){
-    showBanner("House numbers aren't in the map — find your house on the street and claim it", 5200);
+  if(wantedNum){
+    showBanner('No. ' + wantedNum + " isn't in the map — find it along " + r.label + ' and claim it', 5200);
   }
 }
 document.addEventListener('click', e=>{
