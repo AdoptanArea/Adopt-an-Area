@@ -1381,12 +1381,17 @@ function pickTown(di,ti){
 // query settles the towns that share a name (there's a Middelburg and an Emalahleni
 // in two provinces each). The result is kept on currentTown so the address search
 // can lean on it afterwards.
+// Sequence-guarded: pick two towns quickly and the first lookup can land last,
+// which would fly you back and leave the search pointed at the wrong town.
+let townSeq=0;
 async function flyToTown(town, province, district){
+  const seq=++townSeq;
   showBanner('Finding ' + town + '…');
   try{
     const url='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=za&limit=1&q='
             + encodeURIComponent(town + ', ' + province.name + ', South Africa');
     const j=await (await fetch(url)).json();
+    if(seq!==townSeq) return;
     const hit=(j||[])[0];
     if(hit){
       const bb=hit.boundingbox;
@@ -1398,6 +1403,7 @@ async function flyToTown(town, province, district){
       return;
     }
   }catch(e){ /* offline or the service is down — fall through to the province view */ }
+  if(seq!==townSeq) return;
   leafletMap.flyTo(province.capital, 8);
   showBanner("Couldn't pin " + town + ' — pan and zoom to find your street', 3600);
 }
