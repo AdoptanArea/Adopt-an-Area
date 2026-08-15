@@ -1321,22 +1321,42 @@ function onProvinceChange(){
   leafletMap.flyTo(p.capital, 7);
 }
 
-// Matches the district name as well as the town, so typing "Sarah" brings up every
-// town in Sarah Baartman District — which is how you find yours when you know the
-// municipality but not which of its twenty towns you're nearest.
+// Strips case, accents, spaces and punctuation, so "st francis" finds "St Francis
+// Bay" and "kingwilliams" finds "Qonce (King William's Town)".
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+const townRow = (di,ti,town,district) =>
+  `<div class="tl-row" onclick="pickTown(${di},${ti})">${escHtml(town)}<span>${escHtml(district)}</span></div>`;
+
+// Empty box: the full list, grouped by district, for browsing.
+// Anything typed: a ranked list that narrows on every keystroke — towns starting with
+// what you typed first, then towns containing it, then towns whose district matches
+// (so "Sarah" brings up all of Sarah Baartman District). Grouping is dropped while
+// filtering because every row already names its district underneath.
 function renderTownList(q){
   const p=selectedProvince(), list=document.getElementById('townList');
   if(!p) return;
-  const ql=q.trim().toLowerCase();
-  let html='';
+  const ql=norm(q);
+  if(!ql){
+    list.innerHTML = p.districts.map((d,di)=>
+      `<div class="tl-group">${escHtml(d.name)}</div>`
+      + d.towns.map((t,ti)=>townRow(di,ti,t,d.name)).join('')
+    ).join('');
+    return;
+  }
+  const hits=[];
   p.districts.forEach((d,di)=>{
-    const districtHit = ql && d.name.toLowerCase().includes(ql);
-    const hits=d.towns.map((t,ti)=>({t,ti})).filter(x=> !ql || districtHit || x.t.toLowerCase().includes(ql));
-    if(!hits.length) return;
-    html += `<div class="tl-group">${escHtml(d.name)}</div>`
-          + hits.map(x=>`<div class="tl-row" onclick="pickTown(${di},${x.ti})">${escHtml(x.t)}<span>${escHtml(d.name)}</span></div>`).join('');
+    const dn=norm(d.name);
+    d.towns.forEach((t,ti)=>{
+      const tn=norm(t);
+      const rank = tn.startsWith(ql) ? 0 : tn.includes(ql) ? 1
+                 : dn.startsWith(ql) ? 2 : dn.includes(ql) ? 3 : -1;
+      if(rank>=0) hits.push({rank, t, ti, di, dname:d.name});
+    });
   });
-  list.innerHTML = html || '<div class="tl-empty">Nothing matches that. Check the spelling, or try the district name.</div>';
+  hits.sort((a,b)=> a.rank-b.rank || a.t.localeCompare(b.t));
+  list.innerHTML = hits.length
+    ? hits.map(h=>townRow(h.di,h.ti,h.t,h.dname)).join('')
+    : '<div class="tl-empty">Nothing matches that. Check the spelling, or try the district name.</div>';
 }
 // Reopening it means you want to change your mind, so show everything again and
 // select what's there — the next keystroke replaces the town instead of appending
@@ -1588,8 +1608,10 @@ function flashArea(a){
 // (2) a real place/street lookup across South Africa via OpenStreetMap's free
 // geocoding service, debounced so we're not firing a request on every keystroke.
 let searchDebounce=null;
+let lastQuery='';   // kept so a chosen result can tell whether you asked for a house number
 function onMapSearch(q){
   q=q.trim();
+  lastQuery=q;
   const box=document.getElementById('mapSearchResults');
   if(q.length<2){ box.classList.remove('show'); box.innerHTML=''; clearTimeout(searchDebounce); return; }
   const ql=q.toLowerCase();
@@ -1646,7 +1668,7 @@ async function photonSearch(q, center){
       const e=p.extent;
       return {
         label, sub:tidySub([p.city, p.locality, p.district, p.county, p.state], label),
-        lat:+c[1], lon:+c[0],
+        lat:+c[1], lon:+c[0], num:!!p.housenumber,
         bbox:(e && e.length===4) ? [[+e[3], +e[0]], [+e[1], +e[2]]] : null
       };
     })
@@ -1668,6 +1690,18 @@ function qualifyQuery(q){
   return q + ', ' + currentTown.name + ', ' + currentTown.province;
 }
 
+function mapNominatimRow(x){
+  const a=x.address||{}, bb=x.boundingbox;
+  const street=[a.house_number, a.road].filter(Boolean).join(' ');
+  const label=street || a.suburb || a.neighbourhood || a.village || a.town || a.city
+           || (x.display_name||'').split(',')[0];
+  return {
+    label, sub:tidySub([a.suburb, a.town, a.city, a.county, a.state], label),
+    lat:+x.lat, lon:+x.lon, num:!!a.house_number,
+    bbox:(bb && bb.length===4) ? [[+bb[0], +bb[2]], [+bb[1], +bb[3]]] : null
+  };
+}
+
 // Fallback, biased to the selected town (or the visible map area) via viewbox.
 async function nominatimSearch(q){
   const b=searchBounds();
@@ -1676,18 +1710,17 @@ async function nominatimSearch(q){
           + '&addressdetails=1&limit=8&viewbox='+encodeURIComponent(viewbox)
           + '&q='+encodeURIComponent(qualifyQuery(q));
   const j=await (await fetch(url)).json();
-  return (j||[]).map(x=>{
-    const a=x.address||{}, bb=x.boundingbox;
-    const street=[a.house_number, a.road].filter(Boolean).join(' ');
-    const label=street || a.suburb || a.neighbourhood || a.village || a.town || a.city
-             || (x.display_name||'').split(',')[0];
-    return {
-      label, sub:tidySub([a.suburb, a.town, a.city, a.county, a.state], label),
-      lat:+x.lat, lon:+x.lon,
-      bbox:(bb && bb.length===4) ? [[+bb[0], +bb[2]], [+bb[1], +bb[3]]] : null
-    };
-  });
+  return (j||[]).map(mapNominatimRow);
 }
+
+// No house-number lookup here, deliberately. OpenStreetMap has essentially no house
+// numbers anywhere in South Africa — checked against Nominatim's structured endpoint
+// (the only one that can resolve a number) for Humansdorp, Stellenbosch, central
+// Johannesburg and Adderley Street in Cape Town: every one comes back as a road with
+// no number attached. Asking for it would spend a rate-limited request per search to
+// return nothing. The `num` flag below still handles a numbered hit if one ever turns
+// up; until then a number in the query lands you on the street, zoomed in, and says
+// so — see goGeoResult.
 
 // Guards against a slow early request landing after a fast later one and
 // replacing good results with stale ones.
@@ -1735,10 +1768,18 @@ function goGeoResult(i){
   const r=window._geo[i];
   document.getElementById('mapSearchResults').classList.remove('show');
   document.getElementById('mapSearchInput').value=r.label;
-  // Frame the whole street or suburb rather than dropping on its midpoint at a
-  // fixed zoom — a long road otherwise lands you halfway along it, zoomed in too far.
-  if(r.bbox) leafletMap.flyToBounds(r.bbox, {maxZoom:18, padding:[50,50]});
-  else leafletMap.flyTo([r.lat, r.lon], 18);
+  // Asked for a house number? Go in close enough to pick the roof out, since you're
+  // going to have to find it by eye.
+  const wantedHouse = /^\s*\d/.test(lastQuery) && !r.num;
+  if(r.num) leafletMap.flyTo([r.lat, r.lon], 19);
+  else if(r.bbox) leafletMap.flyToBounds(r.bbox, {maxZoom:wantedHouse?19:18, padding:[50,50]});
+  else leafletMap.flyTo([r.lat, r.lon], wantedHouse?19:18);
+  // Say why it stopped at the street rather than leaving you wondering. South African
+  // house numbers simply aren't in OpenStreetMap — the street is as close as any
+  // search gets, and the last few metres are yours to point at.
+  if(wantedHouse){
+    showBanner("House numbers aren't in the map — find your house on the street and claim it", 5200);
+  }
 }
 document.addEventListener('click', e=>{
   const wrap=document.querySelector('.map-search');
