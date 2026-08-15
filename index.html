@@ -1782,6 +1782,35 @@ function queryForms(q){
 // Overpass: every highway carrying that name inside the town. A street usually exists
 // as several ways in OSM, so this catches the whole run of it, not just the segment
 // the geocoder happened to match.
+// The public Overpass API gives an IP two slots and answers 429 the moment you ask
+// for a third. Everything that talks to it goes through here: one request at a time,
+// answers cached by query, one retry when we're told to wait, and an explicit res.ok
+// check — a 429 body is HTML, so calling .json() on it throws, which is how this
+// failed silently and drew no street at all.
+const overpassCache=new Map();
+let overpassChain=Promise.resolve();
+function overpass(query){
+  if(overpassCache.has(query)) return Promise.resolve(overpassCache.get(query));
+  const run=overpassChain.then(async ()=>{
+    if(overpassCache.has(query)) return overpassCache.get(query);
+    for(let attempt=0; attempt<2; attempt++){
+      const res=await fetch('https://overpass-api.de/api/interpreter',
+        {method:'POST', body:'data='+encodeURIComponent(query)});
+      if(res.ok){
+        const j=await res.json();
+        overpassCache.set(query, j);
+        return j;
+      }
+      if(res.status!==429) break;
+      await new Promise(r=>setTimeout(r, 1200));   // slots free up on their own
+    }
+    return {elements:[]};
+  }).catch(()=>({elements:[]}));
+  // Keep the chain alive through failures so one bad call can't wedge the queue.
+  overpassChain=run.then(()=>{}, ()=>{});
+  return run;
+}
+
 let streetLayer=null, streetSeq=0;
 function clearStreetHighlight(){
   if(streetLayer){ leafletMap.removeLayer(streetLayer); streetLayer=null; }
@@ -1808,14 +1837,9 @@ async function highlightStreet(name, within){
   const area=[south,west,north,east].map(v=>v.toFixed(5)).join(',');
   const safe=name.replace(/["\\]/g,'\\$&');
   const q=`[out:json][timeout:20];way["highway"]["name"="${safe}"](${area});out geom;`;
-  let lines=[];
-  try{
-    const res=await fetch('https://overpass-api.de/api/interpreter',
-      {method:'POST', body:'data='+encodeURIComponent(q)});
-    const j=await res.json();
-    lines=(j.elements||[]).filter(w=>w.geometry && w.geometry.length>1)
-                          .map(w=>w.geometry.map(g=>[g.lat, g.lon]));
-  }catch(err){ /* Overpass is busy or offline — the map still flew to the street */ }
+  const j=await overpass(q);
+  const lines=(j.elements||[]).filter(w=>w.geometry && w.geometry.length>1)
+                              .map(w=>w.geometry.map(g=>[g.lat, g.lon]));
   if(seq!==streetSeq || !lines.length) return;
   // Amber: the one colour not already spoken for by a claim status.
   const glow=L.polyline(lines, {color:'#FFC53D', weight:13, opacity:0.32, lineCap:'round'});
@@ -1842,9 +1866,7 @@ async function overpassStreetSearch(q){
   if(safe.length<2) return [];
   const area=[box.s, box.w, box.n, box.e].map(v=>v.toFixed(5)).join(',');
   const query=`[out:json][timeout:20];way["highway"]["name"~"${safe}",i](${area});out tags center;`;
-  const res=await fetch('https://overpass-api.de/api/interpreter',
-    {method:'POST', body:'data='+encodeURIComponent(query)});
-  const j=await res.json();
+  const j=await overpass(query);
   // One row per street name, not per way — a street is several ways and they'd
   // otherwise come back as a dozen identical-looking results.
   const byName=new Map();
@@ -1875,7 +1897,12 @@ async function geocodeSearch(q, localMatches){
     try{ geoResults = await nominatimSearch(forms[0], box); }catch(e){ /* both failed — local matches still show */ }
     if(seq!==searchSeq) return;
   }
+  // Only after typing has actually stopped. Overpass is the one service here with a
+  // hard concurrency cap, and the street highlight needs a slot the moment you pick a
+  // result — so the slow name search must not be firing on every keystroke.
   if(!geoResults.length){
+    await new Promise(r=>setTimeout(r, 500));
+    if(seq!==searchSeq) return;
     try{ geoResults = await overpassStreetSearch(forms[0]); }catch(e){}
     if(seq!==searchSeq) return;
   }
