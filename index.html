@@ -1452,6 +1452,23 @@
   <button class="btn btn-secondary" style="width:100%; margin-top:16px;" onclick="closeGroupSheet()">Close</button>
 </div>
 
+<!-- The only admin trying to leave. A group without an admin is a dead group —
+     nobody could post, share the pin or hand the badge on — so this is the fork:
+     give it to somebody, or end it. -->
+<div class="sheet-backdrop" id="lastAdminBackdrop" onclick="closeLastAdminSheet()"></div>
+<div class="sheet" id="lastAdminSheet">
+  <div class="sheet-handle"></div>
+  <h3>You're the only admin</h3>
+  <p class="sub" id="lastAdminSub"></p>
+  <p class="field-label" id="lastAdminPickLabel">Hand it to one of them</p>
+  <div id="lastAdminMembers"></div>
+  <p class="fineprint" id="lastAdminNoOthers" style="display:none;">Nobody else has joined yet, so there's no one to hand it to. Your only way out is to delete the group.</p>
+  <p class="field-label" style="margin-top:18px;">Or end it</p>
+  <p class="fineprint">Deleting takes the group, its photos and its member list with it, for everybody. It can't be undone.</p>
+  <button id="deleteTeamBtn" style="width:100%; margin-top:8px; background:none; border:1.5px solid var(--red); border-radius:14px; padding:12px; font-family:inherit; font-size:13px; font-weight:800; color:var(--red); cursor:pointer;" onclick="deleteTeamForever()">Delete this group forever</button>
+  <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="closeLastAdminSheet()">Never mind — stay in the group</button>
+</div>
+
 <!-- Municipality rules sheet (readable by anyone, signed in or not) -->
 <div class="sheet-backdrop" id="rulesBackdrop" onclick="closeRulesSheet()"></div>
 <div class="sheet" id="rulesSheet">
@@ -2999,9 +3016,92 @@ async function setTeamMemberRole(userId, role, name){
 async function leaveTeam(){
   const t=openTeam();
   if(!t) return;
+  // Being the last admin isn't a refusal, it's a decision to make — so ask it
+  // properly instead of bouncing them off an error message.
+  if(isTeamAdmin() && myTeamMembers.filter(m=>m.role==='admin').length<=1){
+    openLastAdminSheet();
+    return;
+  }
   const {error} = await sb.rpc('leave_team', {t:t.id});
-  if(error){ showBanner(error.message, 3600); return; }
+  // The database has the final say — if it stops us, it's for the same reason.
+  if(error){
+    if(/only admin/i.test(error.message||'')){ openLastAdminSheet(); return; }
+    showBanner(error.message, 3600);
+    return;
+  }
   showBanner(`You've left ${t.name||'that group'}`, 3000);
+  openTeamId=null;
+  await loadMyTeams();
+  await loadPublicGroups();
+}
+// ---- the last admin's fork: hand it over, or end the group ----
+let deleteArmed=false;   // deleting takes two taps; there's nothing to undo afterwards
+function openLastAdminSheet(){
+  const t=openTeam();
+  if(!t) return;
+  deleteArmed=false;
+  document.getElementById('deleteTeamBtn').textContent='Delete this group forever';
+  document.getElementById('lastAdminSub').textContent =
+    `Somebody has to run ${t.name||'this group'}. Make one of its members an admin and you'll leave at the same time — or delete the group for everyone.`;
+  const others = myTeamMembers.filter(m=>m.user_id!==currentUser.id);
+  const box=document.getElementById('lastAdminMembers');
+  box.innerHTML='';
+  document.getElementById('lastAdminPickLabel').style.display = others.length ? 'block' : 'none';
+  document.getElementById('lastAdminNoOthers').style.display = others.length ? 'none' : 'block';
+  others.forEach(m=>{
+    const row=document.createElement('div');
+    row.className='arow';
+    row.style.cursor='default';
+    row.innerHTML=`<div class="gav" style="width:28px; height:28px; font-size:12px;">${escHtml((m.member_name||'?').charAt(0).toUpperCase())}</div>`+
+      `<div style="flex:1; min-width:0;"><div class="arow-name">${escHtml(m.member_name||'Neighbour')}</div>`+
+      `<div class="arow-desc">Takes over the photos, the pin and who else is an admin</div></div>`;
+    const btn=document.createElement('button');
+    btn.style.cssText='background:none; border:1.5px solid var(--border); border-radius:12px; padding:6px 10px; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer; flex-shrink:0;';
+    btn.textContent='Hand over & leave';
+    btn.onclick=()=>handOverAndLeave(m.user_id, m.member_name);
+    row.appendChild(btn);
+    box.appendChild(row);
+  });
+  document.getElementById('lastAdminBackdrop').classList.add('show');
+  document.getElementById('lastAdminSheet').classList.add('show');
+}
+function closeLastAdminSheet(){
+  document.getElementById('lastAdminBackdrop').classList.remove('show');
+  document.getElementById('lastAdminSheet').classList.remove('show');
+}
+async function handOverAndLeave(userId, name){
+  const t=openTeam();
+  if(!t) return;
+  // Promote first: if the leave then failed for any reason you'd be one of two
+  // admins, which is harmless. The other order could strand the group.
+  const {error:promoteErr} = await sb.rpc('set_team_member_role', {t:t.id, target:userId, new_role:'admin'});
+  if(promoteErr){ showBanner(promoteErr.message, 3600); return; }
+  const {error:leaveErr} = await sb.rpc('leave_team', {t:t.id});
+  if(leaveErr){
+    showBanner(`${name||'They'} is an admin now, but you're still in the group — ${leaveErr.message}`, 4200);
+    closeLastAdminSheet();
+    await loadMyTeams();
+    return;
+  }
+  closeLastAdminSheet();
+  showBanner(`${name||'They'} runs ${t.name||'the group'} now, and you've left it`, 3600);
+  openTeamId=null;
+  await loadMyTeams();
+  await loadPublicGroups();
+}
+async function deleteTeamForever(){
+  const t=openTeam();
+  if(!t) return;
+  const btn=document.getElementById('deleteTeamBtn');
+  if(!deleteArmed){
+    deleteArmed=true;
+    btn.textContent=`Yes — delete ${t.name||'this group'} for everyone`;
+    return;
+  }
+  const {error} = await sb.rpc('delete_team', {t:t.id});
+  if(error){ showBanner(error.message, 3600); deleteArmed=false; btn.textContent='Delete this group forever'; return; }
+  closeLastAdminSheet();
+  showBanner(`${t.name||'The group'} is gone`, 3000);
   openTeamId=null;
   await loadMyTeams();
   await loadPublicGroups();
