@@ -515,6 +515,17 @@
   .grow-meta{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
   .grow .chev{font-size:15px; color:var(--gray); flex-shrink:0;}
   .gs-note{font-size:12px; color:var(--text-dim); padding:14px 2px 0; line-height:1.5;}
+  /* Your groups. You can be in several, so the page lists names only and opens one
+     at a time — the detail underneath is long enough that two open at once would
+     bury everything below it. */
+  .gitem{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:8px; overflow:hidden; }
+  .gitem-head{ display:flex; align-items:center; gap:11px; padding:14px 15px; cursor:pointer; user-select:none; }
+  .gitem-head:hover{ background:var(--soft); }
+  .gitem-caret{ font-size:16px; line-height:1; color:var(--text-dim); flex-shrink:0; transition:transform .18s ease; }
+  .gitem.open .gitem-caret{ transform:rotate(90deg); }
+  .gitem-name{ flex:1; min-width:0; font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gitem-body{ display:none; padding:14px 15px 16px 15px; border-top:1px solid var(--border); }
+  .gitem.open .gitem-body{ display:block; }
   .pubchip{ display:inline-block; background:var(--green-tint); color:var(--green-dark); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
   .privchip{ display:inline-block; background:var(--soft); color:var(--text-dim); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
 
@@ -961,10 +972,13 @@
         <p class="eyebrow" style="margin-top:20px;">Your claimed areas</p>
         <div id="myAreasList" style="margin-bottom:20px;"></div>
 
-        <p class="eyebrow">Your team</p>
+        <p class="eyebrow">Your groups</p>
+        <!-- One row per group, name only. Tap one to open it — see renderMyGroups(). -->
+        <div id="myGroupsList"></div>
+        <button id="addGroupBtn" style="display:none; width:100%; background:none; border:1.5px dashed var(--border); border-radius:var(--radius-md); padding:12px; margin-bottom:8px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="toggleAddGroup()">+ Start or join another group</button>
         <div id="noTeamCard">
           <div class="admin-card">
-            <b style="font-size:14px;">Start a team</b>
+            <b style="font-size:14px;">Start a group</b>
             <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress with each other — and with the whole town if you make it public.</p>
             <input type="text" id="newTeamName" placeholder="Team name" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
             <label class="field-label" style="margin-top:6px;">Who can see this team?</label>
@@ -977,20 +991,22 @@
               <div><b>Private — members only</b><span class="desc">Nobody outside the team sees your photos, and it won't appear in search.</span></div>
             </div>
             <p class="fineprint" style="margin:2px 0 8px 0;">You'll be its first admin: you post the photos, choose who can see them, and hand out the join pin. You can make other members admins too.</p>
-            <button class="btn btn-secondary" style="margin-top:4px;" onclick="createTeam()">Create team</button>
+            <button class="btn btn-secondary" style="margin-top:4px;" onclick="createTeam()">Create group</button>
           </div>
           <div class="admin-card">
-            <b style="font-size:14px;">Join a team</b>
-            <p class="fineprint" style="margin-bottom:10px;">Ask one of the team's admins for their join pin.</p>
+            <b style="font-size:14px;">Join a group</b>
+            <p class="fineprint" style="margin-bottom:10px;">Ask one of the group's admins for their join pin.</p>
             <input type="text" id="joinTeamCode" placeholder="Join pin" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
-            <button class="btn btn-secondary" onclick="joinTeam()">Join team</button>
+            <button class="btn btn-secondary" onclick="joinTeam()">Join group</button>
           </div>
         </div>
-        <div id="hasTeamCard" style="display:none;">
-          <div class="admin-card">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <b style="font-size:14px;" id="myTeamName">—</b>
-              <span id="myTeamRoleChip" class="privchip" style="display:none;">Member</span>
+        <!-- The inside of a group row. In a <template> on purpose: only the group you've
+             opened gets a copy, so these ids stay unique in the live document. -->
+        <template id="teamDetailTpl">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
+              <span id="myTeamRoleChip" class="privchip">Member</span>
+              <span id="myTeamCountNote" class="fineprint" style="margin:0;"></span>
             </div>
             <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b> — you're an admin, so it's yours to hand out.</p>
             <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin — only they can share it.</p>
@@ -1011,8 +1027,9 @@
             <p class="field-label" style="margin-top:16px;">Members</p>
             <div id="teamMemberList"></div>
             <p class="fineprint" id="teamAdminHint" style="display:none;">Admins post photos, decide who can see them, and share the join pin. A group can have as many admins as it likes — but never none.</p>
+            <button id="leaveTeamBtn" style="margin-top:14px; background:none; border:1.5px solid var(--border); border-radius:12px; padding:8px 14px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="leaveTeam()">Leave this group</button>
           </div>
-        </div>
+        </template>
 
         <div id="adminTools" style="display:none;">
           <p class="eyebrow">Team tools (admin)</p>
@@ -1329,14 +1346,14 @@
         </div>
       </details>
       <details class="learn-section">
-        <summary>Start or join a team</summary>
+        <summary>Start or join a group</summary>
         <div class="learn-body">
 <div class="steps">
-        <div class="step"><div class="step-num">1</div><div><h4>Go to My Area</h4><p>Sign in first if you haven't — teams are tied to your account.</p></div></div>
-        <div class="step"><div class="step-num">2</div><div><h4>Find "Your Team"</h4><p>Two options sit side by side: start a new team, or join one with a code.</p></div></div>
-        <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name, choose public or private, and tap "Create team." You'll be its admin, and you'll get a join pin to hand out to neighbours.</p></div></div>
-        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public teams show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private teams stay between members. You can switch later from your team card.</p></div></div>
-        <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the team's admins for the join pin, type it in, and tap "Join team." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
+        <div class="step"><div class="step-num">1</div><div><h4>Go to My Area</h4><p>Sign in first if you haven't — groups are tied to your account.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Find "Your groups"</h4><p>Every group you're in is listed there by name. Tap one to open it and see its photos, its members and its settings. You can be in as many as you like — your street, your church, the school clean-up — and "Start or join another group" adds the next one.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name, choose public or private, and tap "Create group." You'll be its admin, and you'll get a join pin to hand out to neighbours.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
       <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Once you're in a team, everyone in it can post photos to a shared feed. If the team is private that feed stays between members; if it's public, the whole town can look it up from the Gallery.</p>
         </div>
@@ -2696,7 +2713,7 @@ async function afterAuth(){
                phone:(profile&&profile.phone)||'', shareContact:!(profile && profile.share_contact===false)};
   document.getElementById('signinBtn').textContent='Hi, '+currentUser.name.split(' ')[0];
   document.getElementById('signinBtn').onclick=()=>showPage('myarea');
-  await loadMyTeam();
+  await loadMyTeams();
   renderMyAreas();
   renderSponsorBar();
   updateGalleryAdminVisibility();
@@ -2715,6 +2732,9 @@ async function signOut(){
   councilApps=[];
   renderCouncilApplications();
   await loadMyCouncil();
+  // Same goes for the groups panel — it belongs to whoever was signed in.
+  myTeams=[]; openTeamId=null; myTeamMembers=[]; addGroupOpen=false;
+  await renderMyGroups();
   renderMyAreas();
   renderSponsorBar();
   updateGalleryAdminVisibility();
@@ -2765,28 +2785,84 @@ function renderAdminAllAreas(){
 }
 
 // ================= TEAMS =================
-let myTeam=null;
-let myTeamRole='member';
+// You can belong to several groups at once. myTeams holds every one of them with
+// your role on each; openTeamId says which one is showing its detail. Only that one
+// is rendered in full, so the ids inside the detail template stay unique.
+let myTeams=[];
+let openTeamId=null;
 let myTeamMembers=[];
 // invite_code is deliberately missing: the database won't hand it to a plain
 // member any more, so it comes back through the team_invite_code function
 // instead (see supabase-group-admins.sql).
 const TEAM_COLS='id,name,town_id,created_by,is_public,photos_public';
-function isTeamAdmin(){ return myTeamRole==='admin'; }
-async function loadMyTeam(){
-  if(!currentUser){ return; }
-  const {data:membership} = await sb.from('team_members').select('team_id,role').eq('user_id', currentUser.id).maybeSingle();
-  if(!membership){ myTeam=null; myTeamRole='member'; myTeamMembers=[]; document.getElementById('noTeamCard').style.display='block'; document.getElementById('hasTeamCard').style.display='none'; return; }
-  const {data:team} = await sb.from('teams').select(TEAM_COLS).eq('id', membership.team_id).single();
-  myTeam=team;
-  myTeamRole = membership.role || 'member';
-  document.getElementById('noTeamCard').style.display='none';
-  document.getElementById('hasTeamCard').style.display='block';
-  document.getElementById('myTeamName').textContent=team.name;
+function openTeam(){ return myTeams.find(t=>t.id===openTeamId) || null; }
+function isTeamAdmin(){ const t=openTeam(); return !!t && t.role==='admin'; }
+async function loadMyTeams(){
+  if(!currentUser){ myTeams=[]; openTeamId=null; renderMyGroups(); return; }
+  const {data:memberships} = await sb.from('team_members').select('team_id,role').eq('user_id', currentUser.id);
+  const rows = memberships||[];
+  const ids = rows.map(m=>m.team_id);
+  let teams=[];
+  if(ids.length){
+    const {data} = await sb.from('teams').select(TEAM_COLS).in('id', ids).order('name');
+    teams = data||[];
+  }
+  myTeams = teams.map(t=>{
+    const mine = rows.find(m=>m.team_id===t.id);
+    return Object.assign({}, t, {role:(mine && mine.role) || 'member'});
+  });
+  // Whatever was open stays open across a reload, unless you've just left it.
+  if(!myTeams.some(t=>t.id===openTeamId)) openTeamId = null;
+  await renderMyGroups();
+}
+let addGroupOpen=false;
+// The list itself: a name and a caret, nothing else. Everything about a group waits
+// behind its own row.
+async function renderMyGroups(){
+  const box=document.getElementById('myGroupsList');
+  if(!box) return;
+  box.innerHTML='';
+  myTeams.forEach(t=>{
+    const item=document.createElement('div');
+    item.className='gitem'+(t.id===openTeamId ? ' open' : '');
+    const head=document.createElement('div');
+    head.className='gitem-head';
+    head.onclick=()=>toggleGroupOpen(t.id);
+    head.innerHTML=`<span class="gitem-caret">›</span><span class="gitem-name">${escHtml(t.name||'Unnamed group')}</span>`;
+    item.appendChild(head);
+    const body=document.createElement('div');
+    body.className='gitem-body';
+    if(t.id===openTeamId) body.appendChild(document.getElementById('teamDetailTpl').content.cloneNode(true));
+    item.appendChild(body);
+    box.appendChild(item);
+  });
+  // The create/join cards are the whole section when you're in nothing yet. Once
+  // you're in something they fold away behind a button, so the list stays the point.
+  const has=myTeams.length>0;
+  document.getElementById('addGroupBtn').style.display = has ? 'block' : 'none';
+  if(has && !addGroupOpen) document.getElementById('noTeamCard').style.display='none';
+  if(!has){ addGroupOpen=false; document.getElementById('noTeamCard').style.display='block'; }
+  if(openTeamId) await renderOpenTeam();
+}
+function toggleAddGroup(){
+  addGroupOpen=!addGroupOpen;
+  document.getElementById('noTeamCard').style.display = addGroupOpen ? 'block' : 'none';
+  document.getElementById('addGroupBtn').textContent = addGroupOpen ? 'Never mind' : '+ Start or join another group';
+}
+async function toggleGroupOpen(id){
+  openTeamId = (openTeamId===id) ? null : id;
+  await renderMyGroups();
+}
+// Fills in the one open group. Everything below reads openTeam(), so it all follows
+// whichever row you last tapped.
+async function renderOpenTeam(){
+  const t=openTeam();
+  if(!t) return;
   const roleChip=document.getElementById('myTeamRoleChip');
-  roleChip.style.display='inline-block';
   roleChip.className = isTeamAdmin() ? 'pubchip' : 'privchip';
   roleChip.textContent = isTeamAdmin() ? 'Admin' : 'Member';
+  document.getElementById('myTeamCountNote').textContent =
+    myTeams.length>1 ? `One of your ${myTeams.length} groups` : '';
   renderTeamVisibility();
   await renderTeamPin();
   await loadTeamMembers();
@@ -2795,42 +2871,45 @@ async function loadMyTeam(){
 // Only admins get to see the pin, so it isn't sitting in the team row any more —
 // ask for it, and take a blank answer as "you're not an admin".
 async function renderTeamPin(){
+  const t=openTeam();
   const row=document.getElementById('myTeamPinRow');
   const note=document.getElementById('myTeamPinNote');
-  if(!myTeam || !isTeamAdmin()){ row.style.display='none'; note.style.display='block'; return; }
-  const {data:code} = await sb.rpc('team_invite_code', {t:myTeam.id});
+  if(!row || !note) return;   // nothing open, so there's no panel to fill
+  if(!t || !isTeamAdmin()){ row.style.display='none'; note.style.display='block'; return; }
+  const {data:code} = await sb.rpc('team_invite_code', {t:t.id});
   if(!code){ row.style.display='none'; note.style.display='block'; return; }
   row.style.display='block';
   note.style.display='none';
   document.getElementById('myTeamCode').textContent=code;
 }
-// The chip in "Your team" doubles as the switch — a team that started private can be
-// opened up later without having to make a new one. Members see where things stand;
-// only an admin gets the button.
+// The chip inside the open group doubles as the switch — a group that started private
+// can be opened up later without having to make a new one. Members see where things
+// stand; only an admin gets the button.
 function renderTeamVisibility(){
-  if(!myTeam) return;
+  const t=openTeam();
+  if(!t || !document.getElementById('myTeamVisChip')) return;
   const admin=isTeamAdmin();
-  const pub = !!myTeam.is_public;
+  const pub = !!t.is_public;
   const chip=document.getElementById('myTeamVisChip');
   chip.className = pub ? 'pubchip' : 'privchip';
   chip.textContent = pub ? 'Public' : 'Private';
   document.getElementById('myTeamVisNote').textContent = pub
-    ? 'Anyone can find this team in the gallery search and see the areas you\'ve claimed.'
-    : 'The team stays out of the gallery search — nobody outside it sees anything.';
+    ? 'Anyone can find this group in the gallery search and see the areas you\'ve claimed.'
+    : 'The group stays out of the gallery search — nobody outside it sees anything.';
   const visBtn=document.getElementById('myTeamVisBtn');
   visBtn.textContent = pub ? 'Make private' : 'Make public';
   visBtn.style.display = admin ? 'block' : 'none';
 
   // Photos have their own switch: a group can be out in the open and still keep
   // its photo wall to itself. It only means anything while the group is public.
-  const photosPub = myTeam.photos_public !== false;
+  const photosPub = t.photos_public !== false;
   const pchip=document.getElementById('myTeamPhotoChip');
   const pnote=document.getElementById('myTeamPhotoNote');
   const pbtn=document.getElementById('myTeamPhotoVisBtn');
   pchip.className = (pub && photosPub) ? 'pubchip' : 'privchip';
   pchip.textContent = (pub && photosPub) ? 'Photos: anyone' : 'Photos: members';
   pnote.textContent = !pub
-    ? 'While the team is private, photos stay between members whatever this is set to.'
+    ? 'While the group is private, photos stay between members whatever this is set to.'
     : (photosPub
         ? 'Visitors who find your group can look through its photos.'
         : 'Your group is findable, but the photos are for members only.');
@@ -2838,31 +2917,34 @@ function renderTeamVisibility(){
   pbtn.style.display = admin ? 'block' : 'none';
 }
 async function toggleTeamVisibility(){
-  if(!myTeam) return;
+  const t=openTeam();
+  if(!t) return;
   if(!isTeamAdmin()){ showBanner('Only a group admin can change this', 2600); return; }
-  const next = !myTeam.is_public;
-  const {error} = await sb.from('teams').update({is_public:next}).eq('id', myTeam.id);
+  const next = !t.is_public;
+  const {error} = await sb.from('teams').update({is_public:next}).eq('id', t.id);
   if(error){ showBanner(error.message, 3000); return; }
-  myTeam.is_public = next;
+  t.is_public = next;
   renderTeamVisibility();
-  showBanner(next ? 'Your team is public now — anyone can find it in the gallery' : 'Your team is private again', 3000);
+  showBanner(next ? 'This group is public now — anyone can find it in the gallery' : 'This group is private again', 3000);
   await loadPublicGroups();
 }
 async function toggleTeamPhotoVisibility(){
-  if(!myTeam) return;
+  const t=openTeam();
+  if(!t) return;
   if(!isTeamAdmin()){ showBanner('Only a group admin can change this', 2600); return; }
-  const next = myTeam.photos_public === false;
-  const {error} = await sb.from('teams').update({photos_public:next}).eq('id', myTeam.id);
+  const next = t.photos_public === false;
+  const {error} = await sb.from('teams').update({photos_public:next}).eq('id', t.id);
   if(error){ showBanner(error.message, 3000); return; }
-  myTeam.photos_public = next;
+  t.photos_public = next;
   renderTeamVisibility();
-  showBanner(next ? 'Anyone visiting your group can see its photos now' : 'Your group\'s photos are members-only now', 3000);
+  showBanner(next ? 'Anyone visiting this group can see its photos now' : 'This group\'s photos are members-only now', 3000);
   await loadPublicGroups();
 }
 // ---- members and their badges ----
 async function loadTeamMembers(){
-  if(!myTeam){ myTeamMembers=[]; renderTeamMembers(); return; }
-  const {data} = await sb.from('team_members').select('user_id,member_name,role').eq('team_id', myTeam.id);
+  const t=openTeam();
+  if(!t){ myTeamMembers=[]; renderTeamMembers(); return; }
+  const {data} = await sb.from('team_members').select('user_id,member_name,role').eq('team_id', t.id);
   myTeamMembers = (data||[]).slice().sort((a,b)=>{
     const ra=(a.role==='admin')?0:1, rb=(b.role==='admin')?0:1;
     if(ra!==rb) return ra-rb;
@@ -2903,15 +2985,28 @@ function renderTeamMembers(){
   });
 }
 async function setTeamMemberRole(userId, role, name){
-  if(!myTeam || !isTeamAdmin()) return;
-  const {error} = await sb.rpc('set_team_member_role', {t:myTeam.id, target:userId, new_role:role});
+  const t=openTeam();
+  if(!t || !isTeamAdmin()) return;
+  const {error} = await sb.rpc('set_team_member_role', {t:t.id, target:userId, new_role:role});
   if(error){ showBanner(error.message, 3600); return; }
   const who = (userId===currentUser.id) ? 'You are' : ((name||'They')+' is');
   showBanner(role==='admin' ? `${who} now an admin of this group` : `${who} a plain member again`, 3000);
   // Stepping down changes what you're allowed to see, so reload the lot.
-  await loadMyTeam();
+  await loadMyTeams();
 }
-let newTeamVisibility=null;   // no default on purpose — creating a team is an explicit choice
+// Being in several groups means being able to get out of one. The last admin can't
+// walk away and leave nobody in charge — the database says so, not the browser.
+async function leaveTeam(){
+  const t=openTeam();
+  if(!t) return;
+  const {error} = await sb.rpc('leave_team', {t:t.id});
+  if(error){ showBanner(error.message, 3600); return; }
+  showBanner(`You've left ${t.name||'that group'}`, 3000);
+  openTeamId=null;
+  await loadMyTeams();
+  await loadPublicGroups();
+}
+let newTeamVisibility=null;   // no default on purpose — creating a group is an explicit choice
 function selectTeamVisibility(el){
   document.querySelectorAll('#noTeamCard .task-opt').forEach(o=>o.classList.remove('sel'));
   el.classList.add('sel');
@@ -2919,17 +3014,21 @@ function selectTeamVisibility(el){
 }
 async function createTeam(){
   const name=document.getElementById('newTeamName').value.trim();
-  if(!name){ showBanner('Give your team a name first', 2400); return; }
-  if(!newTeamVisibility){ showBanner('Choose who can see this team — public or private', 3000); return; }
+  if(!name){ showBanner('Give your group a name first', 2400); return; }
+  if(!newTeamVisibility){ showBanner('Choose who can see this group — public or private', 3000); return; }
   const isPublic = newTeamVisibility==='public';
   const {data:team, error} = await sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id, is_public:isPublic}).select(TEAM_COLS).single();
   if(error){ showBanner(error.message, 3000); return; }
   // Whoever starts the group runs it until they say otherwise.
-  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name, role:'admin'});
+  const {error:memErr} = await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name, role:'admin'});
+  if(memErr){ showBanner(memErr.message, 3600); return; }
   document.getElementById('newTeamName').value='';
   document.querySelectorAll('#noTeamCard .task-opt').forEach(o=>o.classList.remove('sel'));
   newTeamVisibility=null;
-  await loadMyTeam();
+  // Open the new one — it's the thing you were just working on.
+  openTeamId=team.id;
+  if(addGroupOpen) toggleAddGroup();
+  await loadMyTeams();
   await loadPublicGroups();
 }
 async function joinTeam(){
@@ -2941,15 +3040,20 @@ async function joinTeam(){
   if(error){ showBanner(error.message, 3000); return; }
   if(!teamId){ showBanner('No group found with that pin', 2600); return; }
   document.getElementById('joinTeamCode').value='';
-  await loadMyTeam();
+  // Show them what they've just walked into.
+  openTeamId=teamId;
+  if(addGroupOpen) toggleAddGroup();
+  await loadMyTeams();
 }
 async function renderTeamPhotos(){
+  const t=openTeam();
   const grid=document.getElementById('teamPhotoGrid');
+  if(!grid) return;           // nothing open, so there's no panel to fill
   const admin=isTeamAdmin();
   document.getElementById('teamPhotoBtn').style.display = admin ? 'block' : 'none';
   document.getElementById('teamPhotoMemberNote').style.display = admin ? 'none' : 'block';
-  if(!myTeam){ grid.innerHTML=''; return; }
-  const {data:photos} = await sb.from('team_photos').select('*').eq('team_id', myTeam.id).order('created_at',{ascending:false});
+  if(!t){ grid.innerHTML=''; return; }
+  const {data:photos} = await sb.from('team_photos').select('*').eq('team_id', t.id).order('created_at',{ascending:false});
   grid.innerHTML='';
   (photos||[]).forEach(p=>{
     const card=document.createElement('div');
@@ -2959,15 +3063,16 @@ async function renderTeamPhotos(){
   });
 }
 async function handleTeamPhoto(evt){
+  const t=openTeam();
   const file=evt.target.files[0];
-  if(!file || !myTeam) return;
+  if(!file || !t) return;
   evt.target.value='';
   if(!isTeamAdmin()){ showBanner('Only a group admin can post photos here', 2800); return; }
-  const path=`${myTeam.id}/${Date.now()}_${file.name}`;
+  const path=`${t.id}/${Date.now()}_${file.name}`;
   const {error:upErr} = await sb.storage.from('team-photos').upload(path, file);
   if(upErr){ showBanner(upErr.message, 3000); return; }
   const {data:urlData} = sb.storage.from('team-photos').getPublicUrl(path);
-  const {error:rowErr} = await sb.from('team_photos').insert({team_id:myTeam.id, image_url:urlData.publicUrl, caption:'Progress update', posted_by_name:currentUser.name});
+  const {error:rowErr} = await sb.from('team_photos').insert({team_id:t.id, image_url:urlData.publicUrl, caption:'Progress update', posted_by_name:currentUser.name});
   if(rowErr){ showBanner(rowErr.message, 3000); return; }
   await renderTeamPhotos();
 }
@@ -3073,7 +3178,7 @@ async function openGroupProfile(id){
 
   // The group's admins can shut the photo wall to outsiders while staying
   // findable — say so rather than showing an empty grid.
-  const mine = myTeam && myTeam.id===g.id;
+  const mine = myTeams.some(t=>t.id===g.id);
   if(g.photos_public===false && !mine){
     note.textContent='This group keeps its photos for members only.';
     return;
