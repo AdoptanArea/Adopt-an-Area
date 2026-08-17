@@ -980,7 +980,7 @@
           <div class="admin-card">
             <b style="font-size:14px;">Start a group</b>
             <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress with each other — and with the whole town if you make it public.</p>
-            <input type="text" id="newTeamName" placeholder="Team name" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <input type="text" id="newTeamName" placeholder="Group name" onkeydown="if(event.key==='Enter'){event.preventDefault(); createTeam();}" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
             <label class="field-label" style="margin-top:6px;">Who can see this team?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--green);"></div>
@@ -996,7 +996,7 @@
           <div class="admin-card">
             <b style="font-size:14px;">Join a group</b>
             <p class="fineprint" style="margin-bottom:10px;">Ask one of the group's admins for their join pin.</p>
-            <input type="text" id="joinTeamCode" placeholder="Join pin" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <input type="text" id="joinTeamCode" placeholder="Join pin" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault(); joinTeam();}" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
             <button class="btn btn-secondary" onclick="joinTeam()">Join group</button>
           </div>
         </div>
@@ -3089,6 +3089,16 @@ async function handOverAndLeave(userId, name){
   await loadMyTeams();
   await loadPublicGroups();
 }
+// Empties a group's folder in the team-photos bucket. Returns true if anything
+// was left behind — the group still goes, we just say so rather than pretending
+// the images are gone.
+async function removeTeamPhotoFiles(teamId){
+  const {data:files, error:listErr} = await sb.storage.from('team-photos').list(teamId, {limit:1000});
+  if(listErr) return true;
+  if(!files || !files.length) return false;
+  const {error:rmErr} = await sb.storage.from('team-photos').remove(files.map(f=>`${teamId}/${f.name}`));
+  return !!rmErr;
+}
 async function deleteTeamForever(){
   const t=openTeam();
   if(!t) return;
@@ -3098,10 +3108,18 @@ async function deleteTeamForever(){
     btn.textContent=`Yes — delete ${t.name||'this group'} for everyone`;
     return;
   }
+  btn.textContent='Deleting…';
+  // The image files go first, and from here rather than from SQL: Supabase guards
+  // storage.objects and refuses a delete written in a function. It also has to
+  // happen before the rows, because the storage policy proves we're an admin by
+  // looking us up in team_members — which delete_team is about to empty.
+  const leftovers = await removeTeamPhotoFiles(t.id);
   const {error} = await sb.rpc('delete_team', {t:t.id});
   if(error){ showBanner(error.message, 3600); deleteArmed=false; btn.textContent='Delete this group forever'; return; }
   closeLastAdminSheet();
-  showBanner(`${t.name||'The group'} is gone`, 3000);
+  showBanner(leftovers
+    ? `${t.name||'The group'} is gone, but its images couldn't be cleared from storage`
+    : `${t.name||'The group'} is gone`, leftovers ? 4200 : 3000);
   openTeamId=null;
   await loadMyTeams();
   await loadPublicGroups();
@@ -3132,18 +3150,34 @@ async function createTeam(){
   await loadPublicGroups();
 }
 async function joinTeam(){
-  const code=document.getElementById('joinTeamCode').value.trim();
-  if(!code) return;
-  // Joining goes through the database function now — the pin is no longer
-  // readable from the browser, so we hand it over and let it do the matching.
-  const {data:teamId, error} = await sb.rpc('join_team_with_pin', {p_code:code, p_name:currentUser.name||''});
-  if(error){ showBanner(error.message, 3000); return; }
-  if(!teamId){ showBanner('No group found with that pin', 2600); return; }
-  document.getElementById('joinTeamCode').value='';
+  const field=document.getElementById('joinTeamCode');
+  const code=(field.value||'').trim();
+  // Every way out of here says something. A join that quietly does nothing is
+  // indistinguishable from a broken button.
+  if(!code){ showBanner('Type the join pin first', 2400); return; }
+  if(!currentUser){ showBanner('Sign in before joining a group', 2600); return; }
+  let teamId=null;
+  try {
+    // Joining goes through the database function — the pin is no longer readable
+    // from the browser, so we hand it over and let it do the matching.
+    const {data, error} = await sb.rpc('join_team_with_pin', {p_code:code, p_name:currentUser.name||''});
+    if(error){ showBanner(error.message, 3600); return; }
+    teamId=data;
+  } catch(err){
+    showBanner('Couldn\'t reach the database just now — '+(err && err.message ? err.message : 'try again'), 3600);
+    return;
+  }
+  if(!teamId){ showBanner('No group found with that pin — check it with one of its admins', 3200); return; }
+  const already = myTeams.some(t=>t.id===teamId);
+  field.value='';
   // Show them what they've just walked into.
   openTeamId=teamId;
   if(addGroupOpen) toggleAddGroup();
   await loadMyTeams();
+  const joined=openTeam();
+  showBanner(already
+    ? `You're already in ${joined ? joined.name : 'that group'}`
+    : `You've joined ${joined ? joined.name : 'the group'}`, 3000);
 }
 async function renderTeamPhotos(){
   const t=openTeam();
