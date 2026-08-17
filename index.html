@@ -496,6 +496,22 @@
   .email-card p{font-size:13px; color:var(--text-dim); margin:6px 0 14px 0; line-height:1.5;}
   .email-card .fineprint{font-size:11.5px; color:var(--text-dim); margin-top:10px;}
 
+  /* Group search — browsing public groups from the gallery */
+  .gsearch{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:18px; }
+  .gsearch-box{position:relative;}
+  .gsearch-box input{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:11px 14px 11px 38px; font-size:14px; font-family:inherit; }
+  .gsearch-box input:focus{outline:none; border-color:var(--green);}
+  .gsearch-box .gs-icon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:13.5px; opacity:0.5; pointer-events:none; }
+  .grow{ display:flex; align-items:center; gap:11px; padding:12px 2px; border-top:1px solid var(--border); cursor:pointer; }
+  .grow:first-child{border-top:none; padding-top:14px;}
+  .gav{ width:38px; height:38px; border-radius:12px; background:var(--green-tint); color:var(--green-dark); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0; }
+  .grow-name{font-size:13.5px; font-weight:750;}
+  .grow-meta{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+  .grow .chev{font-size:15px; color:var(--gray); flex-shrink:0;}
+  .gs-note{font-size:12px; color:var(--text-dim); padding:14px 2px 0; line-height:1.5;}
+  .pubchip{ display:inline-block; background:var(--green-tint); color:var(--green-dark); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
+  .privchip{ display:inline-block; background:var(--soft); color:var(--text-dim); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
+
   /* Sponsors */
   #page-sponsors{background:var(--soft2);}
   .sponsor-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
@@ -538,6 +554,49 @@
   .segctrl button.sel{background:#fff; color:var(--text); box-shadow:0 2px 6px rgba(0,0,0,0.08);}
   .checkrow{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); margin-top:12px;}
 
+  /* ---- Municipality rules -------------------------------------------------
+     The card that sits above the area lists and answers "am I allowed to do
+     this here?" without anyone having to phone the council to find out. */
+  .rules-card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:15px 16px; margin-bottom:18px; }
+  .rules-card.none{ background:var(--soft); border:1.5px dashed #C7D2C3; }
+  .rc-top{ display:flex; align-items:flex-start; gap:11px; }
+  .rc-badge{ width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; background:var(--green-tint); }
+  .rc-title{ font-size:13.5px; font-weight:750; line-height:1.35; }
+  .rc-sub{ font-size:11.5px; color:var(--text-dim); margin-top:3px; line-height:1.5; }
+  .rc-btn{ margin-top:12px; width:100%; border:none; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; background:var(--green-tint); color:var(--green-dark); }
+  .rc-tally{ display:flex; gap:6px; flex-wrap:wrap; margin-top:11px; }
+  .rc-tally span{ font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:20px; }
+
+  /* One activity, in the read-only sheet */
+  .rule-row{ display:flex; align-items:flex-start; gap:10px; padding:11px 0; border-top:1px solid var(--border); }
+  .rule-row:first-child{ border-top:none; }
+  .rule-ico{ font-size:15px; width:22px; flex-shrink:0; text-align:center; line-height:1.5; }
+  .rule-label{ font-size:13px; font-weight:650; line-height:1.4; }
+  .rule-note{ font-size:11.5px; color:var(--text-dim); margin-top:3px; line-height:1.5; }
+  .rule-pill{ margin-left:auto; flex-shrink:0; font-size:10px; font-weight:800; padding:4px 9px; border-radius:20px; white-space:nowrap; }
+
+  /* The same activity, in the council's editor */
+  .rule-edit{ padding:12px 0; border-top:1px solid var(--border); }
+  .rule-edit:first-child{ border-top:none; }
+  .stance-row{ display:flex; gap:6px; margin-top:8px; }
+  .stance-btn{ flex:1; border:1.5px solid var(--border); background:#fff; border-radius:10px; padding:7px 4px; font-family:inherit; font-size:11px; font-weight:700; color:var(--text-dim); cursor:pointer; }
+  .stance-btn.sel{ color:#fff; border-color:transparent; }
+  .rule-noteinput{ margin-top:7px; }
+  .rule-noteinput input{ font-size:12.5px; padding:9px 12px; }
+
+  /* Council dashboard */
+  .council-hero{ background:var(--green-tint); border-radius:var(--radius-md); padding:16px 18px; display:flex; align-items:flex-start; gap:13px; margin-bottom:16px; }
+  .council-hero .ch-crest{ font-size:24px; line-height:1.2; }
+  .council-hero h2{ margin:0; font-size:17px; }
+  .council-hero p{ margin:3px 0 0 0; font-size:12.5px; color:var(--green-dark); line-height:1.5; }
+  .res-row{ display:flex; align-items:center; gap:11px; padding:12px 2px; border-top:1px solid var(--border); }
+  .res-row:first-child{ border-top:none; }
+  .res-contact{ font-size:11.5px; color:var(--text-dim); margin-top:2px; line-height:1.5; word-break:break-word; }
+  .res-hidden{ font-size:11px; font-weight:700; color:var(--orange); }
+  /* Blue rather than green: it's a notice about the law, not a success message. */
+  .popia-note{ background:var(--blue-tint); border-radius:var(--radius-sm); padding:13px 15px; font-size:11.5px; line-height:1.6; color:#1F4E82; margin-top:14px; }
+  .popia-note b{ color:#12365C; }
+
   /* Desktop responsive */
   @media (min-width:760px){
     .cardgrid{grid-template-columns:1fr 1fr 1fr;}
@@ -570,6 +629,8 @@
       <button data-page="home" onclick="showPage('home')" class="active">Home</button>
       <button data-page="map" onclick="showPage('map')">Map</button>
       <button data-page="myarea" onclick="showPage('myarea')">My Area</button>
+      <!-- Only exists for an approved municipality account — see renderCouncilPage(). -->
+      <button data-page="council" onclick="showPage('council')" id="navCouncilBtn" style="display:none;">Council</button>
       <button data-page="gallery" onclick="showPage('gallery')">Gallery</button>
       <button data-page="sponsors" onclick="showPage('sponsors')">Sponsors</button>
       <button data-page="learn" onclick="showPage('learn')">Learn</button>
@@ -750,7 +811,7 @@
 
       <div class="permit-note">
         <span class="pn-icon">🏛️</span>
-        <p><b>One thing before you claim something big.</b> Your own pavement, verge or the corner at the end of your street — just get on with it. But a large neglected space belongs to someone: the municipality, a private owner, or a body corporate. For an open field, a dumping spot, a park or a stormwater area, have a word with your ward councillor or the municipality first. It's usually a quick yes, they can often help with bags or collection, and it means nobody can question what you're doing there.</p>
+        <p><b>One thing before you claim something big.</b> Your own pavement, verge or the corner at the end of your street — just get on with it. But a large neglected space belongs to someone: the municipality, a private owner, or a body corporate. For an open field, a dumping spot, a park or a stormwater area, have a word with your ward councillor or the municipality first. It's usually a quick yes, they can often help with bags or collection, and it means nobody can question what you're doing there.<br><br><b>Some municipalities have already answered.</b> Pick your town on the Map and you'll see the list of jobs they've said need no permission at all — and who to phone about everything else.</p>
       </div>
 
       <button class="btn btn-primary btn-full" onclick="startTour()" style="margin-top:26px;">🧭 Help me get started</button>
@@ -845,10 +906,15 @@
         </div>
 
         <div class="arealists">
+          <!-- First thing in the column on purpose: "what am I allowed to do here?"
+               comes before "what has anyone else done here?" -->
+          <div id="townRulesCard"></div>
           <p class="eyebrow" style="margin-top:0;">Claimed areas</p>
           <div id="areaListBelow"></div>
           <p class="eyebrow" style="margin-top:20px;">People offering help</p>
           <div id="helperListBelow"></div>
+          <p class="eyebrow" style="margin-top:22px;">Municipalities with published rules</p>
+          <div id="publishedCouncilList"></div>
         </div>
       </div>
     </div>
@@ -873,31 +939,72 @@
           <div style="flex:1;"><h2 style="margin-bottom:0;" id="welcomeName">Hi there 👋</h2><p style="margin:2px 0 0 0; font-size:13px; color:var(--text-dim);" id="welcomeEmail"></p><p style="margin:2px 0 0 0; font-size:10.5px; color:var(--text-dim); font-family:monospace;" id="debugUserId"></p></div>
           <button style="background:none; border:1.5px solid var(--border); border-radius:14px; padding:8px 14px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="signOut()">Sign out</button>
         </div>
-        <p class="eyebrow">Your claimed areas</p>
+        <p class="eyebrow">Your details</p>
+        <div class="admin-card" style="border-style:solid; border-color:var(--border); border-width:1px; background:#fff;">
+          <label class="field-label" style="margin-top:0;">Contact number</label>
+          <input type="text" id="myPhoneInput" placeholder="082 000 0000">
+          <label class="checkrow" style="align-items:flex-start;">
+            <input type="checkbox" id="shareContactChk" style="margin-top:2px;">
+            <span>Let my municipality see my name and contact details.<br>
+              <span style="font-size:11.5px;">Switch this off and you stay on the map exactly as you are — the council just can't see your number or email in their resident list.</span></span>
+          </label>
+          <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyDetails()">Save</button>
+          <span id="myDetailsSaved" style="font-size:12px; font-weight:700; color:var(--green); margin-left:10px; display:none;">Saved ✓</span>
+        </div>
+
+        <p class="eyebrow" style="margin-top:20px;">Your claimed areas</p>
         <div id="myAreasList" style="margin-bottom:20px;"></div>
 
         <p class="eyebrow">Your team</p>
         <div id="noTeamCard">
           <div class="admin-card">
             <b style="font-size:14px;">Start a team</b>
-            <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress just with each other.</p>
+            <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress with each other — and with the whole town if you make it public.</p>
             <input type="text" id="newTeamName" placeholder="Team name" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
-            <button class="btn btn-secondary" onclick="createTeam()">Create team</button>
+            <label class="field-label" style="margin-top:6px;">Who can see this team?</label>
+            <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
+              <div class="dot" style="background:var(--green);"></div>
+              <div><b>Public — anyone can look</b><span class="desc">Your team shows up in the gallery search. People can see your photos and the areas you've claimed.</span></div>
+            </div>
+            <div class="task-opt" data-vis="private" onclick="selectTeamVisibility(this)">
+              <div class="dot" style="background:var(--gray);"></div>
+              <div><b>Private — members only</b><span class="desc">Nobody outside the team sees your photos, and it won't appear in search.</span></div>
+            </div>
+            <p class="fineprint" style="margin:2px 0 8px 0;">You'll be its first admin: you post the photos, choose who can see them, and hand out the join pin. You can make other members admins too.</p>
+            <button class="btn btn-secondary" style="margin-top:4px;" onclick="createTeam()">Create team</button>
           </div>
           <div class="admin-card">
             <b style="font-size:14px;">Join a team</b>
-            <p class="fineprint" style="margin-bottom:10px;">Ask a neighbour for their team's invite code.</p>
-            <input type="text" id="joinTeamCode" placeholder="Invite code" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <p class="fineprint" style="margin-bottom:10px;">Ask one of the team's admins for their join pin.</p>
+            <input type="text" id="joinTeamCode" placeholder="Join pin" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
             <button class="btn btn-secondary" onclick="joinTeam()">Join team</button>
           </div>
         </div>
         <div id="hasTeamCard" style="display:none;">
           <div class="admin-card">
-            <b style="font-size:14px;" id="myTeamName">—</b>
-            <p class="fineprint">Invite code: <b id="myTeamCode" style="color:var(--text);"></b> — share it with neighbours so they can join.</p>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <b style="font-size:14px;" id="myTeamName">—</b>
+              <span id="myTeamRoleChip" class="privchip" style="display:none;">Member</span>
+            </div>
+            <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b> — you're an admin, so it's yours to hand out.</p>
+            <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin — only they can share it.</p>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <span id="myTeamVisChip" class="privchip">Private</span>
+              <span id="myTeamVisNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
+              <button id="myTeamVisBtn" style="background:none; border:1.5px solid var(--border); border-radius:12px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="toggleTeamVisibility()">Change</button>
+            </div>
+            <div id="myTeamPhotoVisRow" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <span id="myTeamPhotoChip" class="privchip">Photos</span>
+              <span id="myTeamPhotoNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
+              <button id="myTeamPhotoVisBtn" style="background:none; border:1.5px solid var(--border); border-radius:12px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="toggleTeamPhotoVisibility()">Change</button>
+            </div>
             <input type="file" id="teamPhotoInput" accept="image/*" style="display:none;" onchange="handleTeamPhoto(event)">
-            <button class="btn btn-secondary" style="margin-top:8px;" onclick="document.getElementById('teamPhotoInput').click()">+ Add team photo</button>
+            <button class="btn btn-secondary" id="teamPhotoBtn" style="margin-top:8px;" onclick="document.getElementById('teamPhotoInput').click()">+ Add group photo</button>
+            <p class="fineprint" id="teamPhotoMemberNote" style="display:none; margin-top:8px;">Your group's admins are the ones who post photos here.</p>
             <div id="teamPhotoGrid" class="gallery-grid" style="margin-top:14px;"></div>
+            <p class="field-label" style="margin-top:16px;">Members</p>
+            <div id="teamMemberList"></div>
+            <p class="fineprint" id="teamAdminHint" style="display:none;">Admins post photos, decide who can see them, and share the join pin. A group can have as many admins as it likes — but never none.</p>
           </div>
         </div>
 
@@ -954,6 +1061,112 @@
             <p class="fineprint" style="margin-bottom:10px;">Customer-service view — open anyone's area to edit or release it on their behalf.</p>
             <div id="adminAllAreas"></div>
           </div>
+          <div class="admin-card">
+            <b style="font-size:14px;">Council access requests</b>
+            <p class="fineprint" style="margin-bottom:10px;">Approving one hands that person their municipality's rules page — and the contact details of every resident in their district. Check they really work there before you tap it.</p>
+            <div id="councilAppList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- COUNCIL (municipality accounts only) -->
+<div class="page" id="page-council">
+  <section>
+    <div class="wrap">
+      <div id="councilSignedOut">
+        <div class="signedout-card">
+          <div class="bigicon">🏛️</div>
+          <h2>This page is for municipalities</h2>
+          <p class="lead" style="margin-bottom:16px;">If you work for a municipality, you can publish what residents in your district may do without asking, and how to reach you about everything else.</p>
+          <button class="btn btn-primary" onclick="openCouncilApply()">Apply for council access</button>
+        </div>
+      </div>
+
+      <div id="councilMain" style="display:none;">
+        <div class="council-hero">
+          <span class="ch-crest">🏛️</span>
+          <div style="flex:1;">
+            <h2 id="councilName">—</h2>
+            <p id="councilWhere"></p>
+          </div>
+          <span id="councilPubChip" class="privchip">Draft</span>
+        </div>
+
+        <div class="segctrl" style="margin-bottom:18px;">
+          <button class="sel" id="ctabRules"     onclick="setCouncilTab('rules')">Rules</button>
+          <button           id="ctabContact"    onclick="setCouncilTab('contact')">Contact</button>
+          <button           id="ctabResidents"  onclick="setCouncilTab('residents')">Residents</button>
+        </div>
+
+        <!-- RULES -->
+        <div id="cpanelRules">
+          <p class="eyebrow" style="margin-top:0;">What people may do without asking</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.6; margin:0 0 14px 0;">
+            Set each job to one of three answers. Anything you mark <b style="color:var(--green-dark);">go ahead</b> shows on the map as needing no permission, so residents can get on with it. Anything you mark <b style="color:#B8710F;">ask first</b> or <b style="color:#B23338;">not allowed</b> shows your contact details instead.
+          </p>
+
+          <label class="field-label">These rules apply to</label>
+          <select id="councilRuleScope" onchange="onCouncilScopeChange()" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; background:#fff;"></select>
+          <p class="fineprint" style="margin-top:6px;" id="councilScopeNote"></p>
+
+          <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:4px 16px; margin-top:14px;" id="councilRuleEditor"></div>
+
+          <div class="admin-card" style="margin-top:16px;">
+            <b style="font-size:14px;">Publish</b>
+            <p class="fineprint" style="margin-bottom:10px;">Nothing you set here is visible to the public until you publish. You can pull it back at any time.</p>
+            <button class="btn btn-primary" id="councilPublishBtn" style="padding:10px 18px; font-size:13px;" onclick="toggleCouncilPublished()">Publish</button>
+          </div>
+        </div>
+
+        <!-- CONTACT -->
+        <div id="cpanelContact" style="display:none;">
+          <p class="eyebrow" style="margin-top:0;">How to reach you</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.6; margin:0 0 6px 0;">
+            This is what someone sees when they want to do something that isn't on your list. Fill in whichever of these is the honest answer — one working phone number beats five that ring out.
+          </p>
+          <label class="field-label">Municipality name</label>
+          <input type="text" id="cfName" placeholder="e.g. Kouga Local Municipality">
+          <label class="field-label">Which office</label>
+          <input type="text" id="cfOffice" placeholder="e.g. Parks &amp; Environmental Services">
+          <label class="field-label">Contact person</label>
+          <input type="text" id="cfPerson" placeholder="e.g. T. Ndlovu">
+          <label class="field-label">Their role</label>
+          <input type="text" id="cfRole" placeholder="e.g. Community Liaison Officer">
+          <label class="field-label">Phone</label>
+          <input type="text" id="cfPhone" placeholder="042 200 0000">
+          <label class="field-label">Email</label>
+          <input type="email" id="cfEmail" placeholder="parks@example.gov.za">
+          <label class="field-label">Office address</label>
+          <input type="text" id="cfAddress" placeholder="e.g. 33 Da Gama Rd, Jeffreys Bay">
+          <label class="field-label">Office hours</label>
+          <input type="text" id="cfHours" placeholder="e.g. Mon–Fri, 08:00–16:00">
+          <label class="field-label">What to include when they write to you</label>
+          <input type="text" id="cfNotes" placeholder="e.g. Erf number or street, what you plan to do, and roughly when">
+          <button class="btn btn-primary" style="width:100%; margin-top:18px; justify-content:center;" onclick="saveCouncilContact()">Save contact details</button>
+          <span id="councilContactSaved" style="display:none; font-size:12.5px; font-weight:700; color:var(--green);">Saved ✓</span>
+        </div>
+
+        <!-- RESIDENTS -->
+        <div id="cpanelResidents" style="display:none;">
+          <p class="eyebrow" style="margin-top:0;">People using the app in your district</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.6; margin:0 0 14px 0;" id="councilResidentIntro"></p>
+          <div class="gsearch">
+            <div class="gsearch-box">
+              <span class="gs-icon">🔍</span>
+              <input type="text" id="residentSearch" placeholder="Search by name, town, number or email" oninput="renderCouncilResidents()">
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+            <button class="btn btn-secondary" style="padding:9px 16px; font-size:12.5px;" onclick="loadCouncilResidents()">Refresh</button>
+            <button class="btn btn-secondary" style="padding:9px 16px; font-size:12.5px;" onclick="exportResidentsCsv()">Download CSV</button>
+          </div>
+          <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:4px 16px;" id="councilResidentList"></div>
+          <div class="popia-note">
+            <b>This list is personal information under POPIA.</b> Use it to reach residents about looking after spaces in your own district, and nothing else — not for campaigning, not for a mailing list, and don't pass it on. Every time this page loads the list, the fact that you looked is recorded. Residents who've asked not to share their details show here without contact numbers, and that's their right.
+          </div>
         </div>
       </div>
     </div>
@@ -1009,6 +1222,17 @@
         </div>
       </div>
 
+      <div class="gsearch">
+        <b style="font-size:14px;">Find a group</b>
+        <p class="fineprint" style="color:var(--text-dim); font-size:11.5px; margin:6px 0 10px;">Search public groups by name or town to see their photos and the areas they've claimed.</p>
+        <div class="gsearch-box">
+          <span class="gs-icon">🔍</span>
+          <input type="text" id="groupSearchInput" placeholder="Search groups — e.g. Kruisfontein Clean-up" oninput="renderGroupResults()" autocomplete="off">
+        </div>
+        <div id="groupResults"></div>
+      </div>
+
+      <p class="eyebrow" style="margin-top:4px;">Photo wall</p>
       <div class="gallery-grid" id="galleryGrid"></div>
       <div class="email-card">
         <div style="font-size:26px;">📷</div>
@@ -1104,10 +1328,11 @@
 <div class="steps">
         <div class="step"><div class="step-num">1</div><div><h4>Go to My Area</h4><p>Sign in first if you haven't — teams are tied to your account.</p></div></div>
         <div class="step"><div class="step-num">2</div><div><h4>Find "Your Team"</h4><p>Two options sit side by side: start a new team, or join one with a code.</p></div></div>
-        <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name and tap "Create team." You'll get a 6-character invite code to hand out to neighbours.</p></div></div>
-        <div class="step"><div class="step-num">4</div><div><h4>Joining one?</h4><p>Ask whoever's running the team for their code, type it in, and tap "Join team."</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name, choose public or private, and tap "Create team." You'll be its admin, and you'll get a join pin to hand out to neighbours.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public teams show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private teams stay between members. You can switch later from your team card.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the team's admins for the join pin, type it in, and tap "Join team." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
-      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Once you're in a team, everyone in it can post photos to a shared feed that only that team sees — nobody outside it, not even other Adopt an Area users.</p>
+      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Once you're in a team, everyone in it can post photos to a shared feed. If the team is private that feed stays between members; if it's public, the whole town can look it up from the Gallery.</p>
         </div>
       </details>
       <details class="learn-section">
@@ -1165,6 +1390,8 @@
   <div class="sheet-handle"></div>
   <h3 id="sheetTitle">Claim this area</h3>
   <p class="sub" id="sheetSub">Give it a name and pick a colour.</p>
+  <!-- Filled by renderClaimRulesHint() — what this municipality has already said yes to. -->
+  <div id="claimRulesHint"></div>
   <div id="mineFields">
     <label class="field-label">Area name</label>
     <input type="text" id="areaNameInput" placeholder="e.g. My front yard">
@@ -1188,6 +1415,59 @@
   <button style="width:100%; margin-top:8px; border:none; background:none; color:var(--red); border-radius:14px; padding:10px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; display:none;" id="deleteBtn" onclick="deleteAreaConfirm()">Delete permanently</button>
 </div>
 
+<!-- Group profile sheet -->
+<div class="sheet-backdrop" id="groupBackdrop" onclick="closeGroupSheet()"></div>
+<div class="sheet" id="groupSheet">
+  <div class="sheet-handle"></div>
+  <h3 id="groupSheetName">—</h3>
+  <p class="sub" id="groupSheetSub"></p>
+  <p class="field-label" style="margin-top:0;">Areas they've claimed</p>
+  <div id="groupSheetAreas"></div>
+  <p class="field-label">Their photos</p>
+  <div class="gallery-grid" id="groupSheetPhotos"></div>
+  <p class="fineprint" id="groupSheetPhotoNote" style="margin-top:8px;"></p>
+  <button class="btn btn-secondary" style="width:100%; margin-top:16px;" onclick="closeGroupSheet()">Close</button>
+</div>
+
+<!-- Municipality rules sheet (readable by anyone, signed in or not) -->
+<div class="sheet-backdrop" id="rulesBackdrop" onclick="closeRulesSheet()"></div>
+<div class="sheet" id="rulesSheet">
+  <div class="sheet-handle"></div>
+  <h3 id="rulesSheetName">—</h3>
+  <p class="sub" id="rulesSheetSub"></p>
+  <div id="rulesSheetBody"></div>
+  <button class="btn btn-secondary" style="width:100%; margin-top:18px;" onclick="closeRulesSheet()">Close</button>
+</div>
+
+<!-- Apply for a council account -->
+<div class="sheet-backdrop" id="councilApplyBackdrop" onclick="closeCouncilApply()"></div>
+<div class="sheet" id="councilApplySheet">
+  <div class="sheet-handle"></div>
+  <h3>Apply for council access</h3>
+  <p class="sub">For municipal staff and ward councillors. We check every application by hand before switching it on.</p>
+  <label class="field-label">Province</label>
+  <select id="caProvince" onchange="onApplyProvinceChange()" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; background:#fff;"></select>
+  <label class="field-label">District / metro you speak for</label>
+  <select id="caDistrict" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; background:#fff;"></select>
+  <label class="field-label">Municipality name</label>
+  <input type="text" id="caMunicipality" placeholder="e.g. Kouga Local Municipality">
+  <label class="field-label">Your name</label>
+  <input type="text" id="caPerson" placeholder="Your full name">
+  <label class="field-label">Your position</label>
+  <input type="text" id="caRole" placeholder="e.g. Ward Councillor, Ward 7">
+  <label class="field-label">Work email</label>
+  <input type="email" id="caEmail" placeholder="you@municipality.gov.za">
+  <p class="fineprint" style="margin-top:6px;">An official municipal address is the quickest way through — it's how we tell that you are who you say you are.</p>
+  <label class="field-label">Office phone</label>
+  <input type="text" id="caPhone" placeholder="042 200 0000">
+  <label class="field-label">Anything else we should know</label>
+  <input type="text" id="caNote" placeholder="Optional">
+  <p id="caError" style="display:none; color:var(--red); font-size:12.5px; margin:12px 0 0 0;"></p>
+  <p id="caOk" style="display:none; color:var(--green-dark); font-size:12.5px; font-weight:700; margin:12px 0 0 0;"></p>
+  <button class="btn btn-primary" style="width:100%; margin-top:20px; justify-content:center;" onclick="submitCouncilApplication()" id="caSubmitBtn">Send application</button>
+  <p class="fineprint" style="margin-top:10px;">You need an ordinary account first — this links council access to the one you're signed in with.</p>
+</div>
+
 <!-- Sign-in sheet -->
 <div class="sheet-backdrop" id="signBackdrop" onclick="closeSignIn()"></div>
 <div class="sheet" id="signSheet">
@@ -1195,9 +1475,23 @@
   <div class="segctrl" style="margin-bottom:14px;">
     <button class="sel" id="modeSignInBtn" onclick="setAuthMode('signin')">Sign in</button>
     <button id="modeSignUpBtn" onclick="setAuthMode('signup')">Create account</button>
+    <button id="modeCouncilBtn" onclick="setAuthMode('council')">Council</button>
   </div>
   <h3 id="authTitle">Sign in</h3>
   <p class="sub" id="authSub">New here? Switch to "Create account" above.</p>
+  <!-- Council mode is the same sign-in underneath. It's a separate tab because a
+       municipal officer arriving at this screen shouldn't have to guess whether
+       there's a place for them here. -->
+  <div id="councilAuthNote" style="display:none;">
+    <div class="infocard" style="margin-bottom:6px;">
+      <span class="icon-badge">🏛️</span>
+      <div>
+        <h4>Municipal staff</h4>
+        <p>Sign in below with the account we approved. Not approved yet? Create an ordinary account first, then apply — we check each one by hand.</p>
+      </div>
+    </div>
+    <button class="btn btn-secondary" style="width:100%; margin:10px 0 4px 0;" onclick="closeSignIn(); openCouncilApply();">Apply for council access</button>
+  </div>
   <div id="signUpNameWrap" style="display:none;">
     <label class="field-label">Name</label>
     <input type="text" id="signName" placeholder="Your name">
@@ -1211,7 +1505,7 @@
     <select id="signTown" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; background:#fff;">
       <option value="">Prefer not to say</option>
     </select>
-    <p class="fineprint" style="margin-top:6px;">Sponsors can choose to show ads only in your town — set this so you only see local ones.</p>
+    <p class="fineprint" style="margin-top:6px;">Sponsors can choose to show ads only in your town — set this so you only see local ones. Your town also decides which municipality can see your name and contact details, so they can reach you about spaces you look after. You can switch that off under My Area at any time.</p>
   </div>
   <p id="authError" style="display:none; color:var(--red); font-size:12.5px; margin:10px 0 0 0;"></p>
   <button class="btn btn-primary" style="width:100%; margin-top:22px; justify-content:center;" onclick="submitAuth()" id="authSubmitBtn">Sign in</button>
@@ -2434,38 +2728,188 @@ function renderAdminAllAreas(){
 
 // ================= TEAMS =================
 let myTeam=null;
+let myTeamRole='member';
+let myTeamMembers=[];
+// invite_code is deliberately missing: the database won't hand it to a plain
+// member any more, so it comes back through the team_invite_code function
+// instead (see supabase-group-admins.sql).
+const TEAM_COLS='id,name,town_id,created_by,is_public,photos_public';
+function isTeamAdmin(){ return myTeamRole==='admin'; }
 async function loadMyTeam(){
   if(!currentUser){ return; }
-  const {data:membership} = await sb.from('team_members').select('team_id').eq('user_id', currentUser.id).maybeSingle();
-  if(!membership){ myTeam=null; document.getElementById('noTeamCard').style.display='block'; document.getElementById('hasTeamCard').style.display='none'; return; }
-  const {data:team} = await sb.from('teams').select('*').eq('id', membership.team_id).single();
+  const {data:membership} = await sb.from('team_members').select('team_id,role').eq('user_id', currentUser.id).maybeSingle();
+  if(!membership){ myTeam=null; myTeamRole='member'; myTeamMembers=[]; document.getElementById('noTeamCard').style.display='block'; document.getElementById('hasTeamCard').style.display='none'; return; }
+  const {data:team} = await sb.from('teams').select(TEAM_COLS).eq('id', membership.team_id).single();
   myTeam=team;
+  myTeamRole = membership.role || 'member';
   document.getElementById('noTeamCard').style.display='none';
   document.getElementById('hasTeamCard').style.display='block';
   document.getElementById('myTeamName').textContent=team.name;
-  document.getElementById('myTeamCode').textContent=team.invite_code;
+  const roleChip=document.getElementById('myTeamRoleChip');
+  roleChip.style.display='inline-block';
+  roleChip.className = isTeamAdmin() ? 'pubchip' : 'privchip';
+  roleChip.textContent = isTeamAdmin() ? 'Admin' : 'Member';
+  renderTeamVisibility();
+  await renderTeamPin();
+  await loadTeamMembers();
   await renderTeamPhotos();
+}
+// Only admins get to see the pin, so it isn't sitting in the team row any more —
+// ask for it, and take a blank answer as "you're not an admin".
+async function renderTeamPin(){
+  const row=document.getElementById('myTeamPinRow');
+  const note=document.getElementById('myTeamPinNote');
+  if(!myTeam || !isTeamAdmin()){ row.style.display='none'; note.style.display='block'; return; }
+  const {data:code} = await sb.rpc('team_invite_code', {t:myTeam.id});
+  if(!code){ row.style.display='none'; note.style.display='block'; return; }
+  row.style.display='block';
+  note.style.display='none';
+  document.getElementById('myTeamCode').textContent=code;
+}
+// The chip in "Your team" doubles as the switch — a team that started private can be
+// opened up later without having to make a new one. Members see where things stand;
+// only an admin gets the button.
+function renderTeamVisibility(){
+  if(!myTeam) return;
+  const admin=isTeamAdmin();
+  const pub = !!myTeam.is_public;
+  const chip=document.getElementById('myTeamVisChip');
+  chip.className = pub ? 'pubchip' : 'privchip';
+  chip.textContent = pub ? 'Public' : 'Private';
+  document.getElementById('myTeamVisNote').textContent = pub
+    ? 'Anyone can find this team in the gallery search and see the areas you\'ve claimed.'
+    : 'The team stays out of the gallery search — nobody outside it sees anything.';
+  const visBtn=document.getElementById('myTeamVisBtn');
+  visBtn.textContent = pub ? 'Make private' : 'Make public';
+  visBtn.style.display = admin ? 'block' : 'none';
+
+  // Photos have their own switch: a group can be out in the open and still keep
+  // its photo wall to itself. It only means anything while the group is public.
+  const photosPub = myTeam.photos_public !== false;
+  const pchip=document.getElementById('myTeamPhotoChip');
+  const pnote=document.getElementById('myTeamPhotoNote');
+  const pbtn=document.getElementById('myTeamPhotoVisBtn');
+  pchip.className = (pub && photosPub) ? 'pubchip' : 'privchip';
+  pchip.textContent = (pub && photosPub) ? 'Photos: anyone' : 'Photos: members';
+  pnote.textContent = !pub
+    ? 'While the team is private, photos stay between members whatever this is set to.'
+    : (photosPub
+        ? 'Visitors who find your group can look through its photos.'
+        : 'Your group is findable, but the photos are for members only.');
+  pbtn.textContent = photosPub ? 'Members only' : 'Let anyone look';
+  pbtn.style.display = admin ? 'block' : 'none';
+}
+async function toggleTeamVisibility(){
+  if(!myTeam) return;
+  if(!isTeamAdmin()){ showBanner('Only a group admin can change this', 2600); return; }
+  const next = !myTeam.is_public;
+  const {error} = await sb.from('teams').update({is_public:next}).eq('id', myTeam.id);
+  if(error){ showBanner(error.message, 3000); return; }
+  myTeam.is_public = next;
+  renderTeamVisibility();
+  showBanner(next ? 'Your team is public now — anyone can find it in the gallery' : 'Your team is private again', 3000);
+  await loadPublicGroups();
+}
+async function toggleTeamPhotoVisibility(){
+  if(!myTeam) return;
+  if(!isTeamAdmin()){ showBanner('Only a group admin can change this', 2600); return; }
+  const next = myTeam.photos_public === false;
+  const {error} = await sb.from('teams').update({photos_public:next}).eq('id', myTeam.id);
+  if(error){ showBanner(error.message, 3000); return; }
+  myTeam.photos_public = next;
+  renderTeamVisibility();
+  showBanner(next ? 'Anyone visiting your group can see its photos now' : 'Your group\'s photos are members-only now', 3000);
+  await loadPublicGroups();
+}
+// ---- members and their badges ----
+async function loadTeamMembers(){
+  if(!myTeam){ myTeamMembers=[]; renderTeamMembers(); return; }
+  const {data} = await sb.from('team_members').select('user_id,member_name,role').eq('team_id', myTeam.id);
+  myTeamMembers = (data||[]).slice().sort((a,b)=>{
+    const ra=(a.role==='admin')?0:1, rb=(b.role==='admin')?0:1;
+    if(ra!==rb) return ra-rb;
+    return (a.member_name||'').localeCompare(b.member_name||'');
+  });
+  renderTeamMembers();
+}
+function renderTeamMembers(){
+  const box=document.getElementById('teamMemberList');
+  if(!box) return;
+  const admin=isTeamAdmin();
+  document.getElementById('teamAdminHint').style.display = admin ? 'block' : 'none';
+  box.innerHTML='';
+  if(!myTeamMembers.length){
+    box.innerHTML='<p class="fineprint">Nobody here yet.</p>';
+    return;
+  }
+  const adminCount = myTeamMembers.filter(m=>m.role==='admin').length;
+  myTeamMembers.forEach(m=>{
+    const isMe = m.user_id===currentUser.id;
+    const isAdminMember = m.role==='admin';
+    const row=document.createElement('div');
+    row.className='arow';
+    row.style.cursor='default';
+    row.innerHTML=`<div class="gav" style="width:28px; height:28px; font-size:12px;">${escHtml((m.member_name||'?').charAt(0).toUpperCase())}</div>`+
+      `<div style="flex:1; min-width:0;"><div class="arow-name">${escHtml(m.member_name||'Neighbour')}${isMe?' <span class="arow-desc">(you)</span>':''}</div>`+
+      `<div class="arow-desc">${isAdminMember?'Admin — posts photos, shares the pin':'Member'}</div></div>`;
+    // The last admin keeps the badge: dropping it would leave the group with
+    // nobody able to post, share the pin, or promote a replacement.
+    if(admin && !(isAdminMember && adminCount<=1)){
+      const btn=document.createElement('button');
+      btn.style.cssText='background:none; border:1.5px solid var(--border); border-radius:12px; padding:6px 10px; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer; flex-shrink:0;';
+      btn.textContent = isAdminMember ? (isMe?'Step down':'Remove admin') : 'Make admin';
+      btn.onclick = ()=>setTeamMemberRole(m.user_id, isAdminMember?'member':'admin', m.member_name);
+      row.appendChild(btn);
+    }
+    box.appendChild(row);
+  });
+}
+async function setTeamMemberRole(userId, role, name){
+  if(!myTeam || !isTeamAdmin()) return;
+  const {error} = await sb.rpc('set_team_member_role', {t:myTeam.id, target:userId, new_role:role});
+  if(error){ showBanner(error.message, 3600); return; }
+  const who = (userId===currentUser.id) ? 'You are' : ((name||'They')+' is');
+  showBanner(role==='admin' ? `${who} now an admin of this group` : `${who} a plain member again`, 3000);
+  // Stepping down changes what you're allowed to see, so reload the lot.
+  await loadMyTeam();
+}
+let newTeamVisibility=null;   // no default on purpose — creating a team is an explicit choice
+function selectTeamVisibility(el){
+  document.querySelectorAll('#noTeamCard .task-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  newTeamVisibility=el.dataset.vis;
 }
 async function createTeam(){
   const name=document.getElementById('newTeamName').value.trim();
-  if(!name) return;
-  const {data:team, error} = await sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id}).select().single();
+  if(!name){ showBanner('Give your team a name first', 2400); return; }
+  if(!newTeamVisibility){ showBanner('Choose who can see this team — public or private', 3000); return; }
+  const isPublic = newTeamVisibility==='public';
+  const {data:team, error} = await sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id, is_public:isPublic}).select(TEAM_COLS).single();
   if(error){ showBanner(error.message, 3000); return; }
-  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name});
+  // Whoever starts the group runs it until they say otherwise.
+  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name, role:'admin'});
   document.getElementById('newTeamName').value='';
+  document.querySelectorAll('#noTeamCard .task-opt').forEach(o=>o.classList.remove('sel'));
+  newTeamVisibility=null;
   await loadMyTeam();
+  await loadPublicGroups();
 }
 async function joinTeam(){
   const code=document.getElementById('joinTeamCode').value.trim();
   if(!code) return;
-  const {data:team, error} = await sb.from('teams').select('*').eq('invite_code', code).maybeSingle();
-  if(error || !team){ showBanner('No team found with that code', 2600); return; }
-  await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name});
+  // Joining goes through the database function now — the pin is no longer
+  // readable from the browser, so we hand it over and let it do the matching.
+  const {data:teamId, error} = await sb.rpc('join_team_with_pin', {p_code:code, p_name:currentUser.name||''});
+  if(error){ showBanner(error.message, 3000); return; }
+  if(!teamId){ showBanner('No group found with that pin', 2600); return; }
   document.getElementById('joinTeamCode').value='';
   await loadMyTeam();
 }
 async function renderTeamPhotos(){
   const grid=document.getElementById('teamPhotoGrid');
+  const admin=isTeamAdmin();
+  document.getElementById('teamPhotoBtn').style.display = admin ? 'block' : 'none';
+  document.getElementById('teamPhotoMemberNote').style.display = admin ? 'none' : 'block';
   if(!myTeam){ grid.innerHTML=''; return; }
   const {data:photos} = await sb.from('team_photos').select('*').eq('team_id', myTeam.id).order('created_at',{ascending:false});
   grid.innerHTML='';
@@ -2479,13 +2923,145 @@ async function renderTeamPhotos(){
 async function handleTeamPhoto(evt){
   const file=evt.target.files[0];
   if(!file || !myTeam) return;
+  evt.target.value='';
+  if(!isTeamAdmin()){ showBanner('Only a group admin can post photos here', 2800); return; }
   const path=`${myTeam.id}/${Date.now()}_${file.name}`;
   const {error:upErr} = await sb.storage.from('team-photos').upload(path, file);
   if(upErr){ showBanner(upErr.message, 3000); return; }
   const {data:urlData} = sb.storage.from('team-photos').getPublicUrl(path);
-  await sb.from('team_photos').insert({team_id:myTeam.id, image_url:urlData.publicUrl, caption:'Progress update', posted_by_name:currentUser.name});
-  evt.target.value='';
+  const {error:rowErr} = await sb.from('team_photos').insert({team_id:myTeam.id, image_url:urlData.publicUrl, caption:'Progress update', posted_by_name:currentUser.name});
+  if(rowErr){ showBanner(rowErr.message, 3000); return; }
   await renderTeamPhotos();
+}
+
+// ================= GROUP SEARCH =================
+// Only teams that chose "public" when they were created ever land here — a private
+// team is never fetched, so there's nothing to accidentally leak into the search.
+let publicGroups=[];
+async function loadPublicGroups(){
+  const {data:teams, error} = await sb.from('teams').select(TEAM_COLS).eq('is_public', true).order('name');
+  if(error){ publicGroups=[]; renderGroupResults(); return; }
+  publicGroups = teams||[];
+  const ids = publicGroups.map(g=>g.id);
+  let members=[];
+  if(ids.length){
+    const {data} = await sb.from('team_members').select('team_id,user_id,member_name').in('team_id', ids);
+    members = data||[];
+  }
+  publicGroups.forEach(g=>{ g._members = members.filter(m=>m.team_id===g.id); });
+  renderGroupResults();
+}
+function groupTownName(g){
+  if(!g.town_id) return '';
+  const town=ALL_TOWNS.find(t=>t.id===g.town_id);
+  return town ? town.name : '';
+}
+// A group's areas are its members' areas — nothing extra is stored, so the list stays
+// right even when someone claims or releases a spot after joining.
+function groupAreas(g){
+  const ids=new Set((g._members||[]).map(m=>m.user_id).filter(Boolean));
+  return seedAreas.filter(a=>a.ownerId && ids.has(a.ownerId));
+}
+function renderGroupResults(){
+  const box=document.getElementById('groupResults');
+  if(!box) return;
+  const input=document.getElementById('groupSearchInput');
+  const q=(input ? input.value : '').trim().toLowerCase();
+  const matches = q
+    ? publicGroups.filter(g=>(g.name||'').toLowerCase().includes(q) || groupTownName(g).toLowerCase().includes(q))
+    : publicGroups;
+  box.innerHTML='';
+  if(!publicGroups.length){
+    box.innerHTML='<p class="gs-note">No public groups yet. Start one on My Area and pick "Public" so your town can see what you\'re doing.</p>';
+    return;
+  }
+  if(!matches.length){
+    box.innerHTML='<p class="gs-note">No group matches "'+escHtml(q)+'". Try the town name instead.</p>';
+    return;
+  }
+  const shown = matches.slice(0, 10);
+  shown.forEach(g=>{
+    const town=groupTownName(g);
+    const areas=groupAreas(g).length;
+    const mem=(g._members||[]).length;
+    const bits=[town, mem+(mem===1?' member':' members'), areas+(areas===1?' area claimed':' areas claimed')].filter(Boolean);
+    const row=document.createElement('div');
+    row.className='grow';
+    row.onclick=()=>openGroupProfile(g.id);
+    row.innerHTML=`<div class="gav">${escHtml((g.name||'?').charAt(0).toUpperCase())}</div>`+
+      `<div style="flex:1; min-width:0;"><div class="grow-name">${escHtml(g.name||'Unnamed group')}</div><div class="grow-meta">${escHtml(bits.join(' · '))}</div></div>`+
+      `<span class="chev">›</span>`;
+    box.appendChild(row);
+  });
+  if(matches.length>shown.length){
+    const note=document.createElement('p');
+    note.className='gs-note';
+    note.textContent=`Showing 10 of ${matches.length} — type a bit more to narrow it down.`;
+    box.appendChild(note);
+  }
+}
+async function openGroupProfile(id){
+  const g=publicGroups.find(x=>x.id===id);
+  if(!g) return;
+  const town=groupTownName(g);
+  const mem=(g._members||[]).length;
+  document.getElementById('groupSheetName').textContent=g.name||'Unnamed group';
+  document.getElementById('groupSheetSub').textContent=[town, mem+(mem===1?' member':' members')].filter(Boolean).join(' · ');
+
+  const areaBox=document.getElementById('groupSheetAreas');
+  const areas=groupAreas(g);
+  areaBox.innerHTML='';
+  if(!areas.length){
+    areaBox.innerHTML='<p class="gs-note" style="padding-top:0;">This group hasn\'t claimed an area yet.</p>';
+  } else {
+    areas.forEach(a=>{
+      const meta=statusMeta[a.status]||statusMeta.gray;
+      const row=document.createElement('div');
+      row.className='arow';
+      row.onclick=()=>showGroupAreaOnMap(a);
+      row.innerHTML=`<span class="adot" style="background:${meta.color}"></span>`+
+        `<div><div class="arow-name">${escHtml(a.name)}</div><div class="arow-desc">${escHtml([a.townName, meta.label, 'by '+a.by].filter(Boolean).join(' · '))}</div></div>`+
+        `<span class="contact-btn">Map</span>`;
+      areaBox.appendChild(row);
+    });
+  }
+
+  const photoBox=document.getElementById('groupSheetPhotos');
+  const note=document.getElementById('groupSheetPhotoNote');
+  photoBox.innerHTML='';
+  note.textContent='Loading photos…';
+  document.getElementById('groupBackdrop').classList.add('show');
+  document.getElementById('groupSheet').classList.add('show');
+
+  // The group's admins can shut the photo wall to outsiders while staying
+  // findable — say so rather than showing an empty grid.
+  const mine = myTeam && myTeam.id===g.id;
+  if(g.photos_public===false && !mine){
+    note.textContent='This group keeps its photos for members only.';
+    return;
+  }
+  const {data:photos, error} = await sb.from('team_photos').select('*').eq('team_id', g.id).order('created_at',{ascending:false});
+  if(error){ note.textContent='Couldn\'t load this group\'s photos just now.'; return; }
+  const list=photos||[];
+  note.textContent = list.length ? '' : 'No photos posted yet.';
+  list.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='gcard';
+    card.innerHTML=`<div class="gphoto">${p.image_url?`<img src="${escHtml(p.image_url)}">`:'📷'}</div>`+
+      `<div class="gbody"><div class="gcaption">${escHtml(p.caption||'Progress update')}</div><div class="gwho">${escHtml(p.posted_by_name||'')}</div></div>`;
+    photoBox.appendChild(card);
+  });
+}
+function showGroupAreaOnMap(a){
+  closeGroupSheet();
+  showPage('map');
+  if(a.coords && a.coords.length){
+    setTimeout(()=>{ leafletMap.invalidateSize(); leafletMap.flyTo(centroid(a.coords), 17); }, 120);
+  }
+}
+function closeGroupSheet(){
+  document.getElementById('groupBackdrop').classList.remove('show');
+  document.getElementById('groupSheet').classList.remove('show');
 }
 
 // ================= GALLERY =================
@@ -2967,7 +3543,9 @@ function fireTourEvent(key){
   const want=new URLSearchParams(location.search).get('page');
   if(want && document.getElementById('page-'+want)) showPage(want);
   await afterAuth();
-  await Promise.all([loadAreas(), loadGallery(), loadSponsors()]);
+  await Promise.all([loadAreas(), loadGallery(), loadSponsors(), loadPublicGroups()]);
+  // Group cards count claimed areas, so they need one more pass once areas are in.
+  renderGroupResults();
 })();
 
 // Registered only so the browser will offer to install the site to the home
