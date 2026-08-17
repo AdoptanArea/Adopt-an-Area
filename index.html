@@ -440,6 +440,12 @@
   /* Clears the round buttons, which now sit alone at the top right of the map. */
   .banner-msg{ position:absolute; top:62px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
   .banner-msg.show{display:block;}
+  /* showBanner() speaks through the banner above, which lives inside the map shell —
+     so from My Area or the Gallery it was shouting into a hidden div. Every "give your
+     team a name first" and every database error on those pages went nowhere, which is
+     what makes a button look like it does nothing. Off the map, messages come here. */
+  .toast{ position:fixed; left:50%; bottom:calc(26px + var(--safe-bottom)); transform:translateX(-50%) translateY(10px); z-index:1400; width:max-content; max-width:min(420px, calc(100vw - 28px)); background:rgba(28,28,30,0.94); color:#fff; font-size:12.5px; font-weight:600; line-height:1.45; padding:11px 16px; border-radius:14px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3); opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   .edit-panel{ position:absolute; left:12px; right:12px; bottom:calc(70px + var(--map-chrome-bottom)); z-index:550; background:#fff; border-radius:16px; padding:12px 14px; box-shadow:0 8px 22px rgba(0,0,0,0.25); display:none; }
   .edit-panel.show{display:block;}
@@ -1512,6 +1518,9 @@
   <p class="fineprint" style="margin-top:10px; text-align:center;">Admin access isn't set here — it's switched on by the team directly in the database once you have an account.</p>
 </div>
 
+<!-- Where showBanner() puts its message when you're not on the map page. -->
+<div class="toast" id="toast"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ================= SUPABASE =================
@@ -1713,6 +1722,8 @@ function pickTown(di,ti){
   closeTownList();
   currentTown={id:slug(town), name, district:d.name, province:p.name, center:null, bbox:null};
   setMapHeading(d.name);
+  // "What am I allowed to do here?" is a property of where you just moved to.
+  renderTownRulesCard();
   // Now that we know where you are, the address search says so and searches there.
   document.getElementById('mapSearchInput').placeholder='Search a street in ' + name;
   flyToTown(name, p, d);
@@ -2341,10 +2352,16 @@ document.addEventListener('click', e=>{
 
 // ================= LOCATE ME =================
 let youMarker=null, youCircle=null;
+let bannerTimer=null;
 function showBanner(msg, ms){
-  const b=document.getElementById('mapBanner');
+  // The map's banner is inside the map shell, so it's invisible from every other
+  // page. Pick whichever of the two the reader can actually see.
+  const onMap=document.getElementById('page-map').classList.contains('active');
+  const b=document.getElementById(onMap ? 'mapBanner' : 'toast');
+  document.getElementById(onMap ? 'toast' : 'mapBanner').classList.remove('show');
   b.textContent=msg; b.classList.add('show');
-  if(ms) setTimeout(()=>b.classList.remove('show'), ms);
+  clearTimeout(bannerTimer);
+  if(ms) bannerTimer=setTimeout(()=>b.classList.remove('show'), ms);
 }
 function locateMe(){
   showBanner('Finding you…');
@@ -2451,6 +2468,7 @@ function confirmYard(){
   document.getElementById('reshapeBtn').style.display='none';
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('claimSubmitBtn').textContent='Confirm';
+  renderClaimRulesHint(currentTown.id);
   document.getElementById('sheetBackdrop').classList.add('show');
   document.getElementById('claimSheet').classList.add('show');
   if(!isHelper) fireTourEvent('sheetOpened');
@@ -2494,6 +2512,7 @@ function openEditSheet(area, type){
     document.getElementById('helpDetailInput').value=area.help||'';
   }
   document.getElementById('contactInput').value=area.phone||'';
+  renderClaimRulesHint(area.townId);
   document.getElementById('sheetBackdrop').classList.add('show');
   document.getElementById('claimSheet').classList.add('show');
 }
@@ -2613,14 +2632,24 @@ function initSignTownSelect(){
   });
 }
 initSignTownSelect();
+// Three tabs, two behaviours: "council" signs in exactly like "signin" does — the
+// account either has council access or it doesn't. It's a tab of its own so a
+// municipal officer landing here doesn't have to guess whether this app has a
+// place for them.
 function setAuthMode(mode){
   authMode=mode;
   document.getElementById('modeSignInBtn').classList.toggle('sel', mode==='signin');
   document.getElementById('modeSignUpBtn').classList.toggle('sel', mode==='signup');
+  document.getElementById('modeCouncilBtn').classList.toggle('sel', mode==='council');
   document.getElementById('signUpNameWrap').style.display = mode==='signup' ? 'block' : 'none';
   document.getElementById('signUpTownWrap').style.display = mode==='signup' ? 'block' : 'none';
-  document.getElementById('authTitle').textContent = mode==='signup' ? 'Create account' : 'Sign in';
-  document.getElementById('authSub').textContent = mode==='signup' ? 'Just an email and password — takes a few seconds.' : 'Already have an account? Sign in below.';
+  document.getElementById('councilAuthNote').style.display = mode==='council' ? 'block' : 'none';
+  document.getElementById('authTitle').textContent =
+    mode==='signup' ? 'Create account' : mode==='council' ? 'Council sign in' : 'Sign in';
+  document.getElementById('authSub').textContent =
+    mode==='signup'  ? 'Just an email and password — takes a few seconds.'
+  : mode==='council' ? 'For approved municipal accounts.'
+  :                    'Already have an account? Sign in below.';
   document.getElementById('authSubmitBtn').textContent = mode==='signup' ? 'Create account' : 'Sign in';
   document.getElementById('authError').style.display='none';
 }
@@ -2652,7 +2681,7 @@ async function submitAuth(){
   // afterAuth() fires the tour's "signedIn" trigger, and the next tour step moves the
   // user where the tour needs them (the Map). Sending them to My Area here would undo
   // that a split second later — so only do it when no tour is running.
-  if(!tourActive) showPage('myarea');
+  if(!tourActive) showPage(myCouncil ? 'council' : 'myarea');
 }
 async function afterAuth(){
   const {data:{session}} = await sb.auth.getSession();
@@ -2663,7 +2692,8 @@ async function afterAuth(){
     await new Promise(r=>setTimeout(r,600));
     ({data:profile} = await sb.from('profiles').select('*').eq('id', session.user.id).single());
   }
-  currentUser={id:session.user.id, email:session.user.email, name:(profile&&profile.name)||'Neighbour', town:(profile&&profile.town_id)||'', admin:(profile&&profile.is_admin)||false};
+  currentUser={id:session.user.id, email:session.user.email, name:(profile&&profile.name)||'Neighbour', town:(profile&&profile.town_id)||'', admin:(profile&&profile.is_admin)||false,
+               phone:(profile&&profile.phone)||'', shareContact:!(profile && profile.share_contact===false)};
   document.getElementById('signinBtn').textContent='Hi, '+currentUser.name.split(' ')[0];
   document.getElementById('signinBtn').onclick=()=>showPage('myarea');
   await loadMyTeam();
@@ -2671,6 +2701,8 @@ async function afterAuth(){
   renderSponsorBar();
   updateGalleryAdminVisibility();
   renderGallery();
+  await loadMyCouncil();
+  loadCouncilApplications();
   fireTourEvent('signedIn');
 }
 async function signOut(){
@@ -2678,6 +2710,11 @@ async function signOut(){
   currentUser=null;
   document.getElementById('signinBtn').textContent='Sign in';
   document.getElementById('signinBtn').onclick=openSignIn;
+  // A council account signing out must take the Council tab, its rules and its
+  // resident list with it — not leave them on screen for whoever sits down next.
+  councilApps=[];
+  renderCouncilApplications();
+  await loadMyCouncil();
   renderMyAreas();
   renderSponsorBar();
   updateGalleryAdminVisibility();
@@ -2707,8 +2744,9 @@ function renderMyAreas(){
       list.appendChild(div);
     });
   }
+  fillMyDetails();
   document.getElementById('adminTools').style.display = currentUser.admin ? 'block' : 'none';
-  if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); }
+  if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); renderCouncilApplications(); }
 }
 function renderAdminAllAreas(){
   const list=document.getElementById('adminAllAreas');
@@ -3356,6 +3394,605 @@ function renderSponsorBar(){
   track.innerHTML = `<div class="sb-marquee">${chips}${chips}</div>`;
 }
 
+// ================= MUNICIPALITY RULES =================
+// The app kept running into one question it couldn't answer: "am I actually allowed
+// to clear this?" Only the local government can answer it, so this lets them — once,
+// in public, for their whole district — instead of every resident phoning to ask the
+// same thing. Whatever they haven't answered stays "ask first"; silence is not a yes.
+//
+// A council speaks for a district (or metro), which is the level this app has always
+// called the local government — see the comment above `provinces`. Rules can be set
+// for the whole district, or narrowed to one town where that town is different.
+
+const ACTIVITIES = [
+  {key:'litter',    icon:'🗑️', label:'Pick up litter and bag it'},
+  {key:'grass',     icon:'🌾', label:'Cut grass and trim the verge'},
+  {key:'bush',      icon:'🌳', label:'Clear overgrown bush'},
+  {key:'dumping',   icon:'🚮', label:'Clean up an illegal dumping spot'},
+  {key:'plant',     icon:'🌸', label:'Plant flowers, shrubs and groundcover'},
+  {key:'trees',     icon:'🌲', label:'Plant trees'},
+  {key:'paint',     icon:'🎨', label:'Paint kerbs, poles and railings'},
+  {key:'sign',      icon:'🪧', label:'Put up a small "this area is looked after" sign'},
+  {key:'build',     icon:'🔨', label:'Build or install something — a bench, a bin, a fence'},
+  {key:'machinery', icon:'🚜', label:'Bring in machinery — tractor, brushcutter, chainsaw'},
+  {key:'burn',      icon:'🔥', label:'Burn cuttings on site'},
+  {key:'event',     icon:'🎪', label:'Hold a clean-up day or a community event'},
+  {key:'skip',      icon:'🚛', label:'Ask for a skip or a special collection'},
+  {key:'water',     icon:'💧', label:'Use municipal water or power on site'}
+];
+
+// `short` labels a single job; `tally` follows a number ("5 need no permission"),
+// which is a different sentence and reads wrong if you reuse one for the other.
+const STANCES = {
+  allowed:{short:'No permission needed', tally:'need no permission', editLabel:'Go ahead', tint:'var(--green-tint)',  ink:'var(--green-dark)', solid:'var(--green)',  icon:'✅'},
+  ask:    {short:'Ask first',            tally:'need a word first',  editLabel:'Ask first', tint:'var(--orange-tint)', ink:'#8A5410',           solid:'var(--orange)', icon:'✋'},
+  no:     {short:'Not allowed',          tally:'not allowed',        editLabel:'No',        tint:'var(--red-tint)',    ink:'#B23338',           solid:'var(--red)',    icon:'⛔'}
+};
+
+let publishedCouncils = [];   // every district that has published anything
+const rulesCache = {};        // district -> bundle | null   (null = nothing published)
+
+function districtOfTown(townId){
+  const t = ALL_TOWNS.find(x=>x.id===townId);
+  return t ? t.district : '';
+}
+
+async function loadPublishedCouncils(){
+  const {data, error} = await sb.rpc('published_councils');
+  publishedCouncils = error ? [] : (data||[]);
+  renderPublishedCouncilList();
+  renderTownRulesCard();
+}
+
+// One round trip per district, then remembered. The rules of a place don't change
+// while you're looking at the map.
+async function loadRulesFor(district){
+  if(!district) return null;
+  if(rulesCache[district]!==undefined) return rulesCache[district];
+  const {data, error} = await sb.rpc('rules_for_district', {d:district});
+  if(error || !data || !data.length){ rulesCache[district]=null; return null; }
+  const f=data[0];
+  rulesCache[district] = {
+    id:f.council_id, name:f.council_name, district:f.district, province:f.province,
+    office:f.contact_office, person:f.contact_person, role:f.contact_role,
+    phone:f.phone, email:f.email, address:f.address, hours:f.hours, notes:f.notes,
+    // A council with contact details but no rules yet returns one row with a null
+    // activity (the left join) — that's not a rule, so it's filtered out.
+    rules:data.filter(r=>r.activity).map(r=>({town:r.town_id||'', activity:r.activity, stance:r.stance, note:r.note}))
+  };
+  return rulesCache[district];
+}
+
+// A rule set for one town beats the district-wide one. Nothing set at all returns
+// null, and the caller decides what "unanswered" should look like.
+function stanceFor(bundle, key, townId){
+  if(!bundle) return null;
+  return bundle.rules.find(r=>r.activity===key && r.town===townId)
+      || bundle.rules.find(r=>r.activity===key && r.town==='')
+      || null;
+}
+
+function tallyStances(bundle, townId){
+  const t={allowed:0, ask:0, no:0};
+  ACTIVITIES.forEach(a=>{ const r=stanceFor(bundle, a.key, townId); if(r) t[r.stance]++; });
+  return t;
+}
+
+// ---- The card above the area lists -------------------------------------------
+async function renderTownRulesCard(){
+  const el=document.getElementById('townRulesCard');
+  if(!el) return;
+  const district=currentTown.district;
+  if(!district){ el.innerHTML=''; return; }
+  const bundle=await loadRulesFor(district);
+
+  if(!bundle){
+    el.innerHTML = `<div class="rules-card none">
+      <div class="rc-top">
+        <span class="rc-badge" style="background:var(--gray-tint);">🏛️</span>
+        <div>
+          <div class="rc-title">${escHtml(district)} hasn’t published any rules yet</div>
+          <div class="rc-sub">Litter and your own verge are nobody’s argument. For anything bigger — an open field, a dumping spot, a park — have a word with your ward councillor first.</div>
+        </div>
+      </div>
+      <button class="rc-btn" style="background:var(--gray-tint); color:var(--text-dim);" onclick="openCouncilApply()">Work for this municipality? Publish your rules →</button>
+    </div>`;
+    return;
+  }
+
+  const t=tallyStances(bundle, currentTown.id);
+  const chip=(n,s)=> n ? `<span style="background:${STANCES[s].tint}; color:${STANCES[s].ink};">${STANCES[s].icon} ${n} ${escHtml(STANCES[s].tally)}</span>` : '';
+  el.innerHTML = `<div class="rules-card">
+    <div class="rc-top">
+      <span class="rc-badge">🏛️</span>
+      <div>
+        <div class="rc-title">${escHtml(bundle.name)}</div>
+        <div class="rc-sub">Has said what you may do in ${escHtml(currentTown.name||district)} without asking anyone.</div>
+      </div>
+    </div>
+    <div class="rc-tally">${chip(t.allowed,'allowed')}${chip(t.ask,'ask')}${chip(t.no,'no')}</div>
+    <button class="rc-btn" onclick="openRulesSheet('${encodeURIComponent(district)}')">See the full list</button>
+  </div>`;
+}
+
+function renderPublishedCouncilList(){
+  const el=document.getElementById('publishedCouncilList');
+  if(!el) return;
+  if(!publishedCouncils.length){
+    el.innerHTML='<p style="font-size:13px; color:var(--text-dim);">None yet. As municipalities join, the ones that have said what you may do without asking will be listed here.</p>';
+    return;
+  }
+  el.innerHTML = publishedCouncils.map(c=>
+    `<div class="arow" onclick="openRulesSheet('${encodeURIComponent(c.district)}')">
+      <span class="adot" style="background:var(--green)"></span>
+      <div><div class="arow-name">${escHtml(c.name)}</div>
+      <div class="arow-desc">${escHtml(c.district)} · ${c.allowed_count} job${c.allowed_count===1?'':'s'} need no permission</div></div>
+      <span class="contact-btn">See rules</span>
+    </div>`).join('');
+}
+
+// ---- The full list, in a sheet ------------------------------------------------
+function closeRulesSheet(){
+  document.getElementById('rulesBackdrop').classList.remove('show');
+  document.getElementById('rulesSheet').classList.remove('show');
+}
+
+async function openRulesSheet(districtEnc){
+  const district=decodeURIComponent(districtEnc);
+  const bundle=await loadRulesFor(district);
+  if(!bundle) return;
+  // Only narrow to a town when the map is actually on this district — opening the
+  // rules for somewhere else from the list must not apply this town's overrides.
+  const townId = currentTown.district===district ? currentTown.id : '';
+  const townName = currentTown.district===district ? currentTown.name : '';
+
+  document.getElementById('rulesSheetName').textContent=bundle.name;
+  document.getElementById('rulesSheetSub').textContent =
+    townName ? ('What you may do in ' + townName + ', according to the municipality.')
+             : ('What you may do anywhere in ' + district + ', according to the municipality.');
+
+  const rows = ACTIVITIES.map(a=>{
+    const r=stanceFor(bundle, a.key, townId);
+    const s=STANCES[r ? r.stance : DEFAULT_STANCE];
+    const note = r && r.note ? `<div class="rule-note">${escHtml(r.note)}</div>`
+               : (!r ? '<div class="rule-note">Not covered either way — treat it as ask first.</div>' : '');
+    return `<div class="rule-row">
+      <span class="rule-ico">${a.icon}</span>
+      <div style="flex:1; min-width:0;">
+        <div class="rule-label">${escHtml(a.label)}</div>${note}
+      </div>
+      <span class="rule-pill" style="background:${s.tint}; color:${s.ink};">${s.icon} ${escHtml(s.short)}</span>
+    </div>`;
+  }).join('');
+
+  const line = (l,v)=> v ? `<div style="font-size:12.5px; color:var(--text-dim); line-height:1.6;"><b style="color:var(--text);">${l}:</b> ${escHtml(v)}</div>` : '';
+  const contact = `
+    <p class="field-label" style="margin-top:20px;">Want to do something that isn’t on that list?</p>
+    <p style="font-size:12.5px; color:var(--text-dim); line-height:1.6; margin:0 0 12px 0;">Talk to them first. It’s usually a quick yes, and they can often help with bags, a skip or a collection.</p>
+    <div class="infocard" style="align-items:flex-start;">
+      <span class="icon-badge">📞</span>
+      <div style="min-width:0;">
+        <h4>${escHtml(bundle.office || bundle.name)}</h4>
+        ${line('Ask for', [bundle.person, bundle.role].filter(Boolean).join(', '))}
+        ${line('Address', bundle.address)}
+        ${line('Open', bundle.hours)}
+        ${bundle.notes ? `<p style="margin-top:6px;">${escHtml(bundle.notes)}</p>` : ''}
+        ${(!bundle.person && !bundle.address && !bundle.hours && !bundle.notes) ? '<p>Use the buttons below to get hold of them.</p>' : ''}
+      </div>
+    </div>
+    ${bundle.phone ? `<a class="btn btn-primary btn-full" style="margin-top:12px; justify-content:center;" href="tel:${escHtml(bundle.phone)}">📞 ${escHtml(bundle.phone)}</a>` : ''}
+    ${bundle.email ? `<a class="btn btn-secondary btn-full" style="margin-top:8px; justify-content:center;" href="mailto:${escHtml(bundle.email)}">✉️ ${escHtml(bundle.email)}</a>` : ''}
+    ${(!bundle.phone && !bundle.email) ? '<p class="fineprint" style="margin-top:10px;">This municipality hasn’t left a phone number or an email address yet — try your ward councillor.</p>' : ''}`;
+
+  document.getElementById('rulesSheetBody').innerHTML = rows + contact;
+  document.getElementById('rulesBackdrop').classList.add('show');
+  document.getElementById('rulesSheet').classList.add('show');
+}
+
+// ---- A one-line version inside the claim sheet ---------------------------------
+async function renderClaimRulesHint(townId){
+  const el=document.getElementById('claimRulesHint');
+  if(!el) return;
+  el.innerHTML='';
+  const district=districtOfTown(townId) || currentTown.district;
+  if(!district) return;
+  const bundle=await loadRulesFor(district);
+  if(!bundle) return;
+  const t=tallyStances(bundle, townId||currentTown.id);
+  if(!t.allowed && !t.ask && !t.no) return;
+  el.innerHTML = `<div class="infocard" style="margin-bottom:16px; cursor:pointer;" onclick="openRulesSheet('${encodeURIComponent(district)}')">
+    <span class="icon-badge">🏛️</span>
+    <div>
+      <h4>${escHtml(bundle.name)} has published rules here</h4>
+      <p>${t.allowed} job${t.allowed===1?'':'s'} need no permission at all. Tap to see the list before you start.</p>
+    </div>
+  </div>`;
+}
+
+// ================= COUNCIL DASHBOARD =================
+let myCouncil=null;         // the council this account speaks for, if any
+let myCouncilRules=[];      // its rules, raw rows
+let councilScopeTown='';    // '' = the whole district
+let councilResidents=[];
+let councilApps=[];         // pending applications, site-admin view
+
+const DEFAULT_STANCE='ask';
+const val = id => (document.getElementById(id).value||'').trim();
+
+async function loadMyCouncil(){
+  myCouncil=null; myCouncilRules=[]; councilResidents=[]; councilScopeTown='';
+  if(currentUser){
+    const {data} = await sb.rpc('my_council');
+    if(data && data.length) myCouncil=data[0];
+  }
+  const nav=document.getElementById('navCouncilBtn');
+  if(nav) nav.style.display = myCouncil ? '' : 'none';
+  await renderCouncilPage();
+}
+
+async function renderCouncilPage(){
+  const out=document.getElementById('councilSignedOut'), main=document.getElementById('councilMain');
+  if(!out || !main) return;
+  if(!myCouncil){ out.style.display='block'; main.style.display='none'; return; }
+  out.style.display='none'; main.style.display='block';
+
+  document.getElementById('councilName').textContent=myCouncil.name;
+  document.getElementById('councilWhere').textContent=myCouncil.district+' · '+myCouncil.province;
+  const chip=document.getElementById('councilPubChip');
+  chip.className = myCouncil.published ? 'pubchip' : 'privchip';
+  chip.textContent = myCouncil.published ? 'Published' : 'Draft';
+  document.getElementById('councilPublishBtn').textContent = myCouncil.published ? 'Unpublish' : 'Publish';
+
+  fillCouncilContactForm();
+  fillCouncilScopeSelect();
+  document.getElementById('councilResidentIntro').textContent =
+    'Everyone who signed up in a town of ' + myCouncil.district + ', plus anyone who has claimed an area or offered help there. Nobody outside your district appears here, and no other municipality can see yours.';
+  await loadMyCouncilRules();
+}
+
+function setCouncilTab(name){
+  ['rules','contact','residents'].forEach(t=>{
+    document.getElementById('ctab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('sel', t===name);
+    document.getElementById('cpanel'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===name ? 'block' : 'none';
+  });
+  // The resident list is a personal-information read, and every read is logged —
+  // so it's fetched when somebody actually asks for it, not on every page load.
+  if(name==='residents' && !councilResidents.length) loadCouncilResidents();
+}
+
+const councilTowns = ()=> myCouncil ? ALL_TOWNS.filter(t=>t.district===myCouncil.district) : [];
+
+function fillCouncilScopeSelect(){
+  const sel=document.getElementById('councilRuleScope');
+  sel.innerHTML = `<option value="">Everywhere in ${escHtml(myCouncil.district)}</option>`
+    + councilTowns().map(t=>`<option value="${escHtml(t.id)}">Just ${escHtml(t.name)}</option>`).join('');
+  sel.value=councilScopeTown;
+  updateCouncilScopeNote();
+}
+
+function updateCouncilScopeNote(){
+  document.getElementById('councilScopeNote').textContent = councilScopeTown
+    ? 'Anything you set here applies to this town only, and overrides your district-wide answer. Leave a job unset and the district answer stands.'
+    : 'This is your default answer for every town in the district. You can change any single town afterwards.';
+}
+
+function onCouncilScopeChange(){
+  councilScopeTown=document.getElementById('councilRuleScope').value;
+  updateCouncilScopeNote();
+  renderCouncilRuleEditor();
+}
+
+async function loadMyCouncilRules(){
+  const {data} = await sb.from('council_rules').select('*').eq('council_id', myCouncil.id);
+  myCouncilRules = data||[];
+  renderCouncilRuleEditor();
+}
+
+const myRule = (key, town) => myCouncilRules.find(r=>r.activity===key && (r.town_id||'')===town);
+
+function renderCouncilRuleEditor(){
+  const el=document.getElementById('councilRuleEditor');
+  el.innerHTML = ACTIVITIES.map(a=>{
+    const own=myRule(a.key, councilScopeTown);
+    const inherited = councilScopeTown ? myRule(a.key, '') : null;
+
+    let hint='';
+    if(!own && inherited) hint=`<div class="rule-note">Following your district answer: ${escHtml(STANCES[inherited.stance].short)}</div>`;
+    else if(!own)        hint='<div class="rule-note">Not set — residents are told to ask first.</div>';
+
+    const buttons = ['allowed','ask','no'].map(s=>{
+      const on = own && own.stance===s;
+      return `<button class="stance-btn${on?' sel':''}" ${on?`style="background:${STANCES[s].solid};"`:''} onclick="setStance('${a.key}','${s}')">${STANCES[s].icon} ${escHtml(STANCES[s].editLabel)}</button>`;
+    }).join('');
+
+    return `<div class="rule-edit">
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <span class="rule-ico">${a.icon}</span>
+        <div style="flex:1; min-width:0;">
+          <div class="rule-label">${escHtml(a.label)}</div>
+          ${hint}
+          <div class="stance-row">${buttons}</div>
+          <div class="rule-noteinput">
+            <input type="text" ${own?'':'disabled'} value="${escHtml(own && own.note || '')}"
+                   placeholder="${own?'Add a condition — e.g. weekdays only, bag it and leave it at the kerb':'Pick an answer first'}"
+                   onchange="saveRuleNote('${a.key}', this.value)">
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Tapping the answer that's already chosen clears it — that's how a council undoes
+// a rule without there being a fourth "unset" button cluttering every row.
+async function setStance(key, stance){
+  const own=myRule(key, councilScopeTown);
+  let error;
+  if(own && own.stance===stance){
+    ({error} = await sb.from('council_rules').delete().eq('id', own.id));
+  }else if(own){
+    ({error} = await sb.from('council_rules').update({stance, updated_at:new Date().toISOString()}).eq('id', own.id));
+  }else{
+    ({error} = await sb.from('council_rules').insert({council_id:myCouncil.id, town_id:councilScopeTown, activity:key, stance}));
+  }
+  if(error){ alert("Couldn't save that: " + error.message); return; }
+  rulesCache[myCouncil.district]=undefined;
+  await loadMyCouncilRules();
+  renderTownRulesCard();
+}
+
+async function saveRuleNote(key, note){
+  const own=myRule(key, councilScopeTown);
+  if(!own) return;
+  const {error} = await sb.from('council_rules')
+    .update({note:note.trim(), updated_at:new Date().toISOString()}).eq('id', own.id);
+  if(error){ alert("Couldn't save that note: " + error.message); return; }
+  rulesCache[myCouncil.district]=undefined;
+  own.note=note.trim();
+}
+
+function fillCouncilContactForm(){
+  const set=(id,v)=>{ document.getElementById(id).value = v||''; };
+  set('cfName', myCouncil.name);      set('cfOffice', myCouncil.contact_office);
+  set('cfPerson', myCouncil.contact_person); set('cfRole', myCouncil.contact_role);
+  set('cfPhone', myCouncil.phone);    set('cfEmail', myCouncil.email);
+  set('cfAddress', myCouncil.address); set('cfHours', myCouncil.hours);
+  set('cfNotes', myCouncil.notes);
+}
+
+async function saveCouncilContact(){
+  const patch={
+    name: val('cfName') || myCouncil.name,
+    contact_office: val('cfOffice'), contact_person: val('cfPerson'),
+    contact_role: val('cfRole'),     phone: val('cfPhone'),
+    email: val('cfEmail'),           address: val('cfAddress'),
+    hours: val('cfHours'),           notes: val('cfNotes'),
+    updated_at: new Date().toISOString()
+  };
+  const {error} = await sb.from('councils').update(patch).eq('id', myCouncil.id);
+  if(error){ alert("Couldn't save: " + error.message); return; }
+  Object.assign(myCouncil, patch);
+  document.getElementById('councilName').textContent=myCouncil.name;
+  rulesCache[myCouncil.district]=undefined;
+  await loadPublishedCouncils();
+  const ok=document.getElementById('councilContactSaved');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2500);
+}
+
+async function toggleCouncilPublished(){
+  const next=!myCouncil.published;
+  // Publishing a list that says "ask first" with no way to ask is worse than
+  // publishing nothing, so that combination is blocked rather than warned about.
+  if(next && !myCouncil.phone && !myCouncil.email){
+    alert('Add a phone number or an email address under Contact first — otherwise people are told to ask permission with no way to ask.');
+    setCouncilTab('contact');
+    return;
+  }
+  const {error} = await sb.from('councils')
+    .update({published:next, updated_at:new Date().toISOString()}).eq('id', myCouncil.id);
+  if(error){ alert("Couldn't change that: " + error.message); return; }
+  myCouncil.published=next;
+  rulesCache[myCouncil.district]=undefined;
+  await loadPublishedCouncils();
+  await renderCouncilPage();
+}
+
+// ---- The resident list ---------------------------------------------------------
+async function loadCouncilResidents(){
+  const el=document.getElementById('councilResidentList');
+  el.innerHTML='<p style="font-size:13px; color:var(--text-dim); padding:12px 0;">Loading…</p>';
+  const {data, error} = await sb.rpc('council_residents', {c:myCouncil.id});
+  if(error){
+    el.innerHTML=`<p style="font-size:13px; color:var(--red); padding:12px 0;">${escHtml(error.message)}</p>`;
+    return;
+  }
+  councilResidents=data||[];
+  renderCouncilResidents();
+}
+
+function renderCouncilResidents(){
+  const el=document.getElementById('councilResidentList');
+  const q=(document.getElementById('residentSearch').value||'').trim().toLowerCase();
+  const hits = councilResidents.filter(r=>!q ||
+    [r.name, r.email, r.phone, r.town_name].some(v=>v && String(v).toLowerCase().includes(q)));
+
+  if(!hits.length){
+    el.innerHTML=`<p style="font-size:13px; color:var(--text-dim); padding:14px 0;">${
+      councilResidents.length ? 'Nobody matches that.' : 'Nobody in your district is using the app yet.'}</p>`;
+    return;
+  }
+
+  el.innerHTML = hits.map(r=>{
+    const doing=[];
+    if(r.areas_claimed) doing.push(r.areas_claimed+' area'+(r.areas_claimed===1?'':'s')+' claimed');
+    if(r.help_offered)  doing.push('offering help');
+    const where=[r.town_name || (r.lives_here?'':'works here, lives elsewhere'), doing.join(' · ')].filter(Boolean).join(' · ');
+    const contact = r.contact_hidden
+      ? '<div class="res-hidden">Asked not to share contact details</div>'
+      : [ r.phone ? `<a href="tel:${escHtml(r.phone)}" style="color:var(--green-dark); font-weight:700;">📞 ${escHtml(r.phone)}</a>` : '',
+          r.email ? `<a href="mailto:${escHtml(r.email)}" style="color:var(--green-dark); font-weight:700;">✉️ ${escHtml(r.email)}</a>` : ''
+        ].filter(Boolean).join(' · ') || '<span style="color:var(--text-dim);">No number or email on file</span>';
+    return `<div class="res-row">
+      <div class="gav">${escHtml((r.name||'?').charAt(0).toUpperCase())}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="grow-name">${escHtml(r.name)}</div>
+        ${where?`<div class="grow-meta">${escHtml(where)}</div>`:''}
+        <div class="res-contact">${contact}</div>
+      </div>
+    </div>`;
+  }).join('') + `<p class="fineprint" style="padding:12px 0 4px 0;">${hits.length} of ${councilResidents.length} shown.</p>`;
+}
+
+function exportResidentsCsv(){
+  if(!councilResidents.length){ alert('Nothing to export yet.'); return; }
+  const esc = v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"';
+  const rows = [['Name','Email','Phone','Town','Areas claimed','Offering help','Lives in district','Contact withheld']]
+    .concat(councilResidents.map(r=>[r.name, r.email, r.phone, r.town_name,
+      r.areas_claimed, r.help_offered, r.lives_here?'yes':'no', r.contact_hidden?'yes':'no']));
+  const csv = rows.map(r=>r.map(esc).join(',')).join('\r\n');
+  // BOM so Excel opens the accented town names correctly rather than as mojibake.
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download = myCouncil.district.replace(/[^A-Za-z0-9]+/g,'-').toLowerCase() + '-residents.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+// ================= APPLYING FOR COUNCIL ACCESS =================
+function openCouncilApply(){
+  document.getElementById('councilApplyBackdrop').classList.add('show');
+  document.getElementById('councilApplySheet').classList.add('show');
+  document.getElementById('caOk').style.display='none';
+  const err=document.getElementById('caError');
+  if(!currentUser){
+    err.textContent='Create an ordinary account first (or sign in) — council access is added to an account, not signed up for separately.';
+    err.style.display='block';
+  }else{
+    err.style.display='none';
+    if(!val('caPerson')) document.getElementById('caPerson').value=currentUser.name||'';
+  }
+  fillApplyProvinces();
+}
+function closeCouncilApply(){
+  document.getElementById('councilApplyBackdrop').classList.remove('show');
+  document.getElementById('councilApplySheet').classList.remove('show');
+}
+function fillApplyProvinces(){
+  const sel=document.getElementById('caProvince');
+  if(!sel.options.length){
+    sel.innerHTML='<option value="">Choose a province…</option>'
+      + provinces.map(p=>`<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  }
+  // Otherwise the district box opens blank, which reads as broken rather than as
+  // "there's a step above this one".
+  if(!document.getElementById('caDistrict').options.length) onApplyProvinceChange();
+}
+function onApplyProvinceChange(){
+  const p=provinces.find(x=>x.id===document.getElementById('caProvince').value);
+  const sel=document.getElementById('caDistrict');
+  sel.innerHTML = p
+    ? p.districts.map(d=>`<option value="${escHtml(d.name)}">${escHtml(d.name)}</option>`).join('')
+    : '<option value="">Pick a province first</option>';
+}
+
+async function submitCouncilApplication(){
+  const err=document.getElementById('caError'), ok=document.getElementById('caOk');
+  err.style.display='none'; ok.style.display='none';
+  if(!currentUser){
+    err.textContent='Sign in first — council access is added to an existing account.';
+    err.style.display='block';
+    return;
+  }
+  const district=val('caDistrict'), muni=val('caMunicipality');
+  if(!district || !muni){
+    err.textContent='Pick your district and give the municipality’s name.';
+    err.style.display='block';
+    return;
+  }
+  const btn=document.getElementById('caSubmitBtn');
+  btn.disabled=true; btn.textContent='Sending…';
+  const {error} = await sb.rpc('apply_for_council', {
+    p_district:district, p_municipality:muni, p_person:val('caPerson'),
+    p_position:val('caRole'), p_work_email:val('caEmail'),
+    p_phone:val('caPhone'), p_note:val('caNote')
+  });
+  btn.disabled=false; btn.textContent='Send application';
+  if(error){ err.textContent=error.message; err.style.display='block'; return; }
+  ok.textContent='Sent. We’ll check it and switch your access on — you’ll see a Council tab appear once we have.';
+  ok.style.display='block';
+}
+
+// ---- Site-admin side of the same queue ------------------------------------------
+async function loadCouncilApplications(){
+  const el=document.getElementById('councilAppList');
+  if(!el) return;
+  if(!currentUser || !currentUser.admin){ el.innerHTML=''; return; }
+  const {data} = await sb.from('council_applications').select('*').eq('status','pending').order('created_at');
+  councilApps=data||[];
+  renderCouncilApplications();
+}
+
+function renderCouncilApplications(){
+  const el=document.getElementById('councilAppList');
+  if(!el) return;
+  if(!councilApps.length){
+    el.innerHTML='<p style="font-size:12.5px; color:var(--text-dim);">Nothing waiting.</p>';
+    return;
+  }
+  el.innerHTML = councilApps.map((a,i)=>`
+    <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px;">
+      <div style="font-size:13.5px; font-weight:750;">${escHtml(a.municipality)}</div>
+      <div style="font-size:11.5px; color:var(--text-dim); margin-top:3px; line-height:1.6;">
+        ${escHtml(a.district)}${a.province?' · '+escHtml(a.province):''}<br>
+        ${escHtml([a.person, a.job_title].filter(Boolean).join(' · ')||'No name given')}<br>
+        ${escHtml([a.work_email, a.phone].filter(Boolean).join(' · ')||'No contact given')}
+        ${a.note?'<br>'+escHtml(a.note):''}
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn btn-primary" style="padding:8px 14px; font-size:12px;" onclick="approveCouncilApp(${i})">Approve</button>
+        <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="declineCouncilApp(${i})">Decline</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approveCouncilApp(i){
+  const a=councilApps[i];
+  if(!a) return;
+  if(!confirm('Approve ' + a.municipality + '?\n\nThis gives ' + (a.person||'this person')
+      + ' the rules page for ' + a.district + ', and the contact details of every resident there.')) return;
+  const {error} = await sb.rpc('approve_council_application', {p_app:a.id});
+  if(error){ alert(error.message); return; }
+  await loadCouncilApplications();
+  await loadPublishedCouncils();
+}
+
+async function declineCouncilApp(i){
+  const a=councilApps[i];
+  if(!a) return;
+  const {error} = await sb.rpc('decline_council_application', {p_app:a.id});
+  if(error){ alert(error.message); return; }
+  await loadCouncilApplications();
+}
+
+// ================= MY DETAILS (phone + who may see it) =================
+function fillMyDetails(){
+  if(!currentUser) return;
+  document.getElementById('myPhoneInput').value = currentUser.phone||'';
+  document.getElementById('shareContactChk').checked = currentUser.shareContact!==false;
+}
+
+async function saveMyDetails(){
+  if(!currentUser) return;
+  const phone=val('myPhoneInput');
+  const share=document.getElementById('shareContactChk').checked;
+  const {error} = await sb.from('profiles').update({phone, share_contact:share}).eq('id', currentUser.id);
+  if(error){ alert("Couldn't save: " + error.message); return; }
+  currentUser.phone=phone; currentUser.shareContact=share;
+  const ok=document.getElementById('myDetailsSaved');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2500);
+}
+
 // ================= PAGE NAV =================
 function showPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -3543,7 +4180,7 @@ function fireTourEvent(key){
   const want=new URLSearchParams(location.search).get('page');
   if(want && document.getElementById('page-'+want)) showPage(want);
   await afterAuth();
-  await Promise.all([loadAreas(), loadGallery(), loadSponsors(), loadPublicGroups()]);
+  await Promise.all([loadAreas(), loadGallery(), loadSponsors(), loadPublicGroups(), loadPublishedCouncils()]);
   // Group cards count claimed areas, so they need one more pass once areas are in.
   renderGroupResults();
 })();
@@ -3554,7 +4191,7 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 sb.auth.onAuthStateChange((event)=>{
-  if(event==='SIGNED_OUT'){ currentUser=null; renderMyAreas(); renderSponsorBar(); updateGalleryAdminVisibility(); renderGallery(); }
+  if(event==='SIGNED_OUT'){ currentUser=null; councilApps=[]; loadMyCouncil(); renderCouncilApplications(); renderMyAreas(); renderSponsorBar(); updateGalleryAdminVisibility(); renderGallery(); }
 });
 </script>
 </body>
