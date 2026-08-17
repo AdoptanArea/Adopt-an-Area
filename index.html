@@ -325,18 +325,32 @@
 
      Deliberately short on a phone. The old 64vh/440px-minimum pushed the bottom of
      the map — where the claim buttons live — below the fold, so on a phone you got
-     satellite imagery and no controls. Everything now fits between the header and
-     the sponsor bar; full screen is one tap away when you need the room. */
-  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:48vh; height:48svh; min-height:280px; max-height:420px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
+     satellite imagery and no controls. Everything between the header and the sponsor
+     bar has to fit: search bar, map, claim buttons and the filter button. Moving
+     search above the map cost about 48px of that, so the map gives it back — full
+     screen is one tap away when you need the room. */
+  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:40vh; height:40svh; min-height:250px; max-height:380px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
   #leafletMap{ position:absolute; inset:0; }
   .leaflet-container{ font-family:inherit; background:#12261c; }
 
   /* pointer-events:none on the band, auto on the controls themselves — otherwise the
      empty space beside the search box swallows drags and the map won't pan there. */
-  .map-overlay-top{ position:absolute; top:12px; left:12px; right:12px; z-index:500; display:flex; gap:8px; pointer-events:none; }
-  .map-search{ pointer-events:auto; flex:1; background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; padding:10px 13px; position:relative; }
-  .map-search input{ border:none; outline:none; font-family:inherit; font-size:13.5px; flex:1; background:none; }
-  .map-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border-radius:14px; box-shadow:0 10px 26px rgba(0,0,0,0.25); max-height:240px; overflow-y:auto; display:none; }
+  /* Search sits above the map at full width. Only the two round buttons stay on the
+     imagery, top right, where they don't cover anything worth seeing. */
+  .map-searchbar{ margin-bottom:8px; }
+  .map-overlay-top{ position:absolute; top:12px; right:12px; z-index:500; display:flex; gap:8px; pointer-events:none; }
+  /* On the page now rather than floating over satellite, so it's bordered like the
+     province and town controls instead of carrying a drop shadow. */
+  .map-search{ background:#fff; border:1.5px solid var(--border); border-radius:12px; display:flex; align-items:center; gap:8px; padding:10px 12px; position:relative; }
+  .map-search:focus-within{ border-color:var(--green); }
+  /* Selector includes [type=text] deliberately. The global input[type=text] rule sets
+     padding:12px 14px for the forms and sits LATER in this stylesheet at equal
+     specificity, so a plain `.map-search input` loses to it — which is what kept this
+     bar 68px tall instead of 41px. On a phone those 27px are the difference between
+     the filter button clearing the sponsor bar and not. */
+  .map-search input[type=text]{ border:none; outline:none; padding:0; font-family:inherit; font-size:13.5px; line-height:1.3; flex:1; min-width:0; width:auto; background:none; }
+  /* Above the map's own overlays (the filter menu is 600) since it drops over them. */
+  .map-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:700; background:#fff; border-radius:14px; box-shadow:0 10px 26px rgba(0,0,0,0.25); max-height:240px; overflow-y:auto; display:none; }
   .map-search-results.show{display:block;}
   .msr-row{padding:10px 13px; font-size:13px; font-weight:600; border-bottom:1px solid var(--border); cursor:pointer;}
   .msr-row span{display:block; font-size:11px; font-weight:500; color:var(--text-dim);}
@@ -351,7 +365,7 @@
 
   /* During the tour the fixed instruction bar covers the bottom of the map — where
      the claim buttons live. Shrink the map for the duration so they stay in view. */
-  body.tour-running .map-shell{ height:44vh; height:44svh; min-height:280px; max-height:400px; }
+  body.tour-running .map-shell{ height:36vh; height:36svh; min-height:230px; max-height:340px; }
 
   /* Full screen, for placing boundary points precisely. Sits below the tour bar
      (z-index 950) so the instructions stay readable on top of it.
@@ -363,10 +377,12 @@
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:940;
     height:auto; min-height:0; max-height:none; border-radius:0;
   }
-  /* The imagery is welcome to run under the notch; the search box and the banner
-     are not — they start below it instead. */
-  .map-shell.map-full .map-overlay-top{ top:calc(12px + var(--safe-top)); }
-  .map-shell.map-full .banner-msg{ top:calc(104px + var(--safe-top)); }
+  /* Full screen hides anything outside the shell, so the search bar pins to the top of
+     the screen — and the round buttons and banner drop below it so nothing stacks. The
+     imagery is welcome to run under the notch; these are not. */
+  body.map-full-open .map-searchbar{ position:fixed; top:calc(10px + var(--safe-top)); left:12px; right:12px; z-index:960; margin:0; }
+  .map-shell.map-full .map-overlay-top{ top:calc(62px + var(--safe-top)); }
+  .map-shell.map-full .banner-msg{ top:calc(114px + var(--safe-top)); }
   body.map-full-open{ overflow:hidden; }
   body.map-full-open .sponsor-bar{ display:none; }
 
@@ -421,7 +437,8 @@
     .claim-yard-btn{ padding:12px 14px; font-size:12.5px; gap:5px; }
   }
 
-  .banner-msg{ position:absolute; top:104px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
+  /* Clears the round buttons, which now sit alone at the top right of the map. */
+  .banner-msg{ position:absolute; top:62px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
   .banner-msg.show{display:block;}
 
   .edit-panel{ position:absolute; left:12px; right:12px; bottom:calc(70px + var(--map-chrome-bottom)); z-index:550; background:#fff; border-radius:16px; padding:12px 14px; box-shadow:0 8px 22px rgba(0,0,0,0.25); display:none; }
@@ -780,14 +797,18 @@
 
       <div class="map-layout">
         <div>
+          <!-- Above the map, full width. It used to float over the imagery, which cost
+               the top of the view and crowded the round buttons on a phone. -->
+          <div class="map-searchbar" id="mapSearchBar">
+            <div class="map-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
+              <div class="map-search-results" id="mapSearchResults"></div>
+            </div>
+          </div>
           <div class="map-shell">
             <div id="leafletMap"></div>
             <div class="map-overlay-top">
-              <div class="map-search">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
-                <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
-                <div class="map-search-results" id="mapSearchResults"></div>
-              </div>
               <button class="map-round-btn" onclick="locateMe()" title="Use my location">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#22945A" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="#22945A" stroke-width="1.8" stroke-linecap="round"/></svg>
               </button>
