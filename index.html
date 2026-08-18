@@ -479,6 +479,30 @@
   .avatar{width:48px; height:48px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; flex-shrink:0;}
   .admin-card{ background:var(--soft); border:1.5px dashed #C7D2C3; border-radius:var(--radius-md); padding:16px; margin-top:10px; }
   .admin-card .fineprint{font-size:11px; color:var(--text-dim); margin-top:8px;}
+  /* Everything about you folds away into these. Shut, the page opens on your areas
+     and your groups — which is what you came for — instead of a wall of inputs. */
+  .prefbox{ background:var(--soft); border:1px solid var(--border); border-radius:var(--radius-md); padding:0 16px; margin-bottom:8px; }
+  .prefbox summary{ padding:13px 0; font-size:13.5px; font-weight:750; cursor:pointer; list-style:none; display:flex; align-items:center; gap:9px; }
+  .prefbox summary::-webkit-details-marker{ display:none; }
+  .prefbox summary .pf-sub{ font-size:11.5px; font-weight:600; color:var(--text-dim); margin-left:auto; }
+  .prefbox summary:after{ content:'+'; font-size:19px; font-weight:400; color:var(--text-dim); line-height:1; }
+  .prefbox[open] summary:after{ content:'\2013'; }
+  .prefbox .pf-body{ padding:0 0 16px 0; }
+  .prefbox .pf-body > p{ font-size:12.5px; color:var(--text-dim); line-height:1.55; margin:0 0 10px 0; }
+  .prefbox input:not([type=checkbox]), .prefbox select{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; }
+  .prefbox input:focus, .prefbox select:focus{ outline:none; border-color:var(--green); }
+  .pf-sep{ border-top:1px solid var(--border); margin:16px 0 4px 0; }
+  .pf-ok{ font-size:12px; font-weight:700; color:var(--green); margin-left:10px; display:none; }
+
+  /* A claimed area, with a satellite still of the outline you drew on it. The
+     picture is the button: tap it and the map opens on that area, flashing. */
+  .acard{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; margin-bottom:10px; }
+  .athumb{ display:block; position:relative; width:100%; aspect-ratio:32/15; padding:0; border:none; background:#12261c; cursor:pointer; }
+  .athumb svg{ display:block; width:100%; height:100%; }
+  .athumb-tap{ position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; pointer-events:none; }
+
+  .acard-body{ display:flex; align-items:center; gap:11px; padding:11px 13px; cursor:pointer; }
+  .acard-body .adot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
 
   /* Gallery */
   .potw{ background:linear-gradient(155deg, var(--gold) 0%, #A8761F 100%); border-radius:var(--radius-lg); padding:4px; margin-bottom:16px; }
@@ -956,23 +980,61 @@
           <div style="flex:1;"><h2 style="margin-bottom:0;" id="welcomeName">Hi there 👋</h2><p style="margin:2px 0 0 0; font-size:13px; color:var(--text-dim);" id="welcomeEmail"></p><p style="margin:2px 0 0 0; font-size:10.5px; color:var(--text-dim); font-family:monospace;" id="debugUserId"></p></div>
           <button style="background:none; border:1.5px solid var(--border); border-radius:14px; padding:8px 14px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="signOut()">Sign out</button>
         </div>
-        <p class="eyebrow">Your details</p>
-        <div class="admin-card" style="border-style:solid; border-color:var(--border); border-width:1px; background:#fff;">
-          <label class="field-label" style="margin-top:0;">Contact number</label>
-          <input type="text" id="myPhoneInput" placeholder="082 000 0000">
-          <label class="checkrow" style="align-items:flex-start;">
-            <input type="checkbox" id="shareContactChk" style="margin-top:2px;">
-            <span>Let my municipality see my name and contact details.<br>
-              <span style="font-size:11.5px;">Switch this off and you stay on the map exactly as you are — the council just can't see your number or email in their resident list.</span></span>
-          </label>
-          <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyDetails()">Save</button>
-          <span id="myDetailsSaved" style="font-size:12px; font-weight:700; color:var(--green); margin-left:10px; display:none;">Saved ✓</span>
-        </div>
+        <p class="eyebrow">Your account</p>
+        <details class="prefbox">
+          <summary>👤 Personal information<span class="pf-sub">Name · town · contact</span></summary>
+          <div class="pf-body">
+            <label class="field-label" style="margin-top:0;">Your name</label>
+            <input type="text" id="myNameInput" placeholder="Your name" autocomplete="name">
+            <label class="field-label">Your town</label>
+            <select id="myTownSelect">
+              <option value="">Prefer not to say</option>
+            </select>
+            <p class="fineprint" style="margin:6px 0 0 0;">This is the town your areas and your sponsor ads are matched to.</p>
+            <label class="field-label">Contact number</label>
+            <input type="tel" id="myPhoneInput" placeholder="082 000 0000" autocomplete="tel">
+            <label class="checkrow" style="align-items:flex-start;">
+              <input type="checkbox" id="shareContactChk" style="margin-top:2px;">
+              <span>Let my municipality see my name and contact details.<br>
+                <span style="font-size:11.5px;">Switch this off and you stay on the map exactly as you are — the council just can't see your number or email in their resident list.</span></span>
+            </label>
+            <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyDetails()">Save details</button>
+            <span id="myDetailsSaved" class="pf-ok">Saved ✓</span>
+          </div>
+        </details>
+        <details class="prefbox">
+          <summary>🔑 Sign-in details<span class="pf-sub">Email · password</span></summary>
+          <div class="pf-body">
+            <p>What you type in to get back into your account. Changing either one leaves everything else — your areas, your groups, your photos — exactly where it is.</p>
+            <label class="field-label" style="margin-top:0;">Email address</label>
+            <input type="email" id="myEmailInput" placeholder="you@example.com" autocomplete="email">
+            <p class="fineprint" style="margin:6px 0 0 0;">We'll send a confirmation link to the new address. Keep signing in with the old one until you've tapped it.</p>
+            <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyEmail()">Update email</button>
+            <span id="myEmailSaved" class="pf-ok">Check your inbox ✓</span>
+            <div class="pf-sep"></div>
+            <label class="field-label">New password</label>
+            <input type="password" id="myPass1" placeholder="At least 6 characters" autocomplete="new-password">
+            <label class="field-label">Type it again</label>
+            <input type="password" id="myPass2" placeholder="Same again" autocomplete="new-password">
+            <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyPassword()">Change password</button>
+            <span id="myPassSaved" class="pf-ok">Changed ✓</span>
+          </div>
+        </details>
 
         <p class="eyebrow" style="margin-top:20px;">Your claimed areas</p>
         <div id="myAreasList" style="margin-bottom:20px;"></div>
 
         <p class="eyebrow">Your groups</p>
+        <details class="prefbox">
+          <summary>💬 How a group works<span class="pf-sub">Like a WhatsApp group</span></summary>
+          <div class="pf-body">
+            <p>A group works like a WhatsApp group. Everyone in it sees the same thing — the photos, the members, the areas the group looks after — but only the admins can change it.</p>
+            <p><b style="color:var(--text);">Admins</b> hand out the join pin, post the photos, choose who's allowed to see them, switch the group between public and private, and make other members admins. Whoever starts a group is its first admin, and a group can have as many as it likes — but never none.</p>
+            <p><b style="color:var(--text);">Members</b> join with the pin an admin gave them, and see everything the group posts. They don't need the pin again afterwards, and they can leave whenever they want.</p>
+            <p><b style="color:var(--text);">Public or private</b> is the group's front door. Public groups turn up in the Gallery search, so anyone in town can look at the group and the areas it keeps clean. Private ones stay between members. Photos have their own switch on top of that, so a public group can still keep its photos to members only.</p>
+            <p style="margin-bottom:0;">You can be in as many groups as you like — your street, your church, the school clean-up. They're listed below by name; tap one to open it.</p>
+          </div>
+        </details>
         <!-- One row per group, name only. Tap one to open it — see renderMyGroups(). -->
         <div id="myGroupsList"></div>
         <button id="addGroupBtn" style="display:none; width:100%; background:none; border:1.5px dashed var(--border); border-radius:var(--radius-md); padding:12px; margin-bottom:8px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="toggleAddGroup()">+ Start or join another group</button>
@@ -1355,7 +1417,7 @@
         <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
         <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
-      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Once you're in a team, everyone in it can post photos to a shared feed. If the team is private that feed stays between members; if it's public, the whole town can look it up from the Gallery.</p>
+      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Think of it as a WhatsApp group: everyone in it sees the same shared feed of photos, and the admins are the ones who post to it, hand out the join pin and change the settings. If the group is private that feed stays between members; if it's public, the whole town can look it up from the Gallery — unless an admin keeps the photos to members only.</p>
         </div>
       </details>
       <details class="learn-section">
@@ -1959,6 +2021,60 @@ function renderAreaListBelow(){
       hlist.appendChild(div);
     });
   }
+}
+
+// ================= AREA THUMBNAILS =================
+// A still of one claimed area, built the way the map builds itself: the same Esri
+// satellite tiles, laid out by hand at whatever zoom fits the outline, with the
+// outline drawn over them. It's one inline SVG so it scales to whatever width the
+// card is, and the tiles are usually already in the browser's cache from the map.
+const THUMB_W=320, THUMB_H=150, THUMB_MAX_TILE_Z=17;
+const merX=(lng,world)=>(lng+180)/360*world;
+const merY=(lat,world)=>{ const s=Math.sin(lat*Math.PI/180); return (0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*world; };
+function areaThumbSVG(a){
+  const co=(a && a.coords)||[];
+  const open=`<svg viewBox="0 0 ${THUMB_W} ${THUMB_H}" preserveAspectRatio="xMidYMid slice"><rect width="${THUMB_W}" height="${THUMB_H}" fill="#12261c"/>`;
+  if(co.length<3) return open+`<text x="${THUMB_W/2}" y="${THUMB_H/2+5}" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-family="inherit" font-size="13" font-weight="700">No outline saved</text></svg>`;
+  const lats=co.map(c=>c[0]), lngs=co.map(c=>c[1]);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats), minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  // Deepest zoom that still leaves a margin of imagery around the outline. Past
+  // tile zoom 17 Esri has nothing to serve, so anything tighter than that is the
+  // 17 tiles blown up — exactly what the main map does at high zoom.
+  let z=19;
+  for(; z>2; z--){
+    const world=256*Math.pow(2,z);
+    if(merX(maxLng,world)-merX(minLng,world) <= THUMB_W*0.74 && merY(minLat,world)-merY(maxLat,world) <= THUMB_H*0.74) break;
+  }
+  const tz=Math.min(z, THUMB_MAX_TILE_Z), s=Math.pow(2, z-tz), world=256*Math.pow(2,tz);
+  const cx=(merX(minLng,world)+merX(maxLng,world))/2, cy=(merY(minLat,world)+merY(maxLat,world))/2;
+  const left=cx*s-THUMB_W/2, top=cy*s-THUMB_H/2;   // top-left of the picture, in scaled tile pixels
+  const n=Math.pow(2,tz);
+  const tx0=Math.floor(left/s/256), ty0=Math.floor(top/s/256);
+  let tiles='';
+  for(let tx=tx0; tx<=Math.floor((left+THUMB_W)/s/256); tx++){
+    for(let ty=ty0; ty<=Math.floor((top+THUMB_H)/s/256); ty++){
+      if(ty<0 || ty>=n) continue;
+      const wx=((tx%n)+n)%n;   // the world wraps east–west, so a tile off the edge comes back the other side
+      // Placed relative to the first tile, not to the whole world: at zoom 17 the
+      // absolute numbers run to millions, and scaling those by 8 for a small area
+      // pushes the renderer past the precision it draws images accurately at.
+      tiles+=`<image x="${(tx-tx0)*256}" y="${(ty-ty0)*256}" width="256" height="256" href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tz}/${ty}/${wx}"/>`;
+    }
+  }
+  const col=(statusMeta[a.status]||statusMeta.gray).color;
+  const pts=co.map(c=>`${(merX(c[1],world)*s-left).toFixed(1)},${(merY(c[0],world)*s-top).toFixed(1)}`).join(' ');
+  return open
+       + `<g transform="translate(${(tx0*256*s-left).toFixed(2)},${(ty0*256*s-top).toFixed(2)}) scale(${s})">${tiles}</g>`
+       + `<polygon points="${pts}" fill="${col}" fill-opacity="0.32" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+}
+// Tapping the picture is the same as tapping the area on the map — so if the filters
+// have that kind of area hidden, turn it back on first or there'd be nothing to see.
+function showAreaOnMap(a){
+  if(!mapFilter.has(a.status)){ mapFilter.add(a.status); drawAllAreas(); renderAreaListBelow(); }
+  showPage('map');
+  // showPage re-measures the map 80ms from now; flying before that lands off-centre,
+  // because Leaflet is still working from the size the container had while hidden.
+  setTimeout(()=>flashArea(a), 160);
 }
 
 function flashArea(a){
@@ -2652,8 +2768,9 @@ let currentUser=null;
 let authMode='signin';
 // Grouped by province — a flat run of 350 towns is unusable, and the province
 // heading is how anyone finds theirs.
-function initSignTownSelect(){
-  const sel=document.getElementById('signTown');
+function initSignTownSelect(id){
+  const sel=document.getElementById(id||'signTown');
+  if(!sel || sel.querySelector('optgroup')) return;   // already filled; the "prefer not to say" option is markup, not a fill
   provinces.forEach(p=>{
     const g=document.createElement('optgroup');
     g.label=p.name;
@@ -2666,6 +2783,7 @@ function initSignTownSelect(){
   });
 }
 initSignTownSelect();
+initSignTownSelect('myTownSelect');   // same list, second copy — the one under My Area
 // Three tabs, two behaviours: "council" signs in exactly like "signin" does — the
 // account either has council access or it doesn't. It's a tab of its own so a
 // municipal officer landing here doesn't have to guess whether this app has a
@@ -2774,11 +2892,15 @@ function renderMyAreas(){
   else{
     list.innerHTML='';
     mine.forEach(a=>{
-      const div=document.createElement('div');
-      div.className='arow';
-      div.onclick=()=>openEditSheet(a,'mine');
-      div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span><div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${statusMeta[a.status].label}</div></div><span class="contact-btn">Edit</span>`;
-      list.appendChild(div);
+      const card=document.createElement('div');
+      card.className='acard';
+      card.innerHTML=`<button class="athumb" aria-label="Show ${escHtml(a.name)} on the map">${areaThumbSVG(a)}<span class="athumb-tap">📍 Tap to see it on the map</span></button>
+        <div class="acard-body"><span class="adot" style="background:${statusMeta[a.status].color}"></span>
+        <div style="flex:1;"><div class="arow-name">${escHtml(a.name)}</div><div class="arow-desc">${escHtml(a.townName)} · ${statusMeta[a.status].label}</div></div>
+        <span class="contact-btn">Edit</span></div>`;
+      card.querySelector('.athumb').onclick=()=>showAreaOnMap(a);
+      card.querySelector('.acard-body').onclick=()=>openEditSheet(a,'mine');
+      list.appendChild(card);
     });
   }
   fillMyDetails();
@@ -4214,22 +4336,65 @@ async function declineCouncilApp(i){
   await loadCouncilApplications();
 }
 
-// ================= MY DETAILS (phone + who may see it) =================
+// ================= MY DETAILS =================
+// Two panels on My Area: who you are (name, town, phone, and who may see the phone)
+// and how you get in (email, password). The first lives in the profiles table, the
+// second belongs to the auth account itself — hence two different save buttons.
+function flashSaved(id, ms){
+  const ok=document.getElementById(id);
+  if(!ok) return;
+  ok.style.display='inline';
+  setTimeout(()=>ok.style.display='none', ms||2500);
+}
 function fillMyDetails(){
   if(!currentUser) return;
+  document.getElementById('myNameInput').value = currentUser.name||'';
+  document.getElementById('myTownSelect').value = currentUser.town||'';
   document.getElementById('myPhoneInput').value = currentUser.phone||'';
+  document.getElementById('myEmailInput').value = currentUser.email||'';
   document.getElementById('shareContactChk').checked = currentUser.shareContact!==false;
 }
 
 async function saveMyDetails(){
   if(!currentUser) return;
+  const name=val('myNameInput');
+  if(!name){ alert('Your name can\u2019t be empty — it\u2019s what neighbours see next to your areas.'); return; }
+  const town=document.getElementById('myTownSelect').value;
   const phone=val('myPhoneInput');
   const share=document.getElementById('shareContactChk').checked;
-  const {error} = await sb.from('profiles').update({phone, share_contact:share}).eq('id', currentUser.id);
+  const {error} = await sb.from('profiles').update({name, town_id:town, phone, share_contact:share}).eq('id', currentUser.id);
   if(error){ alert("Couldn't save: " + error.message); return; }
-  currentUser.phone=phone; currentUser.shareContact=share;
-  const ok=document.getElementById('myDetailsSaved');
-  ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2500);
+  currentUser.name=name; currentUser.town=town; currentUser.phone=phone; currentUser.shareContact=share;
+  // The header greeting, the avatar letter and the nav button all read the name, so
+  // redraw the page rather than leave three stale copies of the old one on screen.
+  document.getElementById('signinBtn').textContent='Hi, '+name.split(' ')[0];
+  renderMyAreas();
+  flashSaved('myDetailsSaved');
+}
+
+// Supabase won't swap the address over until the new one is confirmed, so nothing
+// changes on screen here — say what's coming instead of pretending it's done.
+async function saveMyEmail(){
+  if(!currentUser) return;
+  const email=val('myEmailInput');
+  if(!email || email.indexOf('@')<1){ alert('That doesn\u2019t look like an email address.'); return; }
+  if(email.toLowerCase()===String(currentUser.email||'').toLowerCase()){ alert('That\u2019s already your email address.'); return; }
+  const {error} = await sb.auth.updateUser({email});
+  if(error){ alert("Couldn't change it: " + error.message); return; }
+  flashSaved('myEmailSaved', 6000);
+  showBanner('Confirm the link we sent to '+email+' to finish the change', 5000);
+}
+
+async function saveMyPassword(){
+  if(!currentUser) return;
+  const p1=val('myPass1'), p2=val('myPass2');
+  if(p1.length<6){ alert('Pick a password of at least 6 characters.'); return; }
+  if(p1!==p2){ alert('The two passwords don\u2019t match.'); return; }
+  const {error} = await sb.auth.updateUser({password:p1});
+  if(error){ alert("Couldn't change it: " + error.message); return; }
+  document.getElementById('myPass1').value='';
+  document.getElementById('myPass2').value='';
+  flashSaved('myPassSaved');
 }
 
 // ================= PAGE NAV =================
