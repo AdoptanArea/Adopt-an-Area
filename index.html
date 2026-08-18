@@ -548,6 +548,23 @@
   .gitem-caret{ font-size:16px; line-height:1; color:var(--text-dim); flex-shrink:0; transition:transform .18s ease; }
   .gitem.open .gitem-caret{ transform:rotate(90deg); }
   .gitem-name{ flex:1; min-width:0; font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* A group's logo. No logo, no problem: the first letter of the name stands in,
+     the way it does everywhere else in the app. */
+  .glogo{ width:32px; height:32px; border-radius:10px; background:var(--green-tint); color:var(--green-dark); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px; flex-shrink:0; overflow:hidden; }
+  .glogo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .glogo-big{ width:56px; height:56px; border-radius:16px; font-size:20px; }
+  .evchip{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:20px; background:var(--gold-tint); color:#8C6212; flex-shrink:0; }
+  .evchip.done{ background:var(--soft); color:var(--text-dim); }
+
+  /* Clean-up events on the home page */
+  .evcard{ display:flex; gap:12px; align-items:flex-start; background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:13px; margin-bottom:10px; }
+  .evcard.past{ background:var(--soft); }
+  .evcard-body{ flex:1; min-width:0; }
+  .evcard-name{ font-size:14px; font-weight:750; }
+  .evcard-meta{ font-size:11.5px; color:var(--text-dim); margin-top:3px; line-height:1.5; }
+  .evcard-acts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; }
+  .evcard-acts button{ background:none; border:1.5px solid var(--border); border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer; }
+  .evcard-acts button.go{ border-color:var(--green); color:var(--green-dark); }
   .gitem-body{ display:none; padding:14px 15px 16px 15px; border-top:1px solid var(--border); }
   .gitem.open .gitem-body{ display:block; }
   .pubchip{ display:inline-block; background:var(--green-tint); color:var(--green-dark); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
@@ -764,6 +781,21 @@
       </div>
       <!-- The "Help me get started" / "See the gallery" buttons used to sit here.
            Moved out on purpose — they belong further down the home page instead. -->
+    </div>
+  </section>
+
+  <!-- Clean-ups happening near you. Hidden altogether when there aren't any, so
+       the home page doesn't carry an empty box around. -->
+  <section id="events-sec" style="display:none;">
+    <div class="wrap">
+      <p class="eyebrow">Coming up near you</p>
+      <h2 style="margin-bottom:6px;">Clean-up days</h2>
+      <p class="lead" style="margin-bottom:14px;" id="eventsLead">Anything happening within 50km of you shows up here.</p>
+      <div id="eventsList"></div>
+      <details class="prefbox" id="pastEventsBox" style="display:none; margin-top:12px;">
+        <summary>Past clean-ups<span class="pf-sub" id="pastEventsCount"></span></summary>
+        <div class="pf-body" id="pastEventsList"></div>
+      </details>
     </div>
   </section>
 
@@ -1043,6 +1075,22 @@
             <b style="font-size:14px;">Start a group</b>
             <p class="fineprint" style="margin-bottom:10px;">Neighbours who join can see how it's going. Make it public and the whole town can see too.</p>
             <input type="text" id="newTeamName" placeholder="Group name" onkeydown="if(event.key==='Enter'){event.preventDefault(); createTeam();}" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
+            <!-- Only somebody who's been given the go-ahead ever sees this row. -->
+            <label class="checkrow" id="eventToggleRow" style="display:none; align-items:flex-start;">
+              <input type="checkbox" id="newIsEvent" style="margin-top:2px;" onchange="toggleEventFields()">
+              <span>This one is a clean-up event<br>
+                <span style="font-size:11.5px;">It gets a day and a meeting spot, and everyone living within 50km sees it on their home page.</span></span>
+            </label>
+            <div id="eventFields" style="display:none;">
+              <label class="field-label">Which day?</label>
+              <input type="date" id="newEventDate" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff;">
+              <label class="field-label">What time? (you can leave this)</label>
+              <input type="text" id="newEventTime" placeholder="e.g. 09:00, or Saturday morning" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit;">
+              <label class="field-label">Where do people meet? (you can leave this)</label>
+              <input type="text" id="newEventPlace" placeholder="e.g. the corner of Main and Church" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit;">
+              <button class="btn btn-secondary" style="margin-top:10px; padding:9px 16px; font-size:12.5px;" onclick="pickEventSpot()">Drop the pin on the map</button>
+              <p class="fineprint" id="eventSpotNote" style="margin-top:8px;">No spot yet. The pin is what puts this on people's home pages, so it can't be skipped.</p>
+            </div>
             <label class="field-label" style="margin-top:6px;">Who can see this group?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--green);"></div>
@@ -1066,9 +1114,21 @@
              opened gets a copy, so these ids stay unique in the live document. -->
         <template id="teamDetailTpl">
           <div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
-              <span id="myTeamRoleChip" class="privchip">Member</span>
-              <span id="myTeamCountNote" class="fineprint" style="margin:0;"></span>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+              <span id="myTeamLogo"></span>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span id="myTeamRoleChip" class="privchip">Member</span>
+                  <span id="myTeamCountNote" class="fineprint" style="margin:0;"></span>
+                </div>
+                <input type="file" id="teamLogoInput" accept="image/*" style="display:none;" onchange="handleTeamLogo(event)">
+                <button id="teamLogoBtn" style="display:none; margin-top:6px; background:none; border:1.5px solid var(--border); border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="document.getElementById('teamLogoInput').click()">Add a logo</button>
+              </div>
+            </div>
+            <div id="myTeamEventBox" style="display:none; background:var(--gold-tint); border-radius:var(--radius-md); padding:12px; margin-bottom:12px;">
+              <b style="font-size:13px;" id="myTeamEventWhen">📅</b>
+              <p class="fineprint" style="margin:4px 0 0 0;" id="myTeamEventWhere"></p>
+              <button style="margin-top:9px; background:none; border:1.5px solid #C9A227; border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:#8C6212; cursor:pointer;" onclick="showEventSpot()">See the meeting spot</button>
             </div>
             <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b>. You're an admin, so it's yours to give out.</p>
             <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin. Only they can see it.</p>
@@ -1092,6 +1152,17 @@
             <button id="leaveTeamBtn" style="margin-top:14px; background:none; border:1.5px solid var(--border); border-radius:12px; padding:8px 14px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="leaveTeam()">Leave this group</button>
           </div>
         </template>
+
+        <!-- Who may run clean-up events. Visible to you, and to anyone you've made
+             a deputy — they can tick hosts, but only you can appoint a deputy. -->
+        <div id="eventHostTools" style="display:none;">
+          <p class="eyebrow">Who may run clean-up events</p>
+          <div class="admin-card">
+            <p class="fineprint" style="margin:0 0 10px 0;">Ticking someone lets them start a clean-up event: a group with a day and a meeting spot that lands on the home page of everyone within 50km. Untick them and their events stay up, they just can't start another.</p>
+            <input type="text" id="eventPeopleSearch" placeholder="Search by name" oninput="renderEventPeople()" autocomplete="off" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff;">
+            <div id="eventPeopleList" style="margin-top:10px;"></div>
+          </div>
+        </div>
 
         <div id="adminTools" style="display:none;">
           <p class="eyebrow">Team tools (admin)</p>
@@ -2023,6 +2094,38 @@ function renderAreaListBelow(){
   }
 }
 
+// Towns in the list are names, not places, so the one time we need to know where
+// a town actually is we ask the same free lookup the map search uses. Answers are
+// kept in the browser: 350 towns, and nobody changes town twice a day.
+async function townCoords(townId){
+  if(!townId) return null;
+  let cache={};
+  try{ cache=JSON.parse(localStorage.getItem('aaa_town_coords')||'{}'); }catch(e){}
+  if(cache[townId]) return cache[townId];
+  const t=ALL_TOWNS.find(x=>x.id===townId);
+  if(!t) return null;
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=za&limit=1&q='
+            + encodeURIComponent(t.name + ', ' + t.province + ', South Africa');
+    const hit=((await (await fetch(url)).json())||[])[0];
+    if(!hit) return null;
+    const at={lat:+hit.lat, lng:+hit.lon};
+    cache[townId]=at;
+    try{ localStorage.setItem('aaa_town_coords', JSON.stringify(cache)); }catch(e){}
+    return at;
+  }catch(e){ return null; }
+}
+
+// Straight-line kilometres between two points. Good enough for "is this near me?" —
+// nobody plans a Saturday morning around the difference between 49 and 51km.
+function kmBetween(a, b){
+  if(!a || !b) return null;
+  const R=6371, rad=d=>d*Math.PI/180;
+  const dLat=rad(b.lat-a.lat), dLng=rad(b.lng-a.lng);
+  const h=Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
 // ================= AREA THUMBNAILS =================
 // A still of one claimed area, built the way the map builds itself: the same Esri
 // satellite tiles, laid out by hand at whatever zoom fits the outline, with the
@@ -2524,6 +2627,11 @@ function locateMe(){
       if(youCircle) leafletMap.removeLayer(youCircle);
       youMarker = L.circleMarker([latitude,longitude], {radius:8, color:'#fff', weight:3, fillColor:'#2E9BFF', fillOpacity:1}).addTo(leafletMap);
       youCircle = L.circle([latitude,longitude], {radius:accuracy, color:'#2E9BFF', weight:1, fillOpacity:0.08}).addTo(leafletMap);
+      // Now that we know where you actually are, the home page can measure the
+      // clean-ups from here instead of from the middle of your town.
+      hereNow={lat:latitude, lng:longitude};
+      try{ sessionStorage.setItem('aaa_here', JSON.stringify(hereNow)); }catch(e){}
+      renderEvents();
       showBanner('This is you — now try "Claim an area"', 2600);
     },
     ()=>{ showBanner('Location off — enable it in your browser to jump to your street', 3000); },
@@ -2544,7 +2652,25 @@ function toggleClaimMode(mode){
   else { document.getElementById('mapBanner').classList.remove('show'); }
   if(claimMode==='mine') fireTourEvent('claimModeOn');
 }
+// Picking where a clean-up event meets. Takes the very next tap on the map, drops
+// a pin there and hands you back to My Area with the spot remembered.
+let eventPinMode=false, eventMarker=null;
+function dropEventMarker(t){
+  if(eventMarker) leafletMap.removeLayer(eventMarker);
+  const icon=L.divIcon({className:'', html:'<div style="font-size:26px; line-height:1; transform:translate(-50%,-100%);">📍</div>', iconSize:[0,0]});
+  eventMarker=L.marker([t.event_lat, t.event_lng], {icon:icon}).addTo(leafletMap);
+  if(t.name) eventMarker.bindTooltip(t.name, {className:'street-label', permanent:true, direction:'top', offset:[0,-26]}).openTooltip();
+}
 leafletMap.on('click', function(e){
+  if(eventPinMode){
+    eventPinMode=false;
+    pendingEventSpot={lat:e.latlng.lat, lng:e.latlng.lng};
+    dropEventMarker({event_lat:e.latlng.lat, event_lng:e.latlng.lng, name:'Meeting spot'});
+    showEventSpotNote();
+    showBanner('Spot marked — back to your group', 2400);
+    setTimeout(()=>showPage('myarea'), 700);
+    return;
+  }
   if(!claimMode || yardPoints) return;
   const {lat,lng}=e.latlng;
   yardCenter=[lat,lng];
@@ -2845,7 +2971,11 @@ async function afterAuth(){
     ({data:profile} = await sb.from('profiles').select('*').eq('id', session.user.id).single());
   }
   currentUser={id:session.user.id, email:session.user.email, name:(profile&&profile.name)||'Neighbour', town:(profile&&profile.town_id)||'', admin:(profile&&profile.is_admin)||false,
-               phone:(profile&&profile.phone)||'', shareContact:!(profile && profile.share_contact===false)};
+               phone:(profile&&profile.phone)||'', shareContact:!(profile && profile.share_contact===false),
+               // Who may run a clean-up event, and who may hand that out to others.
+               canHost:!!(profile && (profile.can_host_events || profile.is_admin)),
+               canGrant:!!(profile && (profile.can_grant_events || profile.is_admin)),
+               lat:(profile && profile.town_lat)||null, lng:(profile && profile.town_lng)||null};
   document.getElementById('signinBtn').textContent='Hi, '+currentUser.name.split(' ')[0];
   document.getElementById('signinBtn').onclick=()=>showPage('myarea');
   await loadMyTeams();
@@ -2855,6 +2985,8 @@ async function afterAuth(){
   renderGallery();
   await loadMyCouncil();
   loadCouncilApplications();
+  loadEvents();
+  renderEventPermission();
   fireTourEvent('signedIn');
 }
 async function signOut(){
@@ -2870,6 +3002,8 @@ async function signOut(){
   // Same goes for the groups panel — it belongs to whoever was signed in.
   myTeams=[]; openTeamId=null; myTeamMembers=[]; addGroupOpen=false;
   await renderMyGroups();
+  renderEventPermission();
+  renderEvents();
   renderMyAreas();
   renderSponsorBar();
   updateGalleryAdminVisibility();
@@ -2904,6 +3038,14 @@ function renderMyAreas(){
     });
   }
   fillMyDetails();
+  renderEventPermission();
+  // The people-who-may-run-events list is for whoever hands that out: you, or a
+  // deputy you've appointed. It's the one admin box a non-admin can see.
+  const evAdmin=document.getElementById('eventHostTools');
+  if(evAdmin){
+    evAdmin.style.display = currentUser.canGrant ? 'block' : 'none';
+    if(currentUser.canGrant) renderEventPeople();
+  }
   document.getElementById('adminTools').style.display = currentUser.admin ? 'block' : 'none';
   if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); renderCouncilApplications(); }
 }
@@ -2933,7 +3075,36 @@ let myTeamMembers=[];
 // invite_code is deliberately missing: the database won't hand it to a plain
 // member any more, so it comes back through the team_invite_code function
 // instead (see supabase-group-admins.sql).
-const TEAM_COLS='id,name,town_id,created_by,is_public,photos_public';
+// The logo and event columns only exist once supabase-events.sql has been run. If
+// the site updates before the database does, asking for them would break every
+// group on the page — so the first query that comes back complaining drops to the
+// old list and the app carries on without events until the migration lands.
+const TEAM_COLS_BASE='id,name,town_id,created_by,is_public,photos_public';
+let TEAM_COLS=TEAM_COLS_BASE+',logo_url,event_date,event_time,event_lat,event_lng,event_place';
+const eventsReady = ()=> TEAM_COLS!==TEAM_COLS_BASE;
+async function teamQuery(fn){
+  let r=await fn(TEAM_COLS);
+  if(r && r.error && eventsReady() && /column|does not exist|schema cache/i.test(r.error.message||'')){
+    TEAM_COLS=TEAM_COLS_BASE;
+    r=await fn(TEAM_COLS);
+  }
+  return r;
+}
+// A group with a day on it is a clean-up event. Everything else about it works
+// the same way: same members, same photos, same pin.
+const isEventTeam = t => !!(t && t.event_date);
+const eventIsOver = t => isEventTeam(t) && t.event_date < todayISO();
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// "Sat 6 Sep", the way anyone would say it out loud.
+function eventDayLabel(iso){
+  if(!iso) return '';
+  const p=String(iso).split('-').map(Number);
+  const d=new Date(p[0], p[1]-1, p[2]);
+  if(isNaN(d)) return iso;
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+}
 function openTeam(){ return myTeams.find(t=>t.id===openTeamId) || null; }
 function isTeamAdmin(){ const t=openTeam(); return !!t && t.role==='admin'; }
 async function loadMyTeams(){
@@ -2943,7 +3114,7 @@ async function loadMyTeams(){
   const ids = rows.map(m=>m.team_id);
   let teams=[];
   if(ids.length){
-    const {data} = await sb.from('teams').select(TEAM_COLS).in('id', ids).order('name');
+    const {data} = await teamQuery(cols => sb.from('teams').select(cols).in('id', ids).order('name'));
     teams = data||[];
   }
   myTeams = teams.map(t=>{
@@ -2957,6 +3128,14 @@ async function loadMyTeams(){
 let addGroupOpen=false;
 // The list itself: a name and a caret, nothing else. Everything about a group waits
 // behind its own row.
+// A group's logo, or its first letter while it hasn't got one.
+function groupLogoHTML(t, big){
+  const cls='glogo'+(big?' glogo-big':'');
+  const letter=escHtml((t.name||'?').charAt(0).toUpperCase());
+  return t.logo_url
+    ? `<span class="${cls}"><img src="${escHtml(t.logo_url)}" alt=""></span>`
+    : `<span class="${cls}">${letter}</span>`;
+}
 async function renderMyGroups(){
   const box=document.getElementById('myGroupsList');
   if(!box) return;
@@ -2967,7 +3146,8 @@ async function renderMyGroups(){
     const head=document.createElement('div');
     head.className='gitem-head';
     head.onclick=()=>toggleGroupOpen(t.id);
-    head.innerHTML=`<span class="gitem-caret">›</span><span class="gitem-name">${escHtml(t.name||'Unnamed group')}</span>`;
+    head.innerHTML=`<span class="gitem-caret">›</span>${groupLogoHTML(t)}<span class="gitem-name">${escHtml(t.name||'Unnamed group')}</span>`
+      + (isEventTeam(t) ? `<span class="evchip${eventIsOver(t)?' done':''}">${eventIsOver(t)?'Finished':'📅 '+eventDayLabel(t.event_date)}</span>` : '');
     item.appendChild(head);
     const body=document.createElement('div');
     body.className='gitem-body';
@@ -3002,6 +3182,8 @@ async function renderOpenTeam(){
   roleChip.textContent = isTeamAdmin() ? 'Admin' : 'Member';
   document.getElementById('myTeamCountNote').textContent =
     myTeams.length>1 ? `One of your ${myTeams.length} groups` : '';
+  renderTeamLogo();
+  renderTeamEvent();
   renderTeamVisibility();
   await renderTeamPin();
   await loadTeamMembers();
@@ -3252,16 +3434,75 @@ function selectTeamVisibility(el){
   el.classList.add('sel');
   newTeamVisibility=el.dataset.vis;
 }
+// ---- clean-up events ----
+// A clean-up event is a group with a day and a place on it. Only somebody who's
+// been given the go-ahead can start one, so the fields stay hidden for everybody
+// else — and the database checks it again, because a hidden field is not a rule.
+let pendingEventSpot=null;   // {lat,lng} picked on the map, waiting for "Create group"
+function toggleEventFields(){
+  const on=document.getElementById('newIsEvent').checked;
+  document.getElementById('eventFields').style.display = on ? 'block' : 'none';
+}
+function renderEventPermission(){
+  const row=document.getElementById('eventToggleRow');
+  if(!row) return;
+  const may = !!(currentUser && currentUser.canHost) && eventsReady();
+  row.style.display = may ? 'flex' : 'none';
+  if(!may){
+    const chk=document.getElementById('newIsEvent');
+    if(chk) chk.checked=false;
+    document.getElementById('eventFields').style.display='none';
+  }
+}
+function showEventSpotNote(){
+  const note=document.getElementById('eventSpotNote');
+  if(!note) return;
+  note.textContent = pendingEventSpot
+    ? `Spot set: ${pendingEventSpot.lat.toFixed(4)}, ${pendingEventSpot.lng.toFixed(4)}. Tap again to move it.`
+    : 'No spot yet. The pin is what puts this on people\u2019s home pages, so it can\u2019t be skipped.';
+}
+function pickEventSpot(){
+  eventPinMode=true;
+  claimMode=null;
+  showPage('map');
+  setTimeout(()=>showBanner('Tap the spot where everyone should meet', 4000), 200);
+}
+
 async function createTeam(){
   const name=document.getElementById('newTeamName').value.trim();
   if(!name){ showBanner('Give your group a name first', 2400); return; }
   if(!newTeamVisibility){ showBanner('Choose who can see this group — public or private', 3000); return; }
   const isPublic = newTeamVisibility==='public';
-  const {data:team, error} = await sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id, is_public:isPublic}).select(TEAM_COLS).single();
-  if(error){ showBanner(error.message, 3000); return; }
-  // Whoever starts the group runs it until they say otherwise.
-  const {error:memErr} = await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name, role:'admin'});
-  if(memErr){ showBanner(memErr.message, 3600); return; }
+  const isEvent = !!(document.getElementById('newIsEvent') && document.getElementById('newIsEvent').checked);
+  let team=null;
+  if(isEvent){
+    const date=val('newEventDate');
+    if(!date){ showBanner('Pick the day the clean-up happens', 2800); return; }
+    if(!pendingEventSpot){ showBanner('Drop the pin on the map so people know where to meet', 3400); return; }
+    const {data:id, error} = await sb.rpc('create_event_group', {
+      p_name:name, p_public:isPublic, p_date:date, p_time:val('newEventTime'),
+      p_lat:pendingEventSpot.lat, p_lng:pendingEventSpot.lng,
+      p_place:val('newEventPlace'), p_town:currentUser.town||''});
+    if(error){ showBanner(error.message, 4000); return; }
+    // The function makes you its admin as it goes, so there's no membership row
+    // to add here.
+    const {data:row} = await sb.from('teams').select(TEAM_COLS).eq('id', id).single();
+    team=row||{id:id};
+    document.getElementById('newIsEvent').checked=false;
+    document.getElementById('eventFields').style.display='none';
+    document.getElementById('newEventDate').value='';
+    document.getElementById('newEventTime').value='';
+    document.getElementById('newEventPlace').value='';
+    pendingEventSpot=null; showEventSpotNote();
+    loadEvents();
+  }else{
+    const {data:row, error} = await teamQuery(cols => sb.from('teams').insert({name, town_id:currentUser.town||null, created_by:currentUser.id, is_public:isPublic}).select(cols).single());
+    if(error){ showBanner(error.message, 3000); return; }
+    team=row;
+    // Whoever starts the group runs it until they say otherwise.
+    const {error:memErr} = await sb.from('team_members').insert({team_id:team.id, user_id:currentUser.id, member_name:currentUser.name, role:'admin'});
+    if(memErr){ showBanner(memErr.message, 3600); return; }
+  }
   document.getElementById('newTeamName').value='';
   document.querySelectorAll('#noTeamCard .task-opt').forEach(o=>o.classList.remove('sel'));
   newTeamVisibility=null;
@@ -3318,6 +3559,59 @@ async function renderTeamPhotos(){
     grid.appendChild(card);
   });
 }
+// The logo sits in the group's own folder in the photo bucket, so the rule that
+// already guards uploads there — admins only, own group only — covers it too.
+function renderTeamLogo(){
+  const t=openTeam();
+  const box=document.getElementById('myTeamLogo');
+  if(!t || !box) return;
+  box.innerHTML=groupLogoHTML(t, true);
+  const btn=document.getElementById('teamLogoBtn');
+  btn.style.display = isTeamAdmin() ? 'inline-block' : 'none';
+  btn.textContent = t.logo_url ? 'Change the logo' : 'Add a logo';
+}
+async function handleTeamLogo(evt){
+  const t=openTeam();
+  const file=evt.target.files[0];
+  if(!file || !t) return;
+  evt.target.value='';
+  if(!isTeamAdmin()){ showBanner('Only a group admin can change the logo', 2800); return; }
+  const path=`${t.id}/logo_${Date.now()}_${file.name}`;
+  const {error:upErr} = await sb.storage.from('team-photos').upload(path, file);
+  if(upErr){ showBanner(upErr.message, 3000); return; }
+  const {data:urlData} = sb.storage.from('team-photos').getPublicUrl(path);
+  const {error} = await sb.from('teams').update({logo_url:urlData.publicUrl}).eq('id', t.id);
+  if(error){ showBanner(error.message, 3000); return; }
+  t.logo_url=urlData.publicUrl;
+  renderTeamLogo();
+  await renderMyGroups();
+  await loadPublicGroups();
+  loadEvents();
+}
+// The day, the time and where to meet — the three things a member opens the group for.
+function renderTeamEvent(){
+  const t=openTeam();
+  const box=document.getElementById('myTeamEventBox');
+  if(!t || !box) return;
+  if(!isEventTeam(t)){ box.style.display='none'; return; }
+  box.style.display='block';
+  const over=eventIsOver(t);
+  document.getElementById('myTeamEventWhen').textContent =
+    (over ? '✅ Was ' : '📅 ') + eventDayLabel(t.event_date) + (t.event_time ? ', '+t.event_time : '');
+  document.getElementById('myTeamEventWhere').textContent = over
+    ? 'This clean-up is done. The photos stay here for good.'
+    : (t.event_place ? 'Meet at '+t.event_place : 'Tap below for the meeting spot.');
+}
+function showEventSpot(){
+  const t=openTeam();
+  if(!t || t.event_lat==null) return;
+  showPage('map');
+  setTimeout(()=>{
+    leafletMap.flyTo([t.event_lat, t.event_lng], 17);
+    dropEventMarker(t);
+  }, 160);
+}
+
 async function handleTeamPhoto(evt){
   const t=openTeam();
   const file=evt.target.files[0];
@@ -3333,12 +3627,151 @@ async function handleTeamPhoto(evt){
   await renderTeamPhotos();
 }
 
+// ---- who may run an event ----
+// Profiles are private to their owner, so the list comes back through a database
+// function that hands over a name and a town and nothing else.
+let eventPeople=[];
+let eventPeopleTimer=null;
+function renderEventPeople(){
+  clearTimeout(eventPeopleTimer);
+  eventPeopleTimer=setTimeout(loadEventPeople, 220);
+  drawEventPeople();
+}
+async function loadEventPeople(){
+  if(!currentUser || !currentUser.canGrant) return;
+  const q=val('eventPeopleSearch');
+  const {data, error} = await sb.rpc('event_people', {p_q:q||null});
+  eventPeople = error ? [] : (data||[]);
+  drawEventPeople();
+}
+function drawEventPeople(){
+  const box=document.getElementById('eventPeopleList');
+  if(!box) return;
+  if(!eventPeople.length){ box.innerHTML='<p class="fineprint" style="margin:0;">Nobody to show yet.</p>'; return; }
+  box.innerHTML='';
+  eventPeople.forEach(p=>{
+    const town=(ALL_TOWNS.find(t=>t.id===p.town_id)||{}).name || '';
+    const row=document.createElement('div');
+    row.className='arow';
+    row.style.cursor='default';
+    row.innerHTML=`<div style="flex:1; min-width:0;"><div class="arow-name">${escHtml(p.name||'Neighbour')}</div><div class="arow-desc">${escHtml(town)}</div></div>`;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex; gap:6px; flex-shrink:0;';
+    wrap.appendChild(evToggle('Events', p.can_host_events, ()=>setEventHost(p.id, !p.can_host_events)));
+    // Only you appoint deputies — see set_event_granter in supabase-events.sql.
+    if(currentUser.admin) wrap.appendChild(evToggle('Deputy', p.can_grant_events, ()=>setEventGranter(p.id, !p.can_grant_events)));
+    row.appendChild(wrap);
+    box.appendChild(row);
+  });
+}
+function evToggle(label, on, fn){
+  const b=document.createElement('button');
+  b.textContent=(on?'✓ ':'')+label;
+  b.style.cssText='background:'+(on?'var(--green-tint)':'none')+'; border:1.5px solid '+(on?'var(--green)':'var(--border)')+'; border-radius:12px; padding:6px 11px; font-family:inherit; font-size:11.5px; font-weight:700; color:'+(on?'var(--green-dark)':'var(--text-dim)')+'; cursor:pointer;';
+  b.onclick=fn;
+  return b;
+}
+async function setEventHost(id, on){
+  const {error} = await sb.rpc('set_event_host', {p_user:id, p_on:on});
+  if(error){ showBanner(error.message, 3600); return; }
+  showBanner(on ? 'They can run clean-up events now' : 'Taken away again', 2400);
+  await loadEventPeople();
+}
+async function setEventGranter(id, on){
+  const {error} = await sb.rpc('set_event_granter', {p_user:id, p_on:on});
+  if(error){ showBanner(error.message, 3600); return; }
+  showBanner(on ? 'They can hand out event hosting now' : 'Taken away again', 2400);
+  await loadEventPeople();
+}
+
+// ================= CLEAN-UP EVENTS ON THE HOME PAGE =================
+// Public event groups, with the ones near you first. "Near" is 50km from wherever
+// we know you to be: the town on your profile, or the spot the map found if you
+// let it. Knowing neither, we show everything rather than an empty page.
+const EVENT_RADIUS_KM=50;
+let siteEvents=[];
+let hereNow=null;
+try{ hereNow=JSON.parse(sessionStorage.getItem('aaa_here')||'null'); }catch(e){}
+
+function myPlace(){
+  if(hereNow) return hereNow;
+  if(currentUser && currentUser.lat!=null && currentUser.lng!=null) return {lat:currentUser.lat, lng:currentUser.lng};
+  return null;
+}
+async function loadEvents(){
+  if(!eventsReady()){ siteEvents=[]; renderEvents(); return; }   // migration hasn't been run yet
+  const {data, error} = await sb.from('teams').select(TEAM_COLS)
+    .eq('is_public', true).not('event_date','is',null).order('event_date');
+  if(error && /column|does not exist|schema cache/i.test(error.message||'')) TEAM_COLS=TEAM_COLS_BASE;
+  siteEvents = error ? [] : (data||[]);
+  renderEvents();
+}
+function renderEvents(){
+  const sec=document.getElementById('eventsSec') || document.getElementById('events-sec');
+  const list=document.getElementById('eventsList');
+  if(!sec || !list) return;
+  const me=myPlace();
+  const withDist = siteEvents.map(t=>{
+    const at=(t.event_lat!=null && t.event_lng!=null) ? {lat:t.event_lat, lng:t.event_lng} : null;
+    return Object.assign({}, t, {_km: (me && at) ? kmBetween(me, at) : null});
+  });
+  const near = e => e._km==null || e._km<=EVENT_RADIUS_KM;
+  const upcoming = withDist.filter(e=>!eventIsOver(e) && near(e));
+  const past = withDist.filter(e=>eventIsOver(e) && near(e)).reverse();
+  sec.style.display = (upcoming.length || past.length) ? 'block' : 'none';
+  document.getElementById('eventsLead').textContent = me
+    ? 'Clean-up days happening within 50km of you.'
+    : 'Clean-up days around the country. Set your town under My Area and this narrows down to yours.';
+  list.innerHTML = upcoming.length
+    ? upcoming.map(e=>eventCardHTML(e,false)).join('')
+    : '<p style="font-size:13px; color:var(--text-dim);">Nothing coming up near you right now.</p>';
+  const box=document.getElementById('pastEventsBox');
+  box.style.display = past.length ? 'block' : 'none';
+  document.getElementById('pastEventsCount').textContent = past.length===1 ? '1 of them' : past.length+' of them';
+  document.getElementById('pastEventsList').innerHTML = past.map(e=>eventCardHTML(e,true)).join('');
+}
+function eventCardHTML(e, isPast){
+  const km = e._km==null ? '' : (e._km<1 ? 'less than a kilometre away' : Math.round(e._km)+'km away');
+  const when = (isPast?'Was ':'') + eventDayLabel(e.event_date) + (e.event_time ? ', '+e.event_time : '');
+  const where = e.event_place ? escHtml(e.event_place) : '';
+  const meta=[when, where, km].filter(Boolean).join(' · ');
+  return `<div class="evcard${isPast?' past':''}">
+      ${groupLogoHTML(e, true)}
+      <div class="evcard-body">
+        <div class="evcard-name">${escHtml(e.name||'Clean-up')}</div>
+        <div class="evcard-meta">${meta}</div>
+        <div class="evcard-acts">
+          ${e.event_lat!=null ? `<button class="go" onclick="eventToMap('${e.id}')">See the spot</button>` : ''}
+          <button onclick="eventToGroup('${e.id}')">${isPast?'Look at the photos':'Who\u2019s going'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+function eventToMap(id){
+  const e=siteEvents.find(x=>x.id===id);
+  if(!e || e.event_lat==null) return;
+  showPage('map');
+  setTimeout(()=>{ leafletMap.flyTo([e.event_lat, e.event_lng], 16); dropEventMarker(e); }, 160);
+}
+// The group behind the event. If you're in it, it opens in My Area; if you're not,
+// it's the public group card in the Gallery, same as any other public group.
+function eventToGroup(id){
+  const mine=myTeams.find(t=>t.id===id);
+  if(mine){ openTeamId=id; showPage('myarea'); renderMyGroups(); return; }
+  // Not yours: it opens as a public group card in the Gallery, same as any other.
+  if(publicGroups.some(g=>g.id===id)){ showPage('gallery'); openGroupProfile(id); return; }
+  const e=siteEvents.find(x=>x.id===id);
+  showPage('gallery');
+  const box=document.getElementById('groupSearchInput');
+  if(box && e){ box.value=e.name||''; renderGroupResults(); }
+}
+
 // ================= GROUP SEARCH =================
 // Only teams that chose "public" when they were created ever land here — a private
 // team is never fetched, so there's nothing to accidentally leak into the search.
 let publicGroups=[];
 async function loadPublicGroups(){
-  const {data:teams, error} = await sb.from('teams').select(TEAM_COLS).eq('is_public', true).order('name');
+  const {data:teams, error} = await teamQuery(cols => sb.from('teams').select(cols).eq('is_public', true).order('name'));
   if(error){ publicGroups=[]; renderGroupResults(); return; }
   publicGroups = teams||[];
   const ids = publicGroups.map(g=>g.id);
@@ -3387,9 +3820,14 @@ function renderGroupResults(){
     const row=document.createElement('div');
     row.className='grow';
     row.onclick=()=>openGroupProfile(g.id);
-    row.innerHTML=`<div class="gav">${escHtml((g.name||'?').charAt(0).toUpperCase())}</div>`+
+    // An event says so here, so nobody joins a Saturday that has been and gone.
+    const evTag = isEventTeam(g)
+      ? `<span class="evchip${eventIsOver(g)?' done':''}">${eventIsOver(g)?'Finished':'📅 '+eventDayLabel(g.event_date)}</span>` : '';
+    row.innerHTML=(g.logo_url
+        ? `<div class="gav" style="overflow:hidden;"><img src="${escHtml(g.logo_url)}" alt="" style="width:100%; height:100%; object-fit:cover;"></div>`
+        : `<div class="gav">${escHtml((g.name||'?').charAt(0).toUpperCase())}</div>`)+
       `<div style="flex:1; min-width:0;"><div class="grow-name">${escHtml(g.name||'Unnamed group')}</div><div class="grow-meta">${escHtml(bits.join(' · '))}</div></div>`+
-      `<span class="chev">›</span>`;
+      evTag + `<span class="chev">›</span>`;
     box.appendChild(row);
   });
   if(matches.length>shown.length){
@@ -3405,7 +3843,12 @@ async function openGroupProfile(id){
   const town=groupTownName(g);
   const mem=(g._members||[]).length;
   document.getElementById('groupSheetName').textContent=g.name||'Unnamed group';
-  document.getElementById('groupSheetSub').textContent=[town, mem+(mem===1?' member':' members')].filter(Boolean).join(' · ');
+  // An event carries its day into the card, and says so plainly once it's over.
+  const evBits = isEventTeam(g)
+    ? [(eventIsOver(g)?'Finished · was ':'📅 ')+eventDayLabel(g.event_date)+(g.event_time?', '+g.event_time:''), g.event_place||''].filter(Boolean)
+    : [];
+  document.getElementById('groupSheetSub').textContent=
+    evBits.concat([town, mem+(mem===1?' member':' members')]).filter(Boolean).join(' · ');
 
   const areaBox=document.getElementById('groupSheetAreas');
   const areas=groupAreas(g);
@@ -4362,9 +4805,19 @@ async function saveMyDetails(){
   const town=document.getElementById('myTownSelect').value;
   const phone=val('myPhoneInput');
   const share=document.getElementById('shareContactChk').checked;
-  const {error} = await sb.from('profiles').update({name, town_id:town, phone, share_contact:share}).eq('id', currentUser.id);
+  // Your town is also how the home page works out which clean-ups are near you,
+  // so we look up where it is while we're here. If the lookup is down, the rest
+  // of your details still save; you just see every event until next time.
+  const patch={name, town_id:town, phone, share_contact:share};
+  if(town && town!==currentUser.town){
+    const at=await townCoords(town);
+    if(at){ patch.town_lat=at.lat; patch.town_lng=at.lng; }
+  }
+  if(!town){ patch.town_lat=null; patch.town_lng=null; }
+  const {error} = await sb.from('profiles').update(patch).eq('id', currentUser.id);
   if(error){ alert("Couldn't save: " + error.message); return; }
   currentUser.name=name; currentUser.town=town; currentUser.phone=phone; currentUser.shareContact=share;
+  if('town_lat' in patch){ currentUser.lat=patch.town_lat; currentUser.lng=patch.town_lng; }
   // The header greeting, the avatar letter and the nav button all read the name, so
   // redraw the page rather than leave three stale copies of the old one on screen.
   document.getElementById('signinBtn').textContent='Hi, '+name.split(' ')[0];
@@ -4584,7 +5037,7 @@ function fireTourEvent(key){
   const want=new URLSearchParams(location.search).get('page');
   if(want && document.getElementById('page-'+want)) showPage(want);
   await afterAuth();
-  await Promise.all([loadAreas(), loadGallery(), loadSponsors(), loadPublicGroups(), loadPublishedCouncils()]);
+  await Promise.all([loadAreas(), loadGallery(), loadSponsors(), loadPublicGroups(), loadPublishedCouncils(), loadEvents()]);
   // Group cards count claimed areas, so they need one more pass once areas are in.
   renderGroupResults();
 })();
