@@ -440,6 +440,11 @@
   /* Clears the round buttons, which now sit alone at the top right of the map. */
   .banner-msg{ position:absolute; top:62px; left:12px; right:12px; z-index:520; background:rgba(28,28,30,0.88); color:#fff; font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:14px; text-align:center; display:none; }
   .banner-msg.show{display:block;}
+  .pinbar{ display:none; position:absolute; top:62px; left:12px; right:12px; z-index:530; background:rgba(28,28,30,0.92); color:#fff; font-size:12.5px; font-weight:700; padding:9px 10px 9px 14px; border-radius:14px; align-items:center; gap:10px; }
+  .pinbar.show{ display:flex; }
+  .pinbar span{ flex:1; }
+  .pinbar button{ background:#fff; border:none; border-radius:10px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:800; color:#1C1C1E; cursor:pointer; flex-shrink:0; }
+  .map-shell.map-full .pinbar{ top:calc(114px + var(--safe-top)); }
   /* showBanner() speaks through the banner above, which lives inside the map shell —
      so from My Area or the Gallery it was shouting into a hidden div. Every "give your
      team a name first" and every database error on those pages went nowhere, which is
@@ -952,6 +957,13 @@
               </button>
             </div>
             <div class="banner-msg" id="mapBanner"></div>
+            <!-- Stays put while you're choosing where a clean-up meets, so there's
+                 always something on screen saying what the map is waiting for —
+                 and a way out that isn't the back button. -->
+            <div class="pinbar" id="eventPinBar">
+              <span>Tap the spot where everyone should meet</span>
+              <button onclick="abandonEventSpot()">Cancel</button>
+            </div>
             <div class="map-zoom"><button onclick="leafletMap.zoomIn()">+</button><button onclick="leafletMap.zoomOut()">−</button></div>
             <div class="edit-panel" id="editPanel">
               <p>Drag the white dots to reshape it. Double-tap a dot to remove it.</p>
@@ -2663,12 +2675,12 @@ function dropEventMarker(t){
 }
 leafletMap.on('click', function(e){
   if(eventPinMode){
-    eventPinMode=false;
+    cancelEventSpot();
     pendingEventSpot={lat:e.latlng.lat, lng:e.latlng.lng};
     dropEventMarker({event_lat:e.latlng.lat, event_lng:e.latlng.lng, name:'Meeting spot'});
     showEventSpotNote();
-    showBanner('Spot marked — back to your group', 2400);
-    setTimeout(()=>showPage('myarea'), 700);
+    showBanner('Spot marked — back to your event', 2400);
+    setTimeout(backToEventForm, 700);
     return;
   }
   if(!claimMode || yardPoints) return;
@@ -3457,15 +3469,47 @@ function renderEventPermission(){
 function showEventSpotNote(){
   const note=document.getElementById('eventSpotNote');
   if(!note) return;
-  note.textContent = pendingEventSpot
-    ? `Spot set: ${pendingEventSpot.lat.toFixed(4)}, ${pendingEventSpot.lng.toFixed(4)}. Tap again to move it.`
+  const set=!!pendingEventSpot;
+  note.textContent = set
+    ? `Meeting spot marked ✓ (${pendingEventSpot.lat.toFixed(4)}, ${pendingEventSpot.lng.toFixed(4)}). Drop it again to move it.`
     : 'No spot yet. The pin is what puts this on people\u2019s home pages, so it can\u2019t be skipped.';
+  note.style.color = set ? 'var(--green-dark)' : '';
+  note.style.fontWeight = set ? '700' : '';
 }
 function pickEventSpot(){
   eventPinMode=true;
   claimMode=null;
   showPage('map');
-  setTimeout(()=>showBanner('Tap the spot where everyone should meet', 4000), 200);
+  document.getElementById('eventPinBar').classList.add('show');
+  // Somewhere near you beats the middle of the country: if we know your town, the
+  // map opens there so the spot is a tap away instead of a long pinch and drag.
+  const me=myPlace();
+  if(me) setTimeout(()=>leafletMap.setView([me.lat, me.lng], 15), 120);
+}
+function cancelEventSpot(){
+  eventPinMode=false;
+  document.getElementById('eventPinBar').classList.remove('show');
+}
+// Back to the half-filled form, at the part that was waiting on the map — landing
+// at the top of My Area and having to hunt for it is how you lose what you typed.
+function backToEventForm(){
+  showPage('myarea');
+  setTimeout(()=>{
+    const fields=document.getElementById('eventFields');
+    if(!fields) return;
+    // Put it a little below the top of the screen rather than hard against it, so
+    // the day and the time you already filled in are on screen with it.
+    const top=fields.getBoundingClientRect().top + window.pageYOffset - 90;
+    // behavior:'auto' on purpose: the stylesheet asks for smooth scrolling, and a
+    // page you've only just switched to sliding under you reads as a glitch.
+    window.scrollTo({top:Math.max(0, top), behavior:'auto'});
+  }, 120);
+}
+// The Cancel on the map bar. Same as changing your mind, but it takes you back to
+// the form instead of leaving you standing on the map.
+function abandonEventSpot(){
+  cancelEventSpot();
+  backToEventForm();
 }
 
 async function createTeam(){
@@ -3705,6 +3749,9 @@ async function loadEvents(){
   if(error && /column|does not exist|schema cache/i.test(error.message||'')) TEAM_COLS=TEAM_COLS_BASE;
   siteEvents = error ? [] : (data||[]);
   renderEvents();
+  // Whether the database knows about events at all is only settled once a query
+  // has come back, so the "this one is a clean-up event" row is decided here too.
+  renderEventPermission();
 }
 function renderEvents(){
   const sec=document.getElementById('eventsSec') || document.getElementById('events-sec');
@@ -4852,6 +4899,11 @@ async function saveMyPassword(){
 
 // ================= PAGE NAV =================
 function showPage(name){
+  // Leaving the map has to hand the screen back. A full-screen map is fixed over
+  // everything with body scrolling switched off, so walking away from it without
+  // shrinking it first leaves you on a page you can't scroll, staring at the map.
+  if(name!=='map') exitMapFullscreen();
+  if(name!=='map' && eventPinMode) cancelEventSpot();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
@@ -4876,6 +4928,9 @@ function toggleMapFullscreen(){
   // Leaflet caches the container size, so it has to be told the box changed —
   // after the style has actually been applied, hence the timeout.
   setTimeout(()=>leafletMap.invalidateSize(), 120);
+}
+function exitMapFullscreen(){
+  if(document.querySelector('.map-shell.map-full')) toggleMapFullscreen();
 }
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape' && document.querySelector('.map-shell.map-full')) toggleMapFullscreen();
