@@ -169,7 +169,6 @@
   /* The heading needs air under it before the reading starts — the hero copy runs
      long now, and a tight gap made it look like one solid block. */
   .mission-sec h1{ margin-bottom:20px; }
-  .mission-sec .hero-badges{ justify-content:flex-start; }
   /* Purely a visual hint now — it still bounces, but it is not clickable and
      goes nowhere when tapped. */
   .scroll-cue{
@@ -183,6 +182,10 @@
   .hero-badges{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
   .pillstat{ background:var(--soft); border-radius:20px; padding:7px 13px; font-size:12px; font-weight:650; color:var(--text-dim); }
   .pillstat b{color:var(--text);}
+  /* Under the map, not above it: this page fights for vertical space, and the
+     numbers are worth reading but not worth pushing the map off a phone screen. */
+  .map-stats{ margin:10px 0 0 0; }
+  .map-stats .pillstat{ background:#fff; border:1px solid var(--border); }
   .btn-row{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;}
   .btn{ border:none; border-radius:14px; padding:13px 20px; font-size:14.5px; font-weight:700; font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
   .btn-primary{background:var(--green); color:#fff;}
@@ -807,11 +810,6 @@
       <p class="lead">Adopt an Area is a simple way for neighbours to take care of the streets, corners and open spaces close to home — a bit of trash pickup here, some overgrown bush cleared there. Claim a piece near you, say what you're doing, and see everyone else doing the same, all on one platform.</p>
       <p class="lead-more">We all walk the same streets every day — past the wrapper on the pavement, the patch of veld behind the shops, the corner that's been getting a little worse for a year now. It's easy to look through it. But what's around us is ours, and so is what we leave behind us. <span class="hl">Leave a place better than you found it.</span> That's the whole thing, really — an old idea that still works, whether it's a full morning with bags and gloves or two tins on the way to the car.</p>
       <p class="lead-more">That's what this page is really for. Not the map, not the photos — the standard. This is how we do things around here. A <b>caring culture</b>, where a clean street is just normal, and a neglected one starts to look out of place. Nobody's asking you to fix the whole town on a Saturday. Start with ten metres of pavement. Then the drain. Then the corner nobody's touched. <b>Small things, done often, by enough of us</b> — that's how a town actually changes, and it starts the day one person decides a patch is theirs.</p>
-      <div class="hero-badges">
-        <span class="pillstat"><b>5</b> towns live</span>
-        <span class="pillstat"><b>6</b> areas adopted</span>
-        <span class="pillstat"><b>2</b> want a hand</span>
-      </div>
       <!-- The "Help me get started" / "See the gallery" buttons used to sit here.
            Moved out on purpose — they belong further down the home page instead. -->
     </div>
@@ -1018,6 +1016,10 @@
             </button>
             <div class="filter-menu" id="filterMenu" role="menu"></div>
           </div>
+          <!-- The three numbers used to sit on the home page as fixed text. They
+               belong here, next to the thing they count, and renderMapStats()
+               counts them off what's actually loaded. -->
+          <div class="hero-badges map-stats" id="mapStats"></div>
         </div>
 
         <div class="arealists">
@@ -2156,7 +2158,27 @@ async function loadAreas(){
   renderMyAreas();
 }
 
+
+// The counts under the map. Real numbers off what's loaded, not typed in:
+// adopted means somebody's name is on it, so grey (still available) doesn't count,
+// and a town is "live" the moment anything at all is happening in it.
+function renderMapStats(){
+  const row = document.getElementById('mapStats');
+  if(!row) return;
+  const taken = seedAreas.filter(a=>a.status!=='gray');
+  const towns = new Set([...taken, ...helperAreas].map(a=>a.townId).filter(Boolean)).size;
+  const need  = seedAreas.filter(a=>a.status==='red').length;
+  const help  = helperAreas.length;
+  const pills = [
+    [towns, towns===1 ? 'town live'    : 'towns live'],
+    [taken.length, taken.length===1 ? 'area adopted' : 'areas adopted'],
+    [need,  need===1  ? 'wants a hand' : 'want a hand'],
+    [help,  help===1  ? 'offering help': 'offering help']
+  ].filter(p=>p[0]>0);
+  row.innerHTML = pills.map(p=>`<span class="pillstat"><b>${p[0]}</b> ${p[1]}</span>`).join('');
+}
 function renderAreaListBelow(){
+  renderMapStats();
   renderMapFilters();
   const empty = m=>`<p style="font-size:13px; color:var(--text-dim);">${m}</p>`;
   const areas = shownAreas(), helpers = shownHelpers();
