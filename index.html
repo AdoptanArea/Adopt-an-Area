@@ -62,6 +62,11 @@
   h1{font-size:30px; font-weight:800; letter-spacing:-0.02em; margin:0 0 10px 0; line-height:1.15;}
   h2{font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:0 0 6px 0;}
   p.lead{font-size:15px; line-height:1.6; color:var(--text-dim); margin:0 0 18px 0;}
+  /* The second half of the hero — the "why", in the same reading column as the
+     lead but a touch lighter, with the line that matters picked out in green. */
+  p.lead-more{font-size:15px; line-height:1.68; color:var(--text-dim); margin:0 0 16px 0;}
+  p.lead-more b{color:var(--text);}
+  .hl{ background:var(--green-tint); color:var(--green-dark); font-weight:700; padding:1px 5px; border-radius:6px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
   .page{display:none;} .page.active{display:block;}
 
   /* The padding, not a margin, so the blurred backdrop fills the status bar strip
@@ -797,6 +802,8 @@
       <p class="eyebrow">South Africa</p>
       <h1>Look after what's around you.</h1>
       <p class="lead">Adopt an Area is a simple way for neighbours to take care of the streets, corners and open spaces close to home — a bit of trash pickup here, some overgrown bush cleared there. Claim a piece near you, say what you're doing, and see everyone else doing the same, all on one platform.</p>
+      <p class="lead-more">We all walk the same streets every day — past the wrapper on the pavement, the patch of veld behind the shops, the corner that's been getting a little worse for a year now. It's easy to look through it. But what's around us is ours, and so is what we leave behind us. <span class="hl">Leave a place better than you found it.</span> That's the whole thing, really — an old idea that still works, whether it's a full morning with bags and gloves or two tins on the way to the car.</p>
+      <p class="lead-more">So this is less an app than a nudge at the way we do things around here. A <b>caring culture</b> — where a clean street is just normal, and a neglected one starts to look out of place. Nobody's asking you to fix the whole town on a Saturday. Start with ten metres of pavement. Then the drain. Then the corner nobody's touched. <b>Small things, done often, by enough of us</b> — that's how a town actually changes, and it starts the day one person decides a patch is theirs.</p>
       <div class="hero-badges">
         <span class="pillstat"><b>5</b> towns live</span>
         <span class="pillstat"><b>6</b> areas adopted</span>
