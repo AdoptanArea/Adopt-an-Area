@@ -970,7 +970,7 @@
         <div class="signedout-card">
           <div class="bigicon">🔐</div>
           <h2>Sign in to see your area</h2>
-          <p class="lead" style="margin-bottom:16px;">Once you're signed in, this page shows every area you've claimed, in one place.</p>
+          <p class="lead" style="margin-bottom:16px;">Sign in and every area you've claimed shows up here.</p>
           <button class="btn btn-primary" onclick="openSignIn()">Sign in</button>
         </div>
       </div>
@@ -982,7 +982,7 @@
         </div>
         <p class="eyebrow">Your account</p>
         <details class="prefbox">
-          <summary>👤 Personal information<span class="pf-sub">Name · town · contact</span></summary>
+          <summary>👤 Personal information<span class="pf-sub">Name, town, phone</span></summary>
           <div class="pf-body">
             <label class="field-label" style="margin-top:0;">Your name</label>
             <input type="text" id="myNameInput" placeholder="Your name" autocomplete="name">
@@ -990,25 +990,25 @@
             <select id="myTownSelect">
               <option value="">Prefer not to say</option>
             </select>
-            <p class="fineprint" style="margin:6px 0 0 0;">This is the town your areas and your sponsor ads are matched to.</p>
+            <p class="fineprint" style="margin:6px 0 0 0;">We use this to show you ads from your town, and to list your areas under it.</p>
             <label class="field-label">Contact number</label>
             <input type="tel" id="myPhoneInput" placeholder="082 000 0000" autocomplete="tel">
             <label class="checkrow" style="align-items:flex-start;">
               <input type="checkbox" id="shareContactChk" style="margin-top:2px;">
               <span>Let my municipality see my name and contact details.<br>
-                <span style="font-size:11.5px;">Switch this off and you stay on the map exactly as you are — the council just can't see your number or email in their resident list.</span></span>
+                <span style="font-size:11.5px;">Switch it off and nothing changes on the map. The council just won't see your number or email on their list of residents.</span></span>
             </label>
             <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyDetails()">Save details</button>
             <span id="myDetailsSaved" class="pf-ok">Saved ✓</span>
           </div>
         </details>
         <details class="prefbox">
-          <summary>🔑 Sign-in details<span class="pf-sub">Email · password</span></summary>
+          <summary>🔑 Sign-in details<span class="pf-sub">Email and password</span></summary>
           <div class="pf-body">
-            <p>What you type in to get back into your account. Changing either one leaves everything else — your areas, your groups, your photos — exactly where it is.</p>
+            <p>This is how you get into your account. Change either one and the rest stays put: your areas, your groups and your photos are all still here.</p>
             <label class="field-label" style="margin-top:0;">Email address</label>
             <input type="email" id="myEmailInput" placeholder="you@example.com" autocomplete="email">
-            <p class="fineprint" style="margin:6px 0 0 0;">We'll send a confirmation link to the new address. Keep signing in with the old one until you've tapped it.</p>
+            <p class="fineprint" style="margin:6px 0 0 0;">We'll email a link to the new address. Tap it to finish. Until you do, sign in with your old address.</p>
             <button class="btn btn-secondary" style="margin-top:12px; padding:9px 16px; font-size:12.5px;" onclick="saveMyEmail()">Update email</button>
             <span id="myEmailSaved" class="pf-ok">Check your inbox ✓</span>
             <div class="pf-sep"></div>
@@ -1028,11 +1028,11 @@
         <details class="prefbox">
           <summary>💬 How a group works<span class="pf-sub">Like a WhatsApp group</span></summary>
           <div class="pf-body">
-            <p>A group works like a WhatsApp group. Everyone in it sees the same thing — the photos, the members, the areas the group looks after — but only the admins can change it.</p>
-            <p><b style="color:var(--text);">Admins</b> hand out the join pin, post the photos, choose who's allowed to see them, switch the group between public and private, and make other members admins. Whoever starts a group is its first admin, and a group can have as many as it likes — but never none.</p>
-            <p><b style="color:var(--text);">Members</b> join with the pin an admin gave them, and see everything the group posts. They don't need the pin again afterwards, and they can leave whenever they want.</p>
-            <p><b style="color:var(--text);">Public or private</b> is the group's front door. Public groups turn up in the Gallery search, so anyone in town can look at the group and the areas it keeps clean. Private ones stay between members. Photos have their own switch on top of that, so a public group can still keep its photos to members only.</p>
-            <p style="margin-bottom:0;">You can be in as many groups as you like — your street, your church, the school clean-up. They're listed below by name; tap one to open it.</p>
+            <p>It's like a WhatsApp group. Everyone in it sees the same photos, the same members and the same areas. Only the admins can change anything.</p>
+            <p><b style="color:var(--text);">Admins</b> run the group. They put up the photos, give out the join pin and decide who may see what. Whoever starts a group is the first admin, and they can make other members admins too. A group always needs at least one.</p>
+            <p><b style="color:var(--text);">Members</b> get the pin from an admin and type it in once. After that they see everything the group puts up. They can leave any time.</p>
+            <p><b style="color:var(--text);">Public or private</b> is up to the admins. A public group shows up in the Gallery search, so anyone in town can see it and the areas it looks after. A private one stays between members. Photos have their own setting, so a public group can still keep its photos for members only.</p>
+            <p style="margin-bottom:0;">You can be in as many groups as you like: your street, your church, the school clean-up. They're all listed below. Tap one to open it.</p>
           </div>
         </details>
         <!-- One row per group, name only. Tap one to open it — see renderMyGroups(). -->
@@ -1041,18 +1041,18 @@
         <div id="noTeamCard">
           <div class="admin-card">
             <b style="font-size:14px;">Start a group</b>
-            <p class="fineprint" style="margin-bottom:10px;">Neighbours who join share progress with each other — and with the whole town if you make it public.</p>
+            <p class="fineprint" style="margin-bottom:10px;">Neighbours who join can see how it's going. Make it public and the whole town can see too.</p>
             <input type="text" id="newTeamName" placeholder="Group name" onkeydown="if(event.key==='Enter'){event.preventDefault(); createTeam();}" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-bottom:8px;">
-            <label class="field-label" style="margin-top:6px;">Who can see this team?</label>
+            <label class="field-label" style="margin-top:6px;">Who can see this group?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--green);"></div>
-              <div><b>Public — anyone can look</b><span class="desc">Your team shows up in the gallery search. People can see your photos and the areas you've claimed.</span></div>
+              <div><b>Public — anyone can look</b><span class="desc">Your group shows up in the gallery search. People can see your photos and the areas you've claimed.</span></div>
             </div>
             <div class="task-opt" data-vis="private" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--gray);"></div>
-              <div><b>Private — members only</b><span class="desc">Nobody outside the team sees your photos, and it won't appear in search.</span></div>
+              <div><b>Private — members only</b><span class="desc">Nobody outside the group sees your photos, and it won't show up in the search.</span></div>
             </div>
-            <p class="fineprint" style="margin:2px 0 8px 0;">You'll be its first admin: you post the photos, choose who can see them, and hand out the join pin. You can make other members admins too.</p>
+            <p class="fineprint" style="margin:2px 0 8px 0;">You'll be the first admin, so the photos, the join pin and the settings are yours. You can make other members admins too.</p>
             <button class="btn btn-secondary" style="margin-top:4px;" onclick="createTeam()">Create group</button>
           </div>
           <div class="admin-card">
@@ -1070,8 +1070,8 @@
               <span id="myTeamRoleChip" class="privchip">Member</span>
               <span id="myTeamCountNote" class="fineprint" style="margin:0;"></span>
             </div>
-            <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b> — you're an admin, so it's yours to hand out.</p>
-            <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin — only they can share it.</p>
+            <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b>. You're an admin, so it's yours to give out.</p>
+            <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin. Only they can see it.</p>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
               <span id="myTeamVisChip" class="privchip">Private</span>
               <span id="myTeamVisNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
@@ -1084,11 +1084,11 @@
             </div>
             <input type="file" id="teamPhotoInput" accept="image/*" style="display:none;" onchange="handleTeamPhoto(event)">
             <button class="btn btn-secondary" id="teamPhotoBtn" style="margin-top:8px;" onclick="document.getElementById('teamPhotoInput').click()">+ Add group photo</button>
-            <p class="fineprint" id="teamPhotoMemberNote" style="display:none; margin-top:8px;">Your group's admins are the ones who post photos here.</p>
+            <p class="fineprint" id="teamPhotoMemberNote" style="display:none; margin-top:8px;">Your group's admins are the ones who put photos up here.</p>
             <div id="teamPhotoGrid" class="gallery-grid" style="margin-top:14px;"></div>
             <p class="field-label" style="margin-top:16px;">Members</p>
             <div id="teamMemberList"></div>
-            <p class="fineprint" id="teamAdminHint" style="display:none;">Admins post photos, decide who can see them, and share the join pin. A group can have as many admins as it likes — but never none.</p>
+            <p class="fineprint" id="teamAdminHint" style="display:none;">Admins put up the photos, decide who can see them and give out the join pin. A group can have several, but it always needs at least one.</p>
             <button id="leaveTeamBtn" style="margin-top:14px; background:none; border:1.5px solid var(--border); border-radius:12px; padding:8px 14px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="leaveTeam()">Leave this group</button>
           </div>
         </template>
@@ -1417,7 +1417,7 @@
         <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
         <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
-      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">Think of it as a WhatsApp group: everyone in it sees the same shared feed of photos, and the admins are the ones who post to it, hand out the join pin and change the settings. If the group is private that feed stays between members; if it's public, the whole town can look it up from the Gallery — unless an admin keeps the photos to members only.</p>
+      <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">It's like a WhatsApp group. Everyone in it sees the same photos, and the admins are the ones who put them up, give out the join pin and change the settings. If the group is private, the photos stay between members. If it's public, anyone in town can find the group in the Gallery, though the admins can still keep the photos for members only.</p>
         </div>
       </details>
       <details class="learn-section">
@@ -2888,7 +2888,7 @@ function renderMyAreas(){
   document.getElementById('debugUserId').textContent='Account ID: '+currentUser.id+(currentUser.admin?' (admin ✓)':' (admin ✗ — profile not matched)');
   const list=document.getElementById('myAreasList');
   const mine=seedAreas.filter(a=>a.ownerId===currentUser.id);
-  if(mine.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">You haven\u2019t claimed an area yet — head to the map to add one.</p>'; }
+  if(mine.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">You haven\u2019t claimed an area yet. Go to the map to add one.</p>'; }
   else{
     list.innerHTML='';
     mine.forEach(a=>{
@@ -3034,7 +3034,7 @@ function renderTeamVisibility(){
   chip.textContent = pub ? 'Public' : 'Private';
   document.getElementById('myTeamVisNote').textContent = pub
     ? 'Anyone can find this group in the gallery search and see the areas you\'ve claimed.'
-    : 'The group stays out of the gallery search — nobody outside it sees anything.';
+    : 'The group stays out of the gallery search. Nobody outside it sees anything.';
   const visBtn=document.getElementById('myTeamVisBtn');
   visBtn.textContent = pub ? 'Make private' : 'Make public';
   visBtn.style.display = admin ? 'block' : 'none';
@@ -4358,7 +4358,7 @@ function fillMyDetails(){
 async function saveMyDetails(){
   if(!currentUser) return;
   const name=val('myNameInput');
-  if(!name){ alert('Your name can\u2019t be empty — it\u2019s what neighbours see next to your areas.'); return; }
+  if(!name){ alert('Please fill in your name. It\u2019s what your neighbours see next to your areas.'); return; }
   const town=document.getElementById('myTownSelect').value;
   const phone=val('myPhoneInput');
   const share=document.getElementById('shareContactChk').checked;
@@ -4378,18 +4378,18 @@ async function saveMyEmail(){
   if(!currentUser) return;
   const email=val('myEmailInput');
   if(!email || email.indexOf('@')<1){ alert('That doesn\u2019t look like an email address.'); return; }
-  if(email.toLowerCase()===String(currentUser.email||'').toLowerCase()){ alert('That\u2019s already your email address.'); return; }
+  if(email.toLowerCase()===String(currentUser.email||'').toLowerCase()){ alert('That\u2019s the address you already use.'); return; }
   const {error} = await sb.auth.updateUser({email});
   if(error){ alert("Couldn't change it: " + error.message); return; }
   flashSaved('myEmailSaved', 6000);
-  showBanner('Confirm the link we sent to '+email+' to finish the change', 5000);
+  showBanner('We\u2019ve emailed '+email+' — tap the link in it to finish', 5000);
 }
 
 async function saveMyPassword(){
   if(!currentUser) return;
   const p1=val('myPass1'), p2=val('myPass2');
-  if(p1.length<6){ alert('Pick a password of at least 6 characters.'); return; }
-  if(p1!==p2){ alert('The two passwords don\u2019t match.'); return; }
+  if(p1.length<6){ alert('Your password needs at least 6 characters.'); return; }
+  if(p1!==p2){ alert('Those two passwords aren\u2019t the same.'); return; }
   const {error} = await sb.auth.updateUser({password:p1});
   if(error){ alert("Couldn't change it: " + error.message); return; }
   document.getElementById('myPass1').value='';
