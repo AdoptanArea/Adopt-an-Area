@@ -1091,7 +1091,7 @@
             <label class="checkrow" id="eventToggleRow" style="display:none; align-items:flex-start;">
               <input type="checkbox" id="newIsEvent" style="margin-top:2px;" onchange="toggleEventFields()">
               <span>This one is a clean-up event<br>
-                <span style="font-size:11.5px;">It gets a day and a meeting spot, and everyone living within 50km sees it on their home page.</span></span>
+                <span style="font-size:11.5px;">It gets a day, a meeting spot and a page of its own, and everyone living within 50km sees it on their home page. Anybody can join a clean-up without a pin, so you can see who's coming — you and your other admins still run it.</span></span>
             </label>
             <div id="eventFields" style="display:none;">
               <label class="field-label">Which day?</label>
@@ -1102,6 +1102,15 @@
               <input type="text" id="newEventPlace" placeholder="e.g. the corner of Main and Church" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit;">
               <button class="btn btn-secondary" style="margin-top:10px; padding:9px 16px; font-size:12.5px;" onclick="pickEventSpot()">Drop the pin on the map</button>
               <p class="fineprint" id="eventSpotNote" style="margin-top:8px;">No spot yet. The pin is what puts this on people's home pages, so it can't be skipped.</p>
+              <label class="field-label">Tell people about it</label>
+              <textarea id="newEventInfo" rows="4" placeholder="What you're doing, what to bring, where to park — anything somebody deciding whether to come would want to know." style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; resize:vertical;"></textarea>
+              <label class="field-label">Who to ask (you can leave this)</label>
+              <input type="text" id="newEventContact" placeholder="A name and number for questions" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit;">
+              <label class="field-label">A video (you can leave this)</label>
+              <input type="text" id="newEventVideo" placeholder="Paste a YouTube or Facebook link" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit;">
+              <input type="file" id="newEventVideoFile" accept="video/*" style="display:none;" onchange="uploadEventVideo(event)">
+              <button class="btn btn-secondary" style="margin-top:8px; padding:9px 16px; font-size:12.5px;" onclick="document.getElementById('newEventVideoFile').click()">…or upload one from your phone</button>
+              <p class="fineprint" id="newEventVideoNote" style="margin-top:6px;">Handy for showing how the last one went, so people can see what they'd be joining.</p>
             </div>
             <label class="field-label" style="margin-top:6px;">Who can see this group?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
@@ -1140,7 +1149,28 @@
             <div id="myTeamEventBox" style="display:none; background:var(--gold-tint); border-radius:var(--radius-md); padding:12px; margin-bottom:12px;">
               <b style="font-size:13px;" id="myTeamEventWhen">📅</b>
               <p class="fineprint" style="margin:4px 0 0 0;" id="myTeamEventWhere"></p>
-              <button style="margin-top:9px; background:none; border:1.5px solid #C9A227; border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:#8C6212; cursor:pointer;" onclick="showEventSpot()">See the meeting spot</button>
+              <p class="fineprint" style="margin:4px 0 0 0;" id="myTeamEventOpen"></p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:9px;">
+                <button style="background:none; border:1.5px solid #C9A227; border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:#8C6212; cursor:pointer;" onclick="showEventSpot()">See the meeting spot</button>
+                <button style="background:none; border:1.5px solid #C9A227; border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:#8C6212; cursor:pointer;" onclick="openEventSheet(openTeamId)">The event page</button>
+              </div>
+              <!-- Admins only: the words and the video can be changed after the
+                   event is up, which is usually when the host gets round to them. -->
+              <details class="prefbox" id="eventEditBox" style="display:none; background:#fff; margin:12px 0 0 0;">
+                <summary>Edit what people see<span class="pf-sub">Words, contact, video</span></summary>
+                <div class="pf-body">
+                  <label class="field-label" style="margin-top:0;">Tell people about it</label>
+                  <textarea id="evEditInfo" rows="4" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; resize:vertical;"></textarea>
+                  <label class="field-label">Who to ask</label>
+                  <input type="text" id="evEditContact" placeholder="A name and number for questions">
+                  <label class="field-label">Video link</label>
+                  <input type="text" id="evEditVideo" placeholder="YouTube or Facebook link">
+                  <input type="file" id="evEditVideoFile" accept="video/*" style="display:none;" onchange="replaceEventVideo(event)">
+                  <button class="btn btn-secondary" style="margin-top:8px; padding:9px 16px; font-size:12.5px;" onclick="document.getElementById('evEditVideoFile').click()">…or upload one</button>
+                  <button class="btn btn-secondary" style="margin-top:8px; padding:9px 16px; font-size:12.5px;" onclick="saveEventDetails()">Save</button>
+                  <span id="evEditSaved" class="pf-ok">Saved ✓</span>
+                </div>
+              </details>
             </div>
             <p class="fineprint" id="myTeamPinRow">Join pin: <b id="myTeamCode" style="color:var(--text); letter-spacing:1px;">…</b>. You're an admin, so it's yours to give out.</p>
             <p class="fineprint" id="myTeamPinNote" style="display:none;">Ask one of your group's admins for the join pin. Only they can see it.</p>
@@ -1581,6 +1611,33 @@
   <button style="width:100%; margin-top:8px; border:none; background:var(--soft); color:var(--text); border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="reshapeBtn" onclick="startReshape()">✎ Edit boundary shape</button>
   <button style="width:100%; margin-top:8px; border:none; background:var(--red-tint); color:#B23338; border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="releaseBtn" onclick="releaseArea()">Release this area — no longer available</button>
   <button style="width:100%; margin-top:8px; border:none; background:none; color:var(--red); border-radius:14px; padding:10px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; display:none;" id="deleteBtn" onclick="deleteAreaConfirm()">Delete permanently</button>
+</div>
+
+<!-- One clean-up, in full: what it is, when and where, who's running it, who's
+     coming, and whatever the host filmed to show people what they'd be joining. -->
+<div class="sheet-backdrop" id="eventBackdrop" onclick="closeEventSheet()"></div>
+<div class="sheet" id="eventSheet">
+  <div class="sheet-handle"></div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <span id="evSheetLogo"></span>
+    <div style="flex:1; min-width:0;">
+      <h3 id="evSheetName" style="margin:0;">—</h3>
+      <p class="sub" id="evSheetWhen" style="margin:2px 0 0 0;"></p>
+    </div>
+  </div>
+  <div id="evSheetVideo" style="margin-top:14px;"></div>
+  <p id="evSheetInfo" style="font-size:13.5px; line-height:1.6; margin:14px 0 0 0; white-space:pre-wrap;"></p>
+  <p class="field-label">Where</p>
+  <p style="font-size:13px; margin:0;" id="evSheetWhere"></p>
+  <button class="btn btn-secondary" style="margin-top:10px; padding:9px 16px; font-size:12.5px;" onclick="eventSheetToMap()">See the meeting spot</button>
+  <p class="field-label">Who's running it</p>
+  <p style="font-size:13px; margin:0;" id="evSheetHosts">—</p>
+  <p class="fineprint" id="evSheetContact" style="margin-top:6px;"></p>
+  <p class="field-label">Who's coming</p>
+  <div id="evSheetGoing"></div>
+  <button class="btn btn-primary" id="evSheetJoin" style="width:100%; margin-top:16px;" onclick="joinThisEvent()">I'm coming</button>
+  <p class="fineprint" id="evSheetJoinNote" style="margin-top:8px;"></p>
+  <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="closeEventSheet()">Close</button>
 </div>
 
 <!-- Group profile sheet -->
@@ -3092,7 +3149,7 @@ let myTeamMembers=[];
 // group on the page — so the first query that comes back complaining drops to the
 // old list and the app carries on without events until the migration lands.
 const TEAM_COLS_BASE='id,name,town_id,created_by,is_public,photos_public';
-let TEAM_COLS=TEAM_COLS_BASE+',logo_url,event_date,event_time,event_lat,event_lng,event_place';
+let TEAM_COLS=TEAM_COLS_BASE+',logo_url,event_date,event_time,event_lat,event_lng,event_place,event_info,event_video,event_contact';
 const eventsReady = ()=> TEAM_COLS!==TEAM_COLS_BASE;
 async function teamQuery(fn){
   let r=await fn(TEAM_COLS);
@@ -3486,6 +3543,34 @@ function pickEventSpot(){
   const me=myPlace();
   if(me) setTimeout(()=>leafletMap.setView([me.lat, me.lng], 15), 120);
 }
+// A video the host picked before the group existed. It waits here until there's a
+// group id to file it under — see createTeam().
+let pendingEventVideo=null;
+function uploadEventVideo(evt){
+  const file=evt.target.files[0];
+  evt.target.value='';
+  if(!file) return;
+  // Supabase takes 50MB a file by default, and a clip off a phone gets there fast.
+  if(file.size > 45*1024*1024){ showBanner('That video is too big — a minute or so is about the limit', 4000); return; }
+  pendingEventVideo=file;
+  showEventVideoNote();
+}
+function showEventVideoNote(){
+  const note=document.getElementById('newEventVideoNote');
+  if(!note) return;
+  note.textContent = pendingEventVideo
+    ? `Ready to go up with the event: ${pendingEventVideo.name}`
+    : 'Handy for showing how the last one went, so people can see what they\u2019d be joining.';
+  note.style.color = pendingEventVideo ? 'var(--green-dark)' : '';
+  note.style.fontWeight = pendingEventVideo ? '700' : '';
+}
+async function uploadGroupVideo(teamId, file){
+  const path=`${teamId}/video_${Date.now()}_${file.name}`;
+  const {error} = await sb.storage.from('team-photos').upload(path, file);
+  if(error){ showBanner('The video didn\u2019t upload: '+error.message, 4000); return null; }
+  const {data} = sb.storage.from('team-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
 function cancelEventSpot(){
   eventPinMode=false;
   document.getElementById('eventPinBar').classList.remove('show');
@@ -3530,8 +3615,21 @@ async function createTeam(){
     if(error){ showBanner(error.message, 4000); return; }
     // The function makes you its admin as it goes, so there's no membership row
     // to add here.
+    // The words, the contact and the video go on afterwards: the video can only be
+    // uploaded once the group exists, because the storage rule keeps every file
+    // inside the folder of the group it belongs to.
+    const extra={event_info:val('newEventInfo')||null, event_contact:val('newEventContact')||null};
+    const link=val('newEventVideo');
+    if(link) extra.event_video=link;
+    if(pendingEventVideo){
+      const up=await uploadGroupVideo(id, pendingEventVideo);
+      if(up) extra.event_video=up;
+    }
+    await sb.from('teams').update(extra).eq('id', id);
     const {data:row} = await sb.from('teams').select(TEAM_COLS).eq('id', id).single();
     team=row||{id:id};
+    ['newEventInfo','newEventContact','newEventVideo'].forEach(f=>{ const el=document.getElementById(f); if(el) el.value=''; });
+    pendingEventVideo=null; showEventVideoNote();
     document.getElementById('newIsEvent').checked=false;
     document.getElementById('eventFields').style.display='none';
     document.getElementById('newEventDate').value='';
@@ -3645,6 +3743,44 @@ function renderTeamEvent(){
   document.getElementById('myTeamEventWhere').textContent = over
     ? 'This clean-up is done. The photos stay here for good.'
     : (t.event_place ? 'Meet at '+t.event_place : 'Tap below for the meeting spot.');
+  // A clean-up is meant to be walked into, so say so — the pin is for the host's
+  // other groups, not this one.
+  const openNote=document.getElementById('myTeamEventOpen');
+  if(openNote) openNote.textContent = over ? ''
+    : (t.is_public ? 'Anyone can join this one without a pin, so people can see who\u2019s coming.'
+                   : 'It\u2019s private, so people still need the join pin.');
+  const ed=document.getElementById('eventEditBox');
+  if(ed){
+    ed.style.display = isTeamAdmin() ? 'block' : 'none';
+    if(isTeamAdmin()){
+      document.getElementById('evEditInfo').value=t.event_info||'';
+      document.getElementById('evEditContact').value=t.event_contact||'';
+      document.getElementById('evEditVideo').value=t.event_video||'';
+    }
+  }
+}
+async function saveEventDetails(){
+  const t=openTeam();
+  if(!t || !isTeamAdmin()) return;
+  const patch={event_info:val('evEditInfo')||null, event_contact:val('evEditContact')||null, event_video:val('evEditVideo')||null};
+  const {error} = await sb.from('teams').update(patch).eq('id', t.id);
+  if(error){ showBanner(error.message, 3600); return; }
+  Object.assign(t, patch);
+  flashSaved('evEditSaved');
+  loadEvents();
+}
+async function replaceEventVideo(evt){
+  const t=openTeam();
+  const file=evt.target.files[0];
+  evt.target.value='';
+  if(!file || !t || !isTeamAdmin()) return;
+  if(file.size > 45*1024*1024){ showBanner('That video is too big — a minute or so is about the limit', 4000); return; }
+  showBanner('Uploading the video…', 4000);
+  const url=await uploadGroupVideo(t.id, file);
+  if(!url) return;
+  document.getElementById('evEditVideo').value=url;
+  await saveEventDetails();
+  showBanner('Video is up', 2400);
 }
 function showEventSpot(){
   const t=openTeam();
@@ -3782,18 +3918,122 @@ function eventCardHTML(e, isPast){
   const when = (isPast?'Was ':'') + eventDayLabel(e.event_date) + (e.event_time ? ', '+e.event_time : '');
   const where = e.event_place ? escHtml(e.event_place) : '';
   const meta=[when, where, km].filter(Boolean).join(' · ');
-  return `<div class="evcard${isPast?' past':''}">
+  // The whole card opens the event page — the buttons are the shortcuts for people
+  // who already know which bit they want.
+  return `<div class="evcard${isPast?' past':''}" onclick="openEventSheet('${e.id}')">
       ${groupLogoHTML(e, true)}
       <div class="evcard-body">
         <div class="evcard-name">${escHtml(e.name||'Clean-up')}</div>
         <div class="evcard-meta">${meta}</div>
         <div class="evcard-acts">
-          ${e.event_lat!=null ? `<button class="go" onclick="eventToMap('${e.id}')">See the spot</button>` : ''}
-          <button onclick="eventToGroup('${e.id}')">${isPast?'Look at the photos':'Who\u2019s going'}</button>
+          <button class="go" onclick="event.stopPropagation(); openEventSheet('${e.id}')">${isPast?'Look back at it':'What\u2019s happening'}</button>
+          ${e.event_lat!=null ? `<button onclick="event.stopPropagation(); eventToMap('${e.id}')">See the spot</button>` : ''}
         </div>
       </div>
     </div>`;
 }
+// ---- the event page ----
+let openEventId=null, openEventGoing=[];
+async function openEventSheet(id){
+  const e=siteEvents.find(x=>x.id===id) || myTeams.find(x=>x.id===id);
+  if(!e) return;
+  openEventId=id;
+  document.getElementById('evSheetLogo').innerHTML=groupLogoHTML(e, true);
+  document.getElementById('evSheetName').textContent=e.name||'Clean-up';
+  const over=eventIsOver(e);
+  // Worked out here rather than read off the card, so the page says the same thing
+  // whether you came from the home page, the search or the group itself.
+  const me=myPlace();
+  const at=(e.event_lat!=null && e.event_lng!=null) ? {lat:e.event_lat, lng:e.event_lng} : null;
+  const d=(me && at) ? kmBetween(me, at) : null;
+  const km=(d==null) ? '' : (d<1 ? 'less than a kilometre away' : Math.round(d)+'km away');
+  document.getElementById('evSheetWhen').textContent=
+    [(over?'Finished · was ':'')+eventDayLabel(e.event_date)+(e.event_time?', '+e.event_time:''), km].filter(Boolean).join(' · ');
+  document.getElementById('evSheetVideo').innerHTML=videoHTML(e.event_video);
+  const info=document.getElementById('evSheetInfo');
+  info.textContent=e.event_info||'';
+  info.style.display=e.event_info?'block':'none';
+  document.getElementById('evSheetWhere').textContent =
+    e.event_place || (e.event_lat!=null ? 'Marked on the map — tap below to see exactly where.' : 'Not said.');
+  const contact=document.getElementById('evSheetContact');
+  contact.textContent=e.event_contact ? 'Questions: '+e.event_contact : '';
+  contact.style.display=e.event_contact?'block':'none';
+  document.getElementById('evSheetHosts').textContent='Loading…';
+  document.getElementById('evSheetGoing').innerHTML='';
+  document.getElementById('eventBackdrop').classList.add('show');
+  document.getElementById('eventSheet').classList.add('show');
+  await loadEventGoing(id);
+}
+// The member list of a public group is readable by anyone, which is what lets the
+// page say who's running it and who has said they're coming.
+async function loadEventGoing(id){
+  const {data} = await sb.from('team_members').select('user_id,member_name,role').eq('team_id', id);
+  openEventGoing=data||[];
+  const e=siteEvents.find(x=>x.id===id) || myTeams.find(x=>x.id===id) || {};
+  const hosts=openEventGoing.filter(m=>m.role==='admin').map(m=>m.member_name||'Neighbour');
+  document.getElementById('evSheetHosts').textContent = hosts.length ? hosts.join(', ') : 'Nobody listed yet.';
+  const going=openEventGoing.filter(m=>m.role!=='admin');
+  const box=document.getElementById('evSheetGoing');
+  box.innerHTML = openEventGoing.length
+    ? `<p style="font-size:13px; margin:0;">${escHtml(openEventGoing.map(m=>m.member_name||'Neighbour').join(', '))}</p>`
+      + `<p class="fineprint" style="margin-top:4px;">${openEventGoing.length} ${openEventGoing.length===1?'person':'people'} so far${going.length?'':' — be the first to say you\'re coming'}.</p>`
+    : '<p style="font-size:13px; margin:0; color:var(--text-dim);">Nobody yet. Be the first.</p>';
+  renderEventJoinButton(e);
+}
+function renderEventJoinButton(e){
+  const btn=document.getElementById('evSheetJoin');
+  const note=document.getElementById('evSheetJoinNote');
+  const mine=!!myTeams.find(t=>t.id===openEventId);
+  const over=eventIsOver(e);
+  if(over){
+    btn.style.display='none';
+    note.textContent='This one has been and gone. The photos stay up.';
+  }else if(mine){
+    btn.style.display='none';
+    note.textContent='You\u2019re on the list. Open it under My Area for the photos and the rest.';
+  }else if(!currentUser){
+    btn.style.display='block';
+    btn.textContent='Sign in to come along';
+    note.textContent='A clean-up is open to anyone — no join pin needed.';
+  }else{
+    btn.style.display='block';
+    btn.textContent='I\u2019m coming';
+    note.textContent='No join pin needed for a clean-up. The admins still run it: they post the photos and change the settings.';
+  }
+}
+async function joinThisEvent(){
+  if(!currentUser){ closeEventSheet(); openSignIn(); return; }
+  const id=openEventId;
+  const {error} = await sb.rpc('join_event', {t:id});
+  if(error){ showBanner(error.message, 4000); return; }
+  showBanner('You\u2019re on the list — see you there', 2800);
+  await loadMyTeams();
+  await loadEventGoing(id);
+}
+function eventSheetToMap(){
+  const id=openEventId;
+  closeEventSheet();
+  eventToMap(id);
+}
+function closeEventSheet(){
+  document.getElementById('eventBackdrop').classList.remove('show');
+  document.getElementById('eventSheet').classList.remove('show');
+}
+// A YouTube or Vimeo link becomes the player itself; something we hosted plays
+// where it stands; anything else is a link, because guessing wrong just leaves a
+// broken black box on the page.
+function videoHTML(url){
+  if(!url) return '';
+  const u=String(url).trim();
+  const yt=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if(yt) return `<div style="position:relative; padding-top:56.25%; border-radius:var(--radius-md); overflow:hidden; background:#000;"><iframe src="https://www.youtube.com/embed/${escHtml(yt[1])}" title="Video" allowfullscreen style="position:absolute; inset:0; width:100%; height:100%; border:0;"></iframe></div>`;
+  const vim=u.match(/vimeo\.com\/(\d+)/);
+  if(vim) return `<div style="position:relative; padding-top:56.25%; border-radius:var(--radius-md); overflow:hidden; background:#000;"><iframe src="https://player.vimeo.com/video/${escHtml(vim[1])}" title="Video" allowfullscreen style="position:absolute; inset:0; width:100%; height:100%; border:0;"></iframe></div>`;
+  if(/\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(u))
+    return `<video src="${escHtml(u)}" controls playsinline style="width:100%; border-radius:var(--radius-md); background:#000; display:block;"></video>`;
+  return `<a href="${escHtml(u)}" target="_blank" rel="noopener" class="btn btn-secondary" style="display:inline-block; text-decoration:none; padding:9px 16px; font-size:12.5px;">Watch the video</a>`;
+}
+
 function eventToMap(id){
   const e=siteEvents.find(x=>x.id===id);
   if(!e || e.event_lat==null) return;
@@ -3802,16 +4042,6 @@ function eventToMap(id){
 }
 // The group behind the event. If you're in it, it opens in My Area; if you're not,
 // it's the public group card in the Gallery, same as any other public group.
-function eventToGroup(id){
-  const mine=myTeams.find(t=>t.id===id);
-  if(mine){ openTeamId=id; showPage('myarea'); renderMyGroups(); return; }
-  // Not yours: it opens as a public group card in the Gallery, same as any other.
-  if(publicGroups.some(g=>g.id===id)){ showPage('gallery'); openGroupProfile(id); return; }
-  const e=siteEvents.find(x=>x.id===id);
-  showPage('gallery');
-  const box=document.getElementById('groupSearchInput');
-  if(box && e){ box.value=e.name||''; renderGroupResults(); }
-}
 
 // ================= GROUP SEARCH =================
 // Only teams that chose "public" when they were created ever land here — a private
@@ -3866,7 +4096,9 @@ function renderGroupResults(){
     const bits=[town, mem+(mem===1?' member':' members'), areas+(areas===1?' area claimed':' areas claimed')].filter(Boolean);
     const row=document.createElement('div');
     row.className='grow';
-    row.onclick=()=>openGroupProfile(g.id);
+    // A clean-up has a page of its own — the day, the spot, who's coming — so it
+    // opens that instead of the plain group card.
+    row.onclick=()=>{ if(isEventTeam(g)) openEventSheet(g.id); else openGroupProfile(g.id); };
     // An event says so here, so nobody joins a Saturday that has been and gone.
     const evTag = isEventTeam(g)
       ? `<span class="evchip${eventIsOver(g)?' done':''}">${eventIsOver(g)?'Finished':'📅 '+eventDayLabel(g.event_date)}</span>` : '';
