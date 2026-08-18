@@ -208,10 +208,10 @@
     padding-bottom:12px; -webkit-overflow-scrolling:touch;
   }
   .stepshot-row > .stepshot{ flex:0 0 78%; scroll-snap-align:start; }
-  /* The contents row under the hero. Scrolls sideways on a phone rather than
-     wrapping into three ragged lines. */
-  .jumpbar{ display:flex; gap:8px; overflow-x:auto; padding:14px 20px; max-width:1080px; margin:0 auto; scrollbar-width:none; }
-  .jumpbar::-webkit-scrollbar{ display:none; }
+  /* The contents row under the hero. Centred and wrapping, so it stays centred
+     however many things end up on this page — a sideways-scrolling row would hide
+     the later ones off the edge of a phone, which is where they'd be missed. */
+  .jumpbar{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:14px 20px; max-width:840px; margin:0 auto; }
   .jumpbar button{ flex:0 0 auto; background:var(--soft); border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; }
   .jumpbar button:hover{ border-color:var(--green); color:var(--green-dark); }
   .walk-grid{ display:grid; grid-template-columns:1fr; gap:14px; }
