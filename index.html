@@ -208,6 +208,12 @@
     padding-bottom:12px; -webkit-overflow-scrolling:touch;
   }
   .stepshot-row > .stepshot{ flex:0 0 78%; scroll-snap-align:start; }
+  /* The contents row under the hero. Scrolls sideways on a phone rather than
+     wrapping into three ragged lines. */
+  .jumpbar{ display:flex; gap:8px; overflow-x:auto; padding:14px 20px; max-width:1080px; margin:0 auto; scrollbar-width:none; }
+  .jumpbar::-webkit-scrollbar{ display:none; }
+  .jumpbar button{ flex:0 0 auto; background:var(--soft); border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; }
+  .jumpbar button:hover{ border-color:var(--green); color:var(--green-dark); }
   .walk-grid{ display:grid; grid-template-columns:1fr; gap:14px; }
   .walk-card{ background:var(--soft); border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border); }
   .walk-card img{ width:100%; display:block; }
@@ -774,6 +780,18 @@
     </div>
   </section>
 
+  <!-- What's further down this page, as a row you can tap. The home page is long
+       and most of it is worth reading, but nobody scrolls a page they can't see
+       the shape of. -->
+  <div class="jumpbar" id="homeJump" role="navigation" aria-label="Jump to a part of this page">
+    <button onclick="jumpHome('mission-sec')">What this is</button>
+    <button onclick="jumpHome('our-mission')">Our mission</button>
+    <button onclick="jumpHome('why-sec')">Why it matters</button>
+    <button onclick="jumpHome('start-sec')">Getting started</button>
+    <button onclick="jumpHome('events-sec')" id="jumpEvents" style="display:none;">Events near you</button>
+    <button onclick="jumpHome('snags-sec')">Good to know</button>
+  </div>
+
   <section class="mission-sec" id="mission-sec">
     <div class="wrap">
       <p class="eyebrow">South Africa</p>
@@ -786,21 +804,6 @@
       </div>
       <!-- The "Help me get started" / "See the gallery" buttons used to sit here.
            Moved out on purpose — they belong further down the home page instead. -->
-    </div>
-  </section>
-
-  <!-- Clean-ups happening near you. Hidden altogether when there aren't any, so
-       the home page doesn't carry an empty box around. -->
-  <section id="events-sec" style="display:none;">
-    <div class="wrap">
-      <p class="eyebrow">Coming up near you</p>
-      <h2 style="margin-bottom:6px;">Clean-up days</h2>
-      <p class="lead" style="margin-bottom:14px;" id="eventsLead">Anything happening within 50km of you shows up here.</p>
-      <div id="eventsList"></div>
-      <details class="prefbox" id="pastEventsBox" style="display:none; margin-top:12px;">
-        <summary>Past clean-ups<span class="pf-sub" id="pastEventsCount"></span></summary>
-        <div class="pf-body" id="pastEventsList"></div>
-      </details>
     </div>
   </section>
 
@@ -836,7 +839,7 @@
     </div>
   </section>
 
-  <section style="background:#0A130E;">
+  <section id="start-sec" style="background:#0A130E;">
     <div class="wrap-full">
       <p class="eyebrow" style="color:#8FD9A8;">Getting started</p>
       <h2 style="margin-bottom:14px; color:#fff;">It takes about a minute</h2>
@@ -897,7 +900,24 @@
     </div>
   </section>
 
-  <section>
+  <!-- Events near you. It sits after the getting-started steps on purpose: somebody
+       landing here cold needs to know what this is before a list of Saturdays means
+       anything. Hidden altogether when there's nothing on, so the page doesn't
+       carry an empty box around. -->
+  <section id="events-sec" style="display:none;">
+    <div class="wrap">
+      <p class="eyebrow">Coming up near you</p>
+      <h2 style="margin-bottom:6px;">Events</h2>
+      <p class="lead" style="margin-bottom:14px;" id="eventsLead">Anything happening within 50km of you shows up here.</p>
+      <div id="eventsList"></div>
+      <details class="prefbox" id="pastEventsBox" style="display:none; margin-top:12px;">
+        <summary>Past events<span class="pf-sub" id="pastEventsCount"></span></summary>
+        <div class="pf-body" id="pastEventsList"></div>
+      </details>
+    </div>
+  </section>
+
+  <section id="snags-sec">
     <div class="wrap">
       <p class="eyebrow">Good to know</p>
       <h2 style="margin-bottom:14px;">Common snags, and how people handle them</h2>
@@ -3901,10 +3921,14 @@ function renderEvents(){
   const near = e => e._km==null || e._km<=EVENT_RADIUS_KM;
   const upcoming = withDist.filter(e=>!eventIsOver(e) && near(e));
   const past = withDist.filter(e=>eventIsOver(e) && near(e)).reverse();
-  sec.style.display = (upcoming.length || past.length) ? 'block' : 'none';
+  const anything=(upcoming.length || past.length);
+  sec.style.display = anything ? 'block' : 'none';
+  // No events, no line about them in the contents row either.
+  const jump=document.getElementById('jumpEvents');
+  if(jump) jump.style.display = anything ? 'block' : 'none';
   document.getElementById('eventsLead').textContent = me
-    ? 'Clean-up days happening within 50km of you.'
-    : 'Clean-up days around the country. Set your town under My Area and this narrows down to yours.';
+    ? 'Events happening within 50km of you.'
+    : 'Events around the country. Set your town under My Area and this narrows down to yours.';
   list.innerHTML = upcoming.length
     ? upcoming.map(e=>eventCardHTML(e,false)).join('')
     : '<p style="font-size:13px; color:var(--text-dim);">Nothing coming up near you right now.</p>';
@@ -5142,6 +5166,17 @@ function showPage(name){
   document.querySelector('nav').classList.remove('open');
   window.scrollTo(0,0);
   if(name==='map') setTimeout(()=>leafletMap.invalidateSize(), 80);
+}
+// Jumping to a part of the home page. The header is sticky, so a plain anchor
+// would park the heading underneath it.
+function jumpHome(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  if(document.querySelector('.page.active').id!=='page-home') showPage('home');
+  const head=document.querySelector('header');
+  const off=(head ? head.getBoundingClientRect().height : 0) + 10;
+  const top=el.getBoundingClientRect().top + window.pageYOffset - off;
+  window.scrollTo({top:Math.max(0, top), behavior:'smooth'});
 }
 function toggleNav(){
   document.querySelector('nav').classList.toggle('open');
