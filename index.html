@@ -168,6 +168,12 @@
   /* The heading needs air under it before the reading starts — the hero copy runs
      long now, and a tight gap made it look like one solid block. */
   .mission-sec h1{ margin-bottom:20px; }
+  /* Home page: every section heading carries the same weight as the one at the
+     top, so scrolling reads as a series of equals rather than one shout and a
+     row of footnotes. Scoped to #page-home on purpose — the map, My Area and
+     the modals use h2 at its ordinary size. */
+  #page-home section h2{ font-size:30px; letter-spacing:-0.02em; line-height:1.15; }
+  #page-home section h2, #page-home .mission-sec h1{ margin-bottom:20px; }
   /* Purely a visual hint now — it still bounces, but it is not clickable and
      goes nowhere when tapped. */
   .scroll-cue{
@@ -688,6 +694,7 @@
     .gallery-grid{grid-template-columns:1fr 1fr 1fr;}
     .sponsor-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
     h1{font-size:40px;}
+    #page-home section h2{font-size:40px;}
     .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
     .map-shell{height:72vh; height:72svh; min-height:520px; max-height:760px;}
     .arealists{max-height:72vh; overflow-y:auto; padding-right:4px;}
@@ -820,7 +827,7 @@
   <section id="our-mission">
     <div class="wrap">
       <p class="eyebrow">Our mission</p>
-      <h2 style="margin-bottom:14px;">Every street has someone who lives on it</h2>
+      <h2>It starts with the first step and bush</h2>
 
       <div class="mission-panel">
         <p>Our mission is simple. Get more people to take ownership of the area around them. Take the neglected bits — the blocked drain, the pavement you can't walk down, the street corner that's become the dumping spot — and make them cleaner and safer. <span class="hl">Not owned. Looked after.</span> None of it has to wait on a budget or a meeting. It waits on one person deciding that patch is theirs, and then keeping at it.</p>
@@ -842,7 +849,7 @@
   <section id="why-sec">
     <div class="wrap">
       <p class="eyebrow">Why it matters</p>
-      <h2 style="margin-bottom:14px;">A few small things make a big difference</h2>
+      <h2>A few small things make a big difference</h2>
       <div class="cardgrid">
         <div class="infocard"><div class="icon-badge">💧</div><div><h4>Standing water breaks the tar</h4><p>Water pooling in the road seeps into cracks. Traffic pumps it in and out until the tar breaks apart underneath — clearing a blocked drain near you is a five-minute job with a big payoff.</p></div></div>
         <div class="infocard"><div class="icon-badge">🌿</div><div><h4>Clear paths keep people safe</h4><p>Overgrown bush along a pavement hides pedestrians from drivers. Cutting it back makes the walk to work or school safer for everyone.</p></div></div>
@@ -854,7 +861,7 @@
   <section id="start-sec" style="background:#0A130E;">
     <div class="wrap-full">
       <p class="eyebrow" style="color:#8FD9A8;">Getting started</p>
-      <h2 style="margin-bottom:14px; color:#fff;">It takes about a minute</h2>
+      <h2 style="color:#fff;">It takes about a minute</h2>
       <div class="stepshot-row">
         <div class="stepshot">
           <p class="ss-eyebrow">Step 1</p>
@@ -919,7 +926,7 @@
   <section id="events-sec" style="display:none;">
     <div class="wrap">
       <p class="eyebrow">Coming up near you</p>
-      <h2 style="margin-bottom:6px;">Events</h2>
+      <h2>Events</h2>
       <p class="lead" style="margin-bottom:14px;" id="eventsLead">Anything happening within 50km of you shows up here.</p>
       <div id="eventsList"></div>
       <details class="prefbox" id="pastEventsBox" style="display:none; margin-top:12px;">
@@ -932,7 +939,7 @@
   <section id="snags-sec">
     <div class="wrap">
       <p class="eyebrow">Good to know</p>
-      <h2 style="margin-bottom:14px;">Common snags, and how people handle them</h2>
+      <h2>Common snags, and how people handle them</h2>
       <details class="faq"><summary>Am I allowed to clear it, or do I need permission?</summary><div class="faqbody">Nobody minds a neighbour picking up litter or cutting back overgrowth on their own pavement or verge. A big neglected space is a different thing — it belongs to the municipality, a private owner, or a body corporate, and clearing it without a word can cause trouble.<div class="faqfix"><b style="color:var(--green);">Fix:</b> For anything bigger than a verge — an open field, a park, a dumping site, a stormwater area — email or phone your ward councillor or the municipal offices and say what you'd like to do. It's rarely a problem, they'll often chip in with bags, a skip or a collection, and you've got an answer ready if anyone asks who said you could.</div></div></details>
       <details class="faq"><summary>Where does the trash actually go?</summary><div class="faqbody">Bagging it is only half the job — it needs to leave the area.<div class="faqfix"><b style="color:var(--green);">Fix:</b> Bag as you go and drop bags at your nearest municipal collection point, or ask your household collection to take an extra bag on collection day.</div></div></details>
       <details class="faq"><summary>People keep dumping there again</summary><div class="faqbody">Clearing it once doesn't always keep it clear.<div class="faqfix"><b style="color:var(--green);">Fix:</b> A visible "this area is looked after" sign helps a lot. Photograph repeats and report them to your ward councillor.</div></div></details>
