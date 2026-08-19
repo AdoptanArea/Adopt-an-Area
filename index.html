@@ -197,14 +197,11 @@
   .btn-secondary{background:var(--green-tint); color:var(--green-dark);}
   .btn-full{ width:100%; justify-content:center; }
 
-  /* Mission statement — set apart from the surrounding copy so it reads as the
-     "why we exist" bit rather than just another paragraph. */
-  .mission-panel{ background:var(--green-tint); border-left:3px solid var(--green); border-radius:var(--radius-md); padding:18px 20px; }
-  .mission-panel p{ margin:0 0 12px 0; font-size:15px; line-height:1.65; color:var(--text); }
+  /* This was a green panel. It reads better as plain page copy — the mission is
+     the page, not a box on it — so only the paragraph rhythm is left, matching
+     the intro above. The marks are ordinary .hl again now that the ground is white. */
+  .mission-panel p{ margin:0 0 16px 0; font-size:15px; line-height:1.68; color:var(--text-dim); }
   .mission-panel p:last-child{ margin-bottom:0; }
-  /* The panel is already green-tint, so a plain .hl would vanish into it —
-     one step deeper so the mark still reads as a mark. */
-  .mission-panel .hl{ background:#CDE9D9; }
 
   .cardgrid{ display:grid; grid-template-columns:1fr; gap:12px; }
   .infocard{ background:var(--soft); border-radius:var(--radius-md); padding:16px; display:flex; gap:12px; align-items:flex-start; }
@@ -883,7 +880,7 @@
   <section id="start-sec" style="background:#0A130E;">
     <div class="wrap-full">
       <p class="eyebrow" style="color:#8FD9A8;">Getting started</p>
-      <h2 style="color:#fff;">It takes about a minute</h2>
+      <h2 style="color:#fff;">It takes less than a minute</h2>
       <div class="stepshot-row">
         <div class="stepshot">
           <p class="ss-eyebrow">Step 1</p>
