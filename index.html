@@ -611,6 +611,24 @@
   .evcard-acts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; }
   .evcard-acts button{ background:none; border:1.5px solid var(--border); border-radius:12px; padding:6px 12px; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer; }
   .evcard-acts button.go{ border-color:var(--green); color:var(--green-dark); }
+
+  /* Events should catch the eye — it is the one part of the page with a date on
+     it. The heading carries a badge, and an upcoming card breathes a green ring
+     every few seconds. Past events sit still. */
+  .ev-badge{ display:inline-block; font-size:0.8em; vertical-align:0.14em; margin-left:8px;
+             animation:evbob 3.2s ease-in-out infinite; }
+  @keyframes evbob{ 0%,100%{ transform:translateY(0) rotate(-6deg); } 50%{ transform:translateY(-4px) rotate(6deg); } }
+  .evcard:not(.past){ border-color:var(--green); animation:evpulse 2.8s ease-in-out infinite; }
+  @keyframes evpulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(34,148,90,0.30); }
+    70%    { box-shadow:0 0 0 9px rgba(34,148,90,0); }
+  }
+  /* Anyone who has asked their phone to stop moving things gets the green edge
+     and a soft halo, and nothing that moves. */
+  @media (prefers-reduced-motion: reduce){
+    .ev-badge{ animation:none; }
+    .evcard:not(.past){ animation:none; box-shadow:0 0 0 4px rgba(34,148,90,0.10); }
+  }
   .gitem-body{ display:none; padding:14px 15px 16px 15px; border-top:1px solid var(--border); }
   .gitem.open .gitem-body{ display:block; }
   .pubchip{ display:inline-block; background:var(--green-tint); color:var(--green-dark); font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; }
@@ -945,7 +963,7 @@
   <section id="events-sec" style="display:none;">
     <div class="wrap">
       <p class="eyebrow">Coming up near you</p>
-      <h2>Events</h2>
+      <h2>Events <span class="ev-badge" aria-hidden="true">📣</span></h2>
       <p class="lead" style="margin-bottom:14px;" id="eventsLead">Anything happening within 50km of you shows up here.</p>
       <div id="eventsList"></div>
       <details class="prefbox" id="pastEventsBox" style="display:none; margin-top:12px;">
