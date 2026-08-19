@@ -212,6 +212,22 @@
   .infocard h4{margin:2px 0 4px 0; font-size:14.5px; font-weight:700;}
   .infocard p{margin:0; font-size:13px; line-height:1.5; color:var(--text-dim);}
 
+  /* The three under the mission fold away. The badge and the title are enough to
+     scan; the sentence is there for whoever wants it. Scoped to details, so the
+     plain cards elsewhere on the page are untouched. */
+  details.infocard{ display:block; padding:12px 14px; }
+  details.infocard summary{ display:flex; align-items:center; gap:11px; cursor:pointer; list-style:none; }
+  details.infocard summary::-webkit-details-marker{ display:none; }
+  details.infocard summary h4{ margin:0; flex:1; }
+  details.infocard summary::after{ content:''; flex:none; width:7px; height:7px; margin-right:3px;
+    border-right:2px solid var(--text-dim); border-bottom:2px solid var(--text-dim);
+    transform:translateY(-2px) rotate(45deg); transition:transform .15s ease; }
+  details.infocard[open] summary::after{ transform:translateY(2px) rotate(-135deg); }
+  details.infocard p{ margin:10px 0 2px 49px; }
+  /* One per row, full width, at every size: three fold-away rows read as
+     buttons, and the titles stop wrapping in a narrow column. */
+  #our-mission .cardgrid{ margin-top:22px; grid-template-columns:1fr; align-items:start; }
+
   /* Heads-up about needing permission for bigger sites. Sits on the dark
      "Getting started" background, so it is tinted rather than boxed in grey. */
   .permit-note{ margin-top:22px; background:rgba(255,255,255,0.06); border:1px solid rgba(143,217,168,0.28); border-radius:var(--radius-md); padding:15px 17px; display:flex; gap:12px; align-items:flex-start; }
@@ -841,11 +857,10 @@
         <p>So the rest of this page is the practical part. Claim your area. Mark it so people know whether it's handled or you'd like a hand. Put up the before and after. See who's already out there near you. Start with one corner — <span class="hl">more people are watching it than you think.</span></p>
       </div>
 
-      <p class="eyebrow" style="margin-top:26px;">What we're trying to do</p>
       <div class="cardgrid">
-        <div class="infocard"><div class="icon-badge">🌱</div><div><h4>Inspire the next person</h4><p>One tidy verge changes what a street expects of itself. Someone walks past, thinks "I could do mine", and does. Then somebody walks past theirs. No credit needed — the example does the work.</p></div></div>
-        <div class="infocard"><div class="icon-badge">🙋</div><div><h4>Make it easy to start</h4><p>No fee, no committee, no meetings. Pick a spot, say what you're doing, and you're going. Claim one corner or a whole street — whatever you can honestly keep up with.</p></div></div>
-        <div class="infocard"><div class="icon-badge">🗺️</div><div><h4>Put the right people together</h4><p>Every claimed area, photo and offer of help sits on one map. Find the neighbours who think like you do, the areas still waiting for a hand, and the people with the tools or the time.</p></div></div>
+        <details class="infocard"><summary><span class="icon-badge">🌱</span><h4>Inspire the next person</h4></summary><p>One tidy verge changes what a street expects of itself. Someone walks past, thinks "I could do mine", and does. Then somebody walks past theirs. No credit needed — the example does the work.</p></details>
+        <details class="infocard"><summary><span class="icon-badge">🙋</span><h4>Make it easy to start</h4></summary><p>No fee, no committee, no meetings. Pick a spot, say what you're doing, and you're going. Claim one corner or a whole street — whatever you can honestly keep up with.</p></details>
+        <details class="infocard"><summary><span class="icon-badge">🗺️</span><h4>Put the right people together</h4></summary><p>Every claimed area, photo and offer of help sits on one map. Find the neighbours who think like you do, the areas still waiting for a hand, and the people with the tools or the time.</p></details>
       </div>
     </div>
   </section>
