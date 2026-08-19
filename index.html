@@ -230,8 +230,11 @@
   /* The contents row under the hero. Centred and wrapping, so it stays centred
      however many things end up on this page — a sideways-scrolling row would hide
      the later ones off the edge of a phone, which is where they'd be missed. */
-  .jumpbar{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:14px 20px; max-width:840px; margin:0 auto; }
-  .jumpbar button{ flex:0 0 auto; background:var(--soft); border:1.5px solid var(--border); border-radius:20px; padding:8px 15px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; }
+  /* On a phone the chips used to wrap into a huddle in the middle of the page.
+     They now grow to share each row edge to edge — three across, two rows —
+     so the bar reads as a bar. Desktop keeps the old shrink-to-fit chips. */
+  .jumpbar{ display:flex; flex-wrap:wrap; justify-content:center; gap:7px; padding:12px 14px; max-width:840px; margin:0 auto; }
+  .jumpbar button{ flex:1 1 28%; min-width:0; background:var(--soft); border:1.5px solid var(--border); border-radius:20px; padding:9px 6px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
   .jumpbar button:hover{ border-color:var(--green); color:var(--green-dark); }
   .walk-grid{ display:grid; grid-template-columns:1fr; gap:14px; }
   .walk-card{ background:var(--soft); border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border); }
@@ -695,6 +698,7 @@
     .sponsor-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
     h1{font-size:40px;}
     #page-home section h2{font-size:40px;}
+    .jumpbar button{ flex:0 0 auto; padding:8px 15px; font-size:12.5px; }
     .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
     .map-shell{height:72vh; height:72svh; min-height:520px; max-height:760px;}
     .arealists{max-height:72vh; overflow-y:auto; padding-right:4px;}
