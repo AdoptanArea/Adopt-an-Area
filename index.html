@@ -370,7 +370,7 @@
      bar has to fit: search bar, map, claim buttons and the filter button. Moving
      search above the map cost about 48px of that, so the map gives it back — full
      screen is one tap away when you need the room. */
-  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:40vh; height:40svh; min-height:250px; max-height:380px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
+  .map-shell{ --map-chrome-bottom:0px; position:relative; border-radius:var(--radius-lg); overflow:hidden; height:36vh; height:36svh; min-height:230px; max-height:330px; box-shadow:0 8px 30px rgba(0,0,0,0.12); background:#12261c; }
   #leafletMap{ position:absolute; inset:0; }
   .leaflet-container{ font-family:inherit; background:#12261c; }
 
@@ -406,7 +406,7 @@
 
   /* During the tour the fixed instruction bar covers the bottom of the map — where
      the claim buttons live. Shrink the map for the duration so they stay in view. */
-  body.tour-running .map-shell{ height:36vh; height:36svh; min-height:230px; max-height:340px; }
+  body.tour-running .map-shell{ height:32vh; height:32svh; min-height:210px; max-height:300px; }
 
   /* Full screen, for placing boundary points precisely. Sits below the tour bar
      (z-index 950) so the instructions stay readable on top of it.
@@ -435,20 +435,21 @@
   .map-zoom button{ width:42px; height:38px; border:none; background:none; font-size:18px; font-weight:700; cursor:pointer; color:var(--text); }
   .map-zoom button:first-child{border-bottom:1px solid var(--border);}
 
-  /* Filters live BELOW the map, not on it — a row of chips over the imagery read as
-     clutter. One full-width button, and a menu that opens upwards over the map:
-     left-aligned and deliberately narrow, so most of the view stays readable while
-     you're picking. It doubles as the colour key the floating legend used to be. */
-  .map-filterbar{ position:relative; margin-top:8px; }
+  /* Filters head the claimed-areas list, not the map — a row of chips over the
+     imagery read as clutter, and under the map it looked like it only hid polygons.
+     One full-width button, and a menu that drops down over the list it's filtering.
+     It doubles as the colour key the floating legend used to be. */
+  .map-filterbar{ position:relative; margin:0 0 10px; }
   .filter-toggle{ width:100%; display:flex; align-items:center; gap:9px; background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--text); text-align:left; cursor:pointer; }
   .filter-toggle .ft-summary{ margin-left:auto; font-size:12.5px; font-weight:650; color:var(--text-dim); }
   .filter-toggle .ft-caret{ flex-shrink:0; transition:transform .18s ease; }
   .map-filterbar.open .filter-toggle{ border-color:var(--green); }
   .map-filterbar.open .ft-caret{ transform:rotate(180deg); }
 
-  /* z-index has to clear the map's own overlays (claim buttons sit at 550) or the
-     menu opens up *behind* them. */
-  .filter-menu{ display:none; position:absolute; left:0; bottom:calc(100% + 8px); z-index:600; width:222px; background:#fff; border-radius:14px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+  /* Drops downward over the list. z-index has to clear the map's own overlays (claim
+     buttons sit at 550) or the menu opens *behind* them on a phone, where the list
+     stacks directly under the map. */
+  .filter-menu{ display:none; position:absolute; left:0; top:calc(100% + 8px); z-index:600; width:222px; max-width:100%; box-sizing:border-box; background:#fff; border-radius:14px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
   .map-filterbar.open .filter-menu{ display:block; }
   .fm-row{ display:flex; align-items:center; gap:8px; width:100%; background:none; border:none; border-radius:10px; padding:7px 8px; font-family:inherit; font-size:12.5px; font-weight:650; color:var(--text); text-align:left; cursor:pointer; }
   .fm-row:hover{ background:var(--soft); }
@@ -465,6 +466,8 @@
      so the filter bar stands down. */
   body.map-full-open .map-shell{ --map-chrome-bottom:70px; }
   body.map-full-open .map-filterbar{ position:fixed; left:12px; right:12px; bottom:calc(10px + var(--safe-bottom)); z-index:960; margin:0; }
+  /* Pinned to the floor, a downward menu would open off the bottom of the screen. */
+  body.map-full-open .filter-menu{ top:auto; bottom:calc(100% + 8px); }
   body.tour-running.map-full-open .map-filterbar{ display:none; }
 
   /* Right padding keeps the buttons clear of the zoom control on a narrow phone. */
@@ -731,8 +734,12 @@
     #page-home section h2{font-size:40px;}
     .jumpbar button{ flex:0 0 auto; padding:8px 15px; font-size:12.5px; }
     .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
-    .map-shell{height:72vh; height:72svh; min-height:520px; max-height:760px;}
-    .arealists{max-height:72vh; overflow-y:auto; padding-right:4px;}
+    /* Short enough that the claim buttons along its bottom edge stay above the fold.
+       The 320px is what's spoken for either side of the map: header, the two pickers
+       and the search bar above it, the sponsor bar below. On a tall screen 58% is the
+       smaller of the two and the map just gets its share. */
+    .map-shell{height:58vh; height:min(58svh, calc(100svh - 320px)); min-height:300px; max-height:580px;}
+    .arealists{max-height:74vh; overflow-y:auto; padding-right:4px;}
     .claim-btn-wrap{ padding-left:60px; }
   }
   @media (min-width:1000px){
@@ -996,23 +1003,24 @@
       <!-- Rewritten by setMapHeading() to name the local government once you pick a town. -->
       <h2 id="mapHeading">See who's doing what, anywhere in South Africa</h2>
 
-      <!-- No label above these: both dropdowns already say what they're for, and the
-           line it saves is the difference between the filter button clearing the
-           sponsor bar on a phone and not. -->
-      <div class="prov-row">
-        <select id="provinceSelect" onchange="onProvinceChange()"></select>
-        <!-- Type-to-filter rather than a plain select: some provinces run to 60 towns,
-             which is a long scroll on a phone. Matches district names too. -->
-        <div class="town-picker" id="townPicker">
-          <input type="text" id="townInput" placeholder="Select a province first" disabled autocomplete="off"
-                 oninput="onTownFilter(this.value)" onfocus="openTownList()" onkeydown="onTownKey(event)">
-          <svg class="tp-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div class="town-list" id="townList"></div>
-        </div>
-      </div>
-
       <div class="map-layout">
         <div>
+          <!-- These sit in the map column, not above the whole layout: lined up with
+               the map's own edge they read as the map's controls rather than page
+               furniture, and they stop stretching the full width of the screen.
+               No label above them — both already say what they're for. -->
+          <div class="prov-row">
+            <select id="provinceSelect" onchange="onProvinceChange()"></select>
+            <!-- Type-to-filter rather than a plain select: some provinces run to 60 towns,
+                 which is a long scroll on a phone. Matches district names too. -->
+            <div class="town-picker" id="townPicker">
+              <input type="text" id="townInput" placeholder="Select a province first" disabled autocomplete="off"
+                     oninput="onTownFilter(this.value)" onfocus="openTownList()" onkeydown="onTownKey(event)">
+              <svg class="tp-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="town-list" id="townList"></div>
+            </div>
+          </div>
+
           <!-- Above the map, full width. It used to float over the imagery, which cost
                the top of the view and crowded the round buttons on a phone. -->
           <div class="map-searchbar" id="mapSearchBar">
@@ -1055,16 +1063,6 @@
               <button class="claim-yard-btn helper" id="helperBtn" onclick="toggleClaimMode('helper')">🚜 Offer help</button>
             </div>
           </div>
-          <!-- Menu contents are built in renderMapFilters() so the counts stay live. -->
-          <div class="map-filterbar" id="mapFilterBar">
-            <button class="filter-toggle" onclick="toggleFilterMenu(event)" aria-haspopup="true" aria-expanded="false" id="filterToggle">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="#22945A" stroke-width="2" stroke-linecap="round"/></svg>
-              Filter
-              <span class="ft-summary" id="filterSummary">Showing all</span>
-              <svg class="ft-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div class="filter-menu" id="filterMenu" role="menu"></div>
-          </div>
           <!-- The three numbers used to sit on the home page as fixed text. They
                belong here, next to the thing they count, and renderMapStats()
                counts them off what's actually loaded. -->
@@ -1076,6 +1074,19 @@
                comes before "what has anyone else done here?" -->
           <div id="townRulesCard"></div>
           <p class="eyebrow" style="margin-top:0;">Claimed areas</p>
+          <!-- Sits between the heading and the list because it filters both this list
+               and the map together — from under the map it looked like it only touched
+               the imagery. Menu contents are built in renderMapFilters() so the counts
+               stay live. -->
+          <div class="map-filterbar" id="mapFilterBar">
+            <button class="filter-toggle" onclick="toggleFilterMenu(event)" aria-haspopup="true" aria-expanded="false" id="filterToggle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="#22945A" stroke-width="2" stroke-linecap="round"/></svg>
+              Filter
+              <span class="ft-summary" id="filterSummary">Showing all</span>
+              <svg class="ft-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="filter-menu" id="filterMenu" role="menu"></div>
+          </div>
           <div id="areaListBelow"></div>
           <p class="eyebrow" style="margin-top:20px;">People offering help</p>
           <div id="helperListBelow"></div>
