@@ -1177,7 +1177,8 @@
             <p>You know how a WhatsApp group works. This is the same thing. Everyone in the group sees the same photos, the same people and the same areas.</p>
             <p><b style="color:var(--text);">The admins look after it.</b> They're the ones who put the photos up, give out the join pin and say who's allowed to see what. Start a group and you're its admin. Make a few of your neighbours admins too if you want, so it doesn't all sit on you. If you're the only admin, you can't just walk out: nobody would be left to put up photos or give out the pin, and the group would sit there stuck. So when you try to leave, we ask you to hand it over to another member first, or to close the group for good.</p>
             <p><b style="color:var(--text);">Everyone else joins with the pin.</b> Ask an admin for it, type it in once and you're in. From then on you see everything the group puts up, and you can leave whenever you feel like it.</p>
-            <p><b style="color:var(--text);">Public or private?</b> Public means anyone in town can find your group in the Gallery and see the areas you look after. Private means it stays between the members. And if you'd rather be public but keep the photos to yourselves, there's a separate switch for that.</p>
+            <p><b style="color:var(--text);">Public or private?</b> Public means anyone in town can find your group on the Groups page and see the areas you look after. Private means it stays between the members. And if you'd rather be public but keep the photos to yourselves, there's a separate switch for that.</p>
+            <p><b style="color:var(--text);">Photos wait for a look-over.</b> Whatever you choose, the photos your group puts up stay between its members until Adopt an Area has been through them — one accidental photo of somebody's yard shouldn't land in front of the whole town. When your wall is ready, an admin taps "Ask Adopt an Area" inside the group and somebody trusted takes a look.</p>
             <p style="margin-bottom:0;">You can be in as many groups as you like — your street, your church, the school clean-up or even a clean-up event.</p>
           </div>
         </details>
@@ -1217,13 +1218,18 @@
             <label class="field-label" style="margin-top:6px;">Who can see this group?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--green);"></div>
-              <div><b>Public — anyone can look</b><span class="desc">Your group shows up on the Groups page. People can see your photos and the areas you've claimed.</span></div>
+              <div><b>Public — anyone can look</b><span class="desc">Your group shows up on the Groups page: its name, its town and the areas you've claimed. Your photos are a separate thing — see below.</span></div>
             </div>
             <div class="task-opt" data-vis="private" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--gray);"></div>
               <div><b>Private — members only</b><span class="desc">Nobody outside the group sees your photos, and it won't show up in the search.</span></div>
             </div>
             <p class="fineprint" style="margin:2px 0 8px 0;">You'll be the first admin, so the photos, the join pin and the settings are yours. You can make other members admins too.</p>
+            <div style="background:var(--soft); border-radius:var(--radius-md); padding:12px 14px; margin:4px 0 10px 0;">
+              <b style="font-size:12.5px;">📷 About your photos</b>
+              <p class="fineprint" style="margin:6px 0 0 0;">Photos your group puts up stay between its members to begin with — even if you choose public. That's on purpose: it's how a photo of somebody's yard, or somebody's children, doesn't go up in front of the whole town by accident.</p>
+              <p class="fineprint" style="margin:6px 0 0 0;">When you're happy with what's on your wall, an admin taps <b>Ask Adopt an Area</b> inside the group. Somebody trusted looks through it and says yes, and from then on the switch inside your group is the only thing deciding who sees them. Say no to it at any time and they go back to members-only.</p>
+            </div>
             <button class="btn btn-secondary" style="margin-top:4px;" onclick="createTeam()">Create group</button>
           </div>
           <div class="admin-card">
@@ -1281,6 +1287,13 @@
               <span id="myTeamVisNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
               <button id="myTeamVisBtn" style="background:none; border:1.5px solid var(--border); border-radius:12px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="toggleTeamVisibility()">Change</button>
             </div>
+            <!-- Asked, and answered. Hidden entirely until the migration behind it
+                 has been run — see approvalReady(). -->
+            <div id="myTeamApprovalRow" style="display:none; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <span id="myTeamOkChip" class="privchip">Not checked</span>
+              <span id="myTeamOkNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
+              <button id="myTeamOkBtn" style="display:none; background:none; border:1.5px solid var(--green); border-radius:12px; padding:7px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--green-dark); cursor:pointer;" onclick="askGroupPhotos()">Ask Adopt an Area</button>
+            </div>
             <div id="myTeamPhotoVisRow" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
               <span id="myTeamPhotoChip" class="privchip">Photos</span>
               <span id="myTeamPhotoNote" class="fineprint" style="margin:0; flex:1; min-width:150px;"></span>
@@ -1300,11 +1313,21 @@
         <!-- Who may run clean-up events. Visible to you, and to anyone you've made
              a deputy — they can tick hosts, but only you can appoint a deputy. -->
         <div id="eventHostTools" style="display:none;">
-          <p class="eyebrow">Who may run clean-up events</p>
+          <p class="eyebrow">Who may do what</p>
           <div class="admin-card">
-            <p class="fineprint" style="margin:0 0 10px 0;">Ticking someone lets them start a clean-up event: a group with a day and a meeting spot that lands on the home page of everyone within 50km. Untick them and their events stay up, they just can't start another.</p>
+            <p class="fineprint" style="margin:0 0 10px 0;">Three things to hand out here. <b>Events</b> lets somebody start a clean-up: a group with a day and a meeting spot that lands on the home page of everyone within 50km. <b>Gallery</b> lets them post to the photo wall. <b>Photo checks</b> lets them decide which groups may show their photos to the whole town. A <b>deputy</b> hands out that same one to other people — appointing a deputy stays with you. Untaking any of them leaves what's already up alone; it just stops the next one.</p>
             <input type="text" id="eventPeopleSearch" placeholder="Search by name" oninput="renderEventPeople()" autocomplete="off" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff;">
             <div id="eventPeopleList" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Groups asking to have their photo wall opened up. Whoever may answer
+             sees this, site admin or not. -->
+        <div id="photoReviewTools" style="display:none;">
+          <p class="eyebrow">Groups waiting to show their photos</p>
+          <div class="admin-card">
+            <p class="fineprint" style="margin:0 0 10px 0;">A public group is findable from the day it's made — its name, its town, the areas it looks after. Its photos are a separate thing, and they stay between its members until somebody here says yes. Open the group and look through what's on its wall before you do: once it's yes, the whole town can see it. Saying no later takes it straight back down again.</p>
+            <div id="photoReviewList"></div>
           </div>
         </div>
 
@@ -1517,7 +1540,7 @@
           <input type="text" id="photoCaption" placeholder="Caption — e.g. Cleared Voortrekker St corner" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:10px;">
           <input type="text" id="photoWho" placeholder="Who did it — e.g. Marie K." style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:8px;">
           <label class="checkrow"><input type="checkbox" id="photoBigProject"> This is a bigger project</label>
-          <label class="checkrow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
+          <label class="checkrow" id="featuredRow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
           <button class="btn btn-primary" id="galleryPostBtn" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
         </div>
       </div>
@@ -1552,7 +1575,7 @@
 
       <div class="email-card">
         <div style="font-size:26px;">👥</div>
-        <p>Groups are started from My Area — name it, hand out the join pin, and it shows up here if you make it public.</p>
+        <p>Groups are started from My Area — name it, hand out the join pin, and it shows up here if you make it public. Its photos stay between members until Adopt an Area has looked through them.</p>
         <button class="btn btn-primary" onclick="showPage('myarea')">Start or join a group</button>
       </div>
     </div>
@@ -1644,8 +1667,9 @@
         <div class="step"><div class="step-num">1</div><div><h4>Go to My Area</h4><p>Sign in first if you haven't — groups are tied to your account.</p></div></div>
         <div class="step"><div class="step-num">2</div><div><h4>Find "Your groups"</h4><p>Every group you're in is listed there by name. Tap one to open it and see its photos, its members and its settings. You can be in as many as you like — your street, your church, the school clean-up — and "Start or join another group" adds the next one.</p></div></div>
         <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name, choose public or private, and tap "Create group." You'll be its admin, and you'll get a join pin to hand out to neighbours.</p></div></div>
-        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up on the Groups page, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
-        <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up on the Groups page, so anyone can see the areas you've claimed. Private groups stay between members. You can switch later from inside the group.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>Your photos wait for a look-over</h4><p>Photos are the one part that isn't automatic. Whether your group is public or not, its photos stay between its members until Adopt an Area has been through them — so nothing goes up in front of the town by accident. An admin taps "Ask Adopt an Area" inside the group when the wall is ready, somebody trusted looks, and after that the switch inside your group decides who sees them.</p></div></div>
+        <div class="step"><div class="step-num">6</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
       <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">It's like a WhatsApp group. Everyone in it sees the same photos, and the admins are the ones who put them up, give out the join pin and change the settings. If the group is private, the photos stay between members. If it's public, anyone in town can find the group in the Gallery, though the admins can still keep the photos for members only.</p>
         </div>
@@ -3182,6 +3206,12 @@ async function afterAuth(){
                // Who may run a clean-up event, and who may hand that out to others.
                canHost:!!(profile && (profile.can_host_events || profile.is_admin)),
                canGrant:!!(profile && (profile.can_grant_events || profile.is_admin)),
+               // The same shape again for the photo wall, and for saying yes to a
+               // group's photos — see supabase-trusted-posters.sql.
+               canPostGallery:!!(profile && (profile.can_post_gallery || profile.is_admin)),
+               canGrantGallery:!!(profile && (profile.can_grant_gallery || profile.is_admin)),
+               canOkPhotos:!!(profile && (profile.can_ok_photos || profile.is_admin)),
+               canGrantPhotos:!!(profile && (profile.can_grant_photos || profile.is_admin)),
                lat:(profile && profile.town_lat)||null, lng:(profile && profile.town_lng)||null};
   document.getElementById('signinBtn').textContent='Hi, '+currentUser.name.split(' ')[0];
   document.getElementById('signinBtn').onclick=()=>showPage('myarea');
@@ -3248,10 +3278,17 @@ function renderMyAreas(){
   renderEventPermission();
   // The people-who-may-run-events list is for whoever hands that out: you, or a
   // deputy you've appointed. It's the one admin box a non-admin can see.
+  const mayGrant = currentUser.canGrant || currentUser.canGrantGallery || currentUser.canGrantPhotos;
   const evAdmin=document.getElementById('eventHostTools');
   if(evAdmin){
-    evAdmin.style.display = currentUser.canGrant ? 'block' : 'none';
-    if(currentUser.canGrant) renderEventPeople();
+    evAdmin.style.display = mayGrant ? 'block' : 'none';
+    if(mayGrant) renderEventPeople();
+  }
+  // Reviewing groups is its own job, and its own box.
+  const phAdmin=document.getElementById('photoReviewTools');
+  if(phAdmin){
+    phAdmin.style.display = currentUser.canOkPhotos ? 'block' : 'none';
+    if(currentUser.canOkPhotos) loadPhotoRequests();
   }
   document.getElementById('adminTools').style.display = currentUser.admin ? 'block' : 'none';
   if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); renderCouncilApplications(); }
@@ -3287,12 +3324,23 @@ let myTeamMembers=[];
 // group on the page — so the first query that comes back complaining drops to the
 // old list and the app carries on without events until the migration lands.
 const TEAM_COLS_BASE='id,name,town_id,created_by,is_public,photos_public';
-let TEAM_COLS=TEAM_COLS_BASE+',logo_url,event_date,event_time,event_lat,event_lng,event_place,event_info,event_video,event_contact';
-const eventsReady = ()=> TEAM_COLS!==TEAM_COLS_BASE;
+const TEAM_COLS_EVENTS=TEAM_COLS_BASE+',logo_url,event_date,event_time,event_lat,event_lng,event_place,event_info,event_video,event_contact';
+// The go-ahead a group needs before outsiders may see its photos — that's
+// supabase-trusted-posters.sql, the newest migration and the first to go.
+const TEAM_COLS_FULL=TEAM_COLS_EVENTS+',photos_asked,photos_approved';
+let TEAM_COLS=TEAM_COLS_FULL;
+const eventsReady   = ()=> TEAM_COLS!==TEAM_COLS_BASE;
+const approvalReady = ()=> TEAM_COLS===TEAM_COLS_FULL;
+// Each complaint about a missing column drops one rung, so a site that's ahead
+// of its database still works — just without whatever hasn't landed yet.
+function dropTeamCols(){
+  TEAM_COLS = TEAM_COLS===TEAM_COLS_FULL ? TEAM_COLS_EVENTS : TEAM_COLS_BASE;
+}
 async function teamQuery(fn){
   let r=await fn(TEAM_COLS);
-  if(r && r.error && eventsReady() && /column|does not exist|schema cache/i.test(r.error.message||'')){
-    TEAM_COLS=TEAM_COLS_BASE;
+  while(r && r.error && TEAM_COLS!==TEAM_COLS_BASE
+        && /column|does not exist|schema cache/i.test(r.error.message||'')){
+    dropTeamCols();
     r=await fn(TEAM_COLS);
   }
   return r;
@@ -3436,13 +3484,45 @@ function renderTeamVisibility(){
   const pbtn=document.getElementById('myTeamPhotoVisBtn');
   pchip.className = (pub && photosPub) ? 'pubchip' : 'privchip';
   pchip.textContent = (pub && photosPub) ? 'Photos: anyone' : 'Photos: members';
+  const okd = !approvalReady() || !!t.photos_approved;
   pnote.textContent = !pub
     ? 'While the group is private, photos stay between members whatever this is set to.'
     : (photosPub
-        ? 'Visitors who find your group can look through its photos.'
+        ? (okd ? 'Visitors who find your group can look through its photos.'
+               : 'Set to open — it takes effect once Adopt an Area has looked at the group.')
         : 'Your group is findable, but the photos are for members only.');
   pbtn.textContent = photosPub ? 'Members only' : 'Let anyone look';
   pbtn.style.display = admin ? 'block' : 'none';
+  renderTeamApproval(t, admin);
+}
+// Nothing a group can give itself: an admin can ask, and that's all. The rest
+// happens in "Groups waiting to show their photos" on somebody else's screen.
+function renderTeamApproval(t, admin){
+  const row=document.getElementById('myTeamApprovalRow');
+  if(!row) return;
+  if(!approvalReady()){ row.style.display='none'; return; }   // migration not run yet
+  row.style.display='flex';
+  const done=!!t.photos_approved, asked=!!t.photos_asked;
+  const chip=document.getElementById('myTeamOkChip');
+  chip.className = done ? 'pubchip' : 'privchip';
+  chip.textContent = done ? 'Photos checked ✓' : asked ? 'Asked' : 'Not checked yet';
+  document.getElementById('myTeamOkNote').textContent = done
+    ? 'Adopt an Area has been through this group, so the switch above is the only thing deciding who sees the photos.'
+    : asked
+      ? 'You\'ve asked. Somebody at Adopt an Area will look through what\'s on your wall and come back to you. Until then the photos stay between members.'
+      : 'Your photos stay between members until Adopt an Area has looked through them. Your name, your town and the areas you look after are public the moment the group is.';
+  const btn=document.getElementById('myTeamOkBtn');
+  btn.style.display = (admin && !done && !asked) ? 'block' : 'none';
+}
+async function askGroupPhotos(){
+  const t=openTeam();
+  if(!t) return;
+  if(!isTeamAdmin()){ showBanner('Only a group admin can ask for this', 2600); return; }
+  const {error} = await sb.rpc('request_group_photos', {p_team:t.id});
+  if(error){ showBanner(error.message, 3600); return; }
+  t.photos_asked=true;
+  renderTeamVisibility();
+  showBanner('Asked — somebody will look through your photos and come back to you', 3800);
 }
 async function toggleTeamVisibility(){
   const t=openTeam();
@@ -3956,9 +4036,13 @@ function renderEventPeople(){
   drawEventPeople();
 }
 async function loadEventPeople(){
-  if(!currentUser || !currentUser.canGrant) return;
+  if(!currentUser) return;
+  if(!(currentUser.canGrant || currentUser.canGrantGallery || currentUser.canGrantPhotos)) return;
   const q=val('eventPeopleSearch');
-  const {data, error} = await sb.rpc('event_people', {p_q:q||null});
+  // permission_people carries every switch; event_people is what's there before
+  // supabase-trusted-posters.sql has been run.
+  let {data, error} = await sb.rpc('permission_people', {p_q:q||null});
+  if(error) ({data, error} = await sb.rpc('event_people', {p_q:q||null}));
   eventPeople = error ? [] : (data||[]);
   drawEventPeople();
 }
@@ -3974,10 +4058,23 @@ function drawEventPeople(){
     row.style.cursor='default';
     row.innerHTML=`<div style="flex:1; min-width:0;"><div class="arow-name">${escHtml(p.name||'Neighbour')}</div><div class="arow-desc">${escHtml(town)}</div></div>`;
     const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex; gap:6px; flex-shrink:0;';
-    wrap.appendChild(evToggle('Events', p.can_host_events, ()=>setEventHost(p.id, !p.can_host_events)));
-    // Only you appoint deputies — see set_event_granter in supabase-events.sql.
-    if(currentUser.admin) wrap.appendChild(evToggle('Deputy', p.can_grant_events, ()=>setEventGranter(p.id, !p.can_grant_events)));
+    wrap.style.cssText='display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex-shrink:0;';
+    // Only what this person can actually hand out is offered. The database checks
+    // the same thing again, so a stray tap can't do anything either way.
+    const trusted = p.can_post_gallery!==undefined;   // the newer migration has run
+    if(currentUser.canGrant){
+      wrap.appendChild(evToggle('Events', p.can_host_events, ()=>setEventHost(p.id, !p.can_host_events)));
+      // Only you appoint deputies — see set_event_granter in supabase-events.sql.
+      if(currentUser.admin) wrap.appendChild(evToggle('Events deputy', p.can_grant_events, ()=>setEventGranter(p.id, !p.can_grant_events)));
+    }
+    if(trusted && currentUser.canGrantGallery){
+      wrap.appendChild(evToggle('Gallery', p.can_post_gallery, ()=>flipPermission('set_gallery_poster', p.id, !p.can_post_gallery, 'They can post to the gallery now')));
+      if(currentUser.admin) wrap.appendChild(evToggle('Gallery deputy', p.can_grant_gallery, ()=>flipPermission('set_gallery_granter', p.id, !p.can_grant_gallery, 'They can hand out gallery posting now')));
+    }
+    if(trusted && currentUser.canGrantPhotos){
+      wrap.appendChild(evToggle('Photo checks', p.can_ok_photos, ()=>flipPermission('set_photo_reviewer', p.id, !p.can_ok_photos, 'They can review group photos now')));
+      if(currentUser.admin) wrap.appendChild(evToggle('Photo deputy', p.can_grant_photos, ()=>flipPermission('set_photo_granter', p.id, !p.can_grant_photos, 'They can hand out photo checks now')));
+    }
     row.appendChild(wrap);
     box.appendChild(row);
   });
@@ -4001,6 +4098,61 @@ async function setEventGranter(id, on){
   showBanner(on ? 'They can hand out event hosting now' : 'Taken away again', 2400);
   await loadEventPeople();
 }
+// The gallery and photo-check switches all work the same way, so they share one.
+async function flipPermission(rpc, id, on, yes){
+  const {error} = await sb.rpc(rpc, {p_user:id, p_on:on});
+  if(error){ showBanner(error.message, 3600); return; }
+  showBanner(on ? yes : 'Taken away again', 2400);
+  await loadEventPeople();
+}
+
+// ---- groups waiting to show their photos ----
+// A public group is findable straight away; its photo wall isn't. An admin of the
+// group asks, and whoever holds the photo-check switch answers here.
+let photoRequests=[];
+async function loadPhotoRequests(){
+  if(!currentUser || !currentUser.canOkPhotos) return;
+  const {data, error} = await sb.rpc('group_photo_requests');
+  photoRequests = error ? [] : (data||[]);
+  drawPhotoRequests();
+}
+function drawPhotoRequests(){
+  const box=document.getElementById('photoReviewList');
+  if(!box) return;
+  if(!photoRequests.length){ box.innerHTML='<p class="fineprint" style="margin:0;">Nothing waiting, and nothing said yes to yet.</p>'; return; }
+  box.innerHTML='';
+  photoRequests.forEach(g=>{
+    const town=(ALL_TOWNS.find(t=>t.id===g.town_id)||{}).name || '';
+    const n=Number(g.photo_count)||0, m=Number(g.member_count)||0;
+    const bits=[town, n+(n===1?' photo':' photos'), m+(m===1?' member':' members'),
+                g.photos_approved ? 'showing' : 'waiting'].filter(Boolean);
+    const row=document.createElement('div');
+    row.className='arow';
+    row.style.cursor='default';
+    row.innerHTML=`<div style="flex:1; min-width:0;"><div class="arow-name">${escHtml(g.name||'Group')}</div><div class="arow-desc">${escHtml(bits.join(' · '))}</div></div>`;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex-shrink:0;';
+    wrap.appendChild(evToggle('Look', false, ()=>lookAtGroup(g.id)));
+    wrap.appendChild(evToggle(g.photos_approved?'Showing':'Say yes', g.photos_approved,
+                              ()=>setGroupPhotos(g.id, !g.photos_approved)));
+    row.appendChild(wrap);
+    box.appendChild(row);
+  });
+}
+// Reviewers can read any group's photos (can_see_team_photos lets them), but the
+// sheet is built from the public-groups list, so a private one can't be opened.
+function lookAtGroup(id){
+  if(!publicGroups.some(g=>g.id===id)){ showBanner('That group is private, so there\'s nothing to show the town yet', 3200); return; }
+  openGroupProfile(id);
+}
+async function setGroupPhotos(id, on){
+  const {error} = await sb.rpc('set_group_photos', {p_team:id, p_on:on});
+  if(error){ showBanner(error.message, 3600); return; }
+  showBanner(on ? 'Their photos are public now' : 'Taken back down — members only again', 2800);
+  await loadPhotoRequests();
+  await loadPublicGroups();
+  await loadMyTeams();
+}
 
 // ================= CLEAN-UP EVENTS ON THE HOME PAGE =================
 // Public event groups, with the ones near you first. "Near" is 50km from wherever
@@ -4020,7 +4172,7 @@ async function loadEvents(){
   if(!eventsReady()){ siteEvents=[]; renderEvents(); return; }   // migration hasn't been run yet
   const {data, error} = await sb.from('teams').select(TEAM_COLS)
     .eq('is_public', true).not('event_date','is',null).order('event_date');
-  if(error && /column|does not exist|schema cache/i.test(error.message||'')) TEAM_COLS=TEAM_COLS_BASE;
+  if(error && /column|does not exist|schema cache/i.test(error.message||'')) dropTeamCols();
   siteEvents = error ? [] : (data||[]);
   renderEvents();
   // Whether the database knows about events at all is only settled once a query
@@ -4299,9 +4451,16 @@ async function openGroupProfile(id){
   // The group's admins can shut the photo wall to outsiders while staying
   // findable — say so rather than showing an empty grid.
   const mine = myTeams.some(t=>t.id===g.id);
-  if(g.photos_public===false && !mine){
-    note.textContent='This group keeps its photos for members only.';
-    return;
+  const reviewer = !!(currentUser && currentUser.canOkPhotos);
+  if(!mine && !reviewer){
+    if(g.photos_public===false){
+      note.textContent='This group keeps its photos for members only.';
+      return;
+    }
+    if(approvalReady() && !g.photos_approved){
+      note.textContent='This group\'s photos aren\'t open to the town yet — Adopt an Area looks through a group\'s wall before it goes up.';
+      return;
+    }
   }
   const {data:photos, error} = await sb.from('team_photos').select('*').eq('team_id', g.id).order('created_at',{ascending:false});
   if(error){ note.textContent='Couldn\'t load this group\'s photos just now.'; return; }
@@ -4343,8 +4502,15 @@ function stagePhoto(evt, kind){
   const labelId = kind==='single' ? 'singlePickLabel' : kind==='before' ? 'beforePickLabel' : 'afterPickLabel';
   document.getElementById(labelId).textContent = '✓ '+file.name.slice(0,18);
 }
+// The wall is open to whoever has been trusted with it, not only the site admin.
+// The database says the same thing — see supabase-trusted-posters.sql — so this
+// is about what's worth showing, not about holding anybody back.
+function mayPostGallery(){ return !!(currentUser && (currentUser.admin || currentUser.canPostGallery)); }
 function updateGalleryAdminVisibility(){
-  document.getElementById('galleryAdminTools').style.display = (currentUser && currentUser.admin) ? 'block' : 'none';
+  document.getElementById('galleryAdminTools').style.display = mayPostGallery() ? 'block' : 'none';
+  // The hero on the home page stays the site admin's pick.
+  const feat=document.getElementById('featuredRow');
+  if(feat) feat.style.display = (currentUser && currentUser.admin) ? 'flex' : 'none';
 }
 // 50MB is Supabase's own per-file ceiling — catching it here means a phone video
 // that is too long says so straight away instead of after a long silent upload.
@@ -4451,7 +4617,10 @@ function renderGallery(){
     } else {
       photoHtml = `<div class="gphoto">📷</div>`;
     }
-    const delBtn = (currentUser && currentUser.admin) ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
+    // Your own back, or anything at all if you're the site admin. Same rule as
+    // the delete policy on gallery_photos.
+    const mayDelete = currentUser && (currentUser.admin || (currentUser.canPostGallery && g.posted_by===currentUser.id));
+    const delBtn = mayDelete ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
     card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${delBtn}</div>`;
     grid.appendChild(card);
   });
