@@ -1129,7 +1129,7 @@ ZZO3_END_UNUSED
       <div id="myAreaSignedIn" style="display:none;">
         <div class="welcome-row">
           <div class="avatar" id="avatarInitial">?</div>
-          <div style="flex:1;"><h2 style="margin-bottom:0;" id="welcomeName">Hi there 👋</h2><p style="margin:2px 0 0 0; font-size:13px; color:var(--text-dim);" id="welcomeEmail"></p><p style="margin:2px 0 0 0; font-size:10.5px; color:var(--text-dim); font-family:monospace;" id="debugUserId"></p></div>
+          <div style="flex:1;"><h2 style="margin-bottom:0;" id="welcomeName">Hi there 👋</h2><p style="margin:2px 0 0 0; font-size:13px; color:var(--text-dim);" id="welcomeEmail"></p></div>
           <button style="background:none; border:1.5px solid var(--border); border-radius:14px; padding:8px 14px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;" onclick="signOut()">Sign out</button>
         </div>
         <p class="eyebrow">Your account</p>
@@ -3278,7 +3278,6 @@ function renderMyAreas(){
   document.getElementById('welcomeName').textContent='Hi '+currentUser.name.split(' ')[0]+' 👋';
   const townName = currentUser.town ? (ALL_TOWNS.find(t=>t.id===currentUser.town)||{}).name : '';
   document.getElementById('welcomeEmail').textContent=[currentUser.email, townName].filter(Boolean).join(' · ');
-  document.getElementById('debugUserId').textContent='Account ID: '+currentUser.id+(currentUser.admin?' (admin ✓)':' (admin ✗ — profile not matched)');
   const list=document.getElementById('myAreasList');
   const mine=seedAreas.filter(a=>a.ownerId===currentUser.id);
   if(mine.length===0){ list.innerHTML='<p style="font-size:13px; color:var(--text-dim);">You haven\u2019t claimed an area yet. Go to the map to add one.</p>'; }
