@@ -263,7 +263,7 @@
      the shots at size instead of squinting at the thumbnail. */
   .lightbox-stage{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%; max-height:100%; }
   .lightbox-fig{ flex:1 1 0; min-width:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:9px; }
-  .lightbox-fig img{ max-width:100%; max-height:calc(100vh - 120px); object-fit:contain; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .lightbox-fig img, .lightbox-fig video{ max-width:100%; max-height:calc(100vh - 120px); object-fit:contain; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
   .lightbox-fig figcaption{ color:#fff; font-size:12px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; opacity:0.82; }
   .lightbox-close{ position:fixed; top:calc(14px + var(--safe-top)); right:14px; width:38px; height:38px; border:none; border-radius:50%; background:rgba(255,255,255,0.18); color:#fff; font-size:21px; font-family:inherit; line-height:1; cursor:pointer; }
 
@@ -563,18 +563,20 @@
   .potw{ background:linear-gradient(155deg, var(--gold) 0%, #A8761F 100%); border-radius:var(--radius-lg); padding:4px; margin-bottom:16px; }
   .potw-inner{ background:rgba(255,255,255,0.97); border-radius:20px; padding:16px; }
   .potw-badge{ display:inline-flex; align-items:center; gap:6px; background:var(--gold-tint); color:#8C6212; font-size:11px; font-weight:800; padding:5px 11px; border-radius:20px; margin-bottom:10px; }
-  .potw-photo{ width:100%; aspect-ratio:16/9; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:52px; margin-bottom:10px; overflow:hidden; }
+  .potw-photo{ position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:52px; margin-bottom:10px; overflow:hidden; }
   .potw h3{margin:0 0 4px 0; font-size:16.5px; font-weight:800;}
   .potw p{margin:0; font-size:13px; color:var(--text-dim);}
   .gallery-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .gcard{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
-  .gphoto{ width:100%; aspect-ratio:4/3; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:36px; overflow:hidden; }
-  .gphoto img{width:100%; height:100%; object-fit:cover;}
+  .gphoto{ position:relative; width:100%; aspect-ratio:4/3; background:var(--soft); display:flex; align-items:center; justify-content:center; font-size:36px; overflow:hidden; }
+  .gphoto img, .gphoto video{width:100%; height:100%; object-fit:cover;}
   .gphoto-ba{ display:flex; width:100%; aspect-ratio:4/3; }
   .gphoto-ba > div{ flex:1; position:relative; overflow:hidden; }
-  .gphoto-ba img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .gphoto-ba img, .gphoto-ba video{ width:100%; height:100%; object-fit:cover; display:block; }
   .gphoto-ba .ba-label{ position:absolute; bottom:5px; left:5px; background:rgba(0,0,0,0.6); color:#fff; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
-  .gphoto img, .gphoto-ba img, .potw-photo img{ cursor:pointer; }
+  .gphoto img, .gphoto video, .gphoto-ba img, .gphoto-ba video, .potw-photo img, .potw-photo video{ cursor:pointer; }
+  /* Grid tiles do not play — this marks the ones that will, once opened. */
+  .play-pill{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:42px; height:42px; padding-left:3px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; font-size:15px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .gbody{padding:10px 12px;}
   .gcaption{font-size:12.5px; font-weight:700;}
   .gwho{font-size:11px; color:var(--text-dim); margin-top:3px;}
@@ -1491,23 +1493,23 @@
       <div id="galleryAdminTools" style="display:none;">
         <div class="admin-card" style="margin-bottom:16px;">
           <b style="font-size:14px;">Add to the gallery</b>
-          <p class="fineprint" style="margin-bottom:10px;">Posts straight to the public wall — choose what type below.</p>
+          <p class="fineprint" style="margin-bottom:10px;">Posts straight to the public wall — photos or short videos, up to 50MB each.</p>
           <div class="segctrl" style="margin-bottom:12px;">
-            <button class="sel" id="modeSingleBtn" onclick="setPhotoMode('single')">Single photo</button>
+            <button class="sel" id="modeSingleBtn" onclick="setPhotoMode('single')">One photo or video</button>
             <button id="modeBABtn" onclick="setPhotoMode('beforeafter')">Before &amp; after</button>
           </div>
           <div id="singlePhotoFields">
-            <input type="file" id="adminPhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'single')">
-            <button class="btn btn-secondary" onclick="document.getElementById('adminPhotoInput').click()" id="singlePickLabel">+ Choose photo</button>
+            <input type="file" id="adminPhotoInput" accept="image/*,video/*" style="display:none;" onchange="stagePhoto(event,'single')">
+            <button class="btn btn-secondary" onclick="document.getElementById('adminPhotoInput').click()" id="singlePickLabel">+ Choose photo or video</button>
           </div>
           <div id="baPhotoFields" style="display:none;">
             <div style="display:flex; gap:8px;">
               <div style="flex:1;">
-                <input type="file" id="beforePhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'before')">
+                <input type="file" id="beforePhotoInput" accept="image/*,video/*" style="display:none;" onchange="stagePhoto(event,'before')">
                 <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('beforePhotoInput').click()" id="beforePickLabel">+ Before</button>
               </div>
               <div style="flex:1;">
-                <input type="file" id="afterPhotoInput" accept="image/*" style="display:none;" onchange="stagePhoto(event,'after')">
+                <input type="file" id="afterPhotoInput" accept="image/*,video/*" style="display:none;" onchange="stagePhoto(event,'after')">
                 <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('afterPhotoInput').click()" id="afterPickLabel">+ After</button>
               </div>
             </div>
@@ -1516,7 +1518,7 @@
           <input type="text" id="photoWho" placeholder="Who did it — e.g. Marie K." style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:8px;">
           <label class="checkrow"><input type="checkbox" id="photoBigProject"> This is a bigger project</label>
           <label class="checkrow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
-          <button class="btn btn-primary" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
+          <button class="btn btn-primary" id="galleryPostBtn" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
         </div>
       </div>
 
@@ -4344,14 +4346,32 @@ function stagePhoto(evt, kind){
 function updateGalleryAdminVisibility(){
   document.getElementById('galleryAdminTools').style.display = (currentUser && currentUser.admin) ? 'block' : 'none';
 }
+// 50MB is Supabase's own per-file ceiling — catching it here means a phone video
+// that is too long says so straight away instead of after a long silent upload.
+const MAX_UPLOAD_MB=50;
 async function uploadToGallery(file){
-  const path=`${Date.now()}_${file.name}`;
-  const {error} = await sb.storage.from('gallery').upload(path, file);
-  if(error){ showBanner(error.message, 3000); return null; }
+  if(file.size > MAX_UPLOAD_MB*1024*1024){
+    showBanner(`That file is ${Math.round(file.size/1048576)}MB — keep it under ${MAX_UPLOAD_MB}MB`, 4200);
+    return null;
+  }
+  // Spaces and stray punctuation in a phone's filename make for a fragile public
+  // URL, so the name is flattened. The extension stays — that is how the gallery
+  // knows later whether the row holds a video.
+  const path=`${Date.now()}_${file.name.replace(/[^A-Za-z0-9._-]/g,'_')}`;
+  const {error} = await sb.storage.from('gallery').upload(path, file, {contentType:file.type||undefined});
+  if(error){ showBanner(error.message, 4200); return null; }
   const {data} = sb.storage.from('gallery').getPublicUrl(path);
   return data.publicUrl;
 }
+// A video takes long enough to upload that the button has to say so.
 async function submitGalleryPhoto(){
+  const btn=document.getElementById('galleryPostBtn');
+  const label=btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='Uploading…'; }
+  try{ await postGalleryMedia(); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=label; } }
+}
+async function postGalleryMedia(){
   const caption=document.getElementById('photoCaption').value.trim() || 'Just added by the team';
   const who=document.getElementById('photoWho').value.trim() || currentUser.name;
   const isBig=document.getElementById('photoBigProject').checked;
@@ -4359,13 +4379,13 @@ async function submitGalleryPhoto(){
   let image_url='', before_url='', after_url='';
   if(photoMode==='single'){
     const file=document.getElementById('adminPhotoInput').files[0];
-    if(!file){ showBanner('Choose a photo first', 2200); return; }
+    if(!file){ showBanner('Choose a photo or video first', 2400); return; }
     image_url = await uploadToGallery(file);
     if(!image_url) return;
   } else {
     const bf=document.getElementById('beforePhotoInput').files[0];
     const af=document.getElementById('afterPhotoInput').files[0];
-    if(!bf || !af){ showBanner('Choose both a before and after photo', 2400); return; }
+    if(!bf || !af){ showBanner('Choose both a before and an after file', 2400); return; }
     before_url = await uploadToGallery(bf);
     if(!before_url) return;
     after_url = await uploadToGallery(af);
@@ -4374,7 +4394,7 @@ async function submitGalleryPhoto(){
   if(isFeatured){ await sb.from('gallery_photos').update({is_featured:false}).eq('is_featured', true); }
   await sb.from('gallery_photos').insert({image_url, before_url, after_url, caption, who, is_big_project:isBig, is_featured:isFeatured});
   document.getElementById('adminPhotoInput').value=''; document.getElementById('beforePhotoInput').value=''; document.getElementById('afterPhotoInput').value='';
-  document.getElementById('singlePickLabel').textContent='+ Choose photo';
+  document.getElementById('singlePickLabel').textContent='+ Choose photo or video';
   document.getElementById('beforePickLabel').textContent='+ Before';
   document.getElementById('afterPickLabel').textContent='+ After';
   document.getElementById('photoCaption').value=''; document.getElementById('photoWho').value='';
@@ -4400,9 +4420,22 @@ function renderFeatured(){
   const heroImg = featured.after_url || featured.image_url;
   const heroPair = (featured.before_url && featured.after_url)
     ? ` data-before="${escHtml(featured.before_url)}" data-after="${escHtml(featured.after_url)}"` : '';
-  document.getElementById('potwPhoto').innerHTML = heroImg ? `<img src="${escHtml(heroImg)}"${heroPair} style="width:100%; height:100%; object-fit:cover;">` : '📷';
+  document.getElementById('potwPhoto').innerHTML = heroImg ? galleryMedia(heroImg, `${heroPair} style="width:100%; height:100%; object-fit:cover;"`) : '📷';
   document.getElementById('potwTitle').textContent = featured.caption;
   document.getElementById('potwCaption').textContent = featured.who;
+}
+// Whether a file is a video is read off its extension. The uploader keeps the
+// original name, so nothing extra has to be recorded against the row.
+const VIDEO_EXT=/\.(mp4|m4v|mov|webm|ogv|ogg|3gp)(\?|#|$)/i;
+function isVideoUrl(u){ return VIDEO_EXT.test(u||''); }
+// Tiles stay quiet — muted, no controls, metadata only. Playing happens in the
+// lightbox, so a wall of cards does not pull down a wall of video. The #t=0.1
+// is what makes iOS draw a frame instead of a black rectangle.
+function galleryMedia(url, attrs){
+  const a = attrs||'';
+  return isVideoUrl(url)
+    ? `<video src="${escHtml(url)}#t=0.1"${a} muted playsinline preload="metadata"></video><span class="play-pill">&#9654;</span>`
+    : `<img src="${escHtml(url)}"${a}>`;
 }
 function renderGallery(){
   const grid=document.getElementById('galleryGrid');
@@ -4412,9 +4445,9 @@ function renderGallery(){
     card.className='gcard';
     let photoHtml;
     if(g.before_url && g.after_url){
-      photoHtml = `<div class="gphoto-ba"><div><img src="${g.before_url}"><span class="ba-label">Before</span></div><div><img src="${g.after_url}"><span class="ba-label">After</span></div></div>`;
+      photoHtml = `<div class="gphoto-ba"><div>${galleryMedia(g.before_url)}<span class="ba-label">Before</span></div><div>${galleryMedia(g.after_url)}<span class="ba-label">After</span></div></div>`;
     } else if(g.image_url){
-      photoHtml = `<div class="gphoto"><img src="${g.image_url}"></div>`;
+      photoHtml = `<div class="gphoto">${galleryMedia(g.image_url)}</div>`;
     } else {
       photoHtml = `<div class="gphoto">📷</div>`;
     }
@@ -5402,9 +5435,20 @@ function hasStoredSession(){
 function lightboxFigure(src, label){
   const fig=document.createElement('figure');
   fig.className='lightbox-fig';
-  const img=document.createElement('img');
-  img.src=src; img.alt=label||'';
-  fig.appendChild(img);
+  let media;
+  if(isVideoUrl(src)){
+    media=document.createElement('video');
+    media.controls=true; media.autoplay=true; media.playsInline=true;
+    media.setAttribute('playsinline','');
+    // The backdrop closes on click, so the controls need their taps to themselves.
+    media.addEventListener('click', e=>e.stopPropagation());
+    src = src.replace(/#t=0\.1$/, '');   // the tile's poster hint, not wanted here
+  } else {
+    media=document.createElement('img');
+    media.alt=label||'';
+  }
+  media.src=src;
+  fig.appendChild(media);
   if(label){ const cap=document.createElement('figcaption'); cap.textContent=label; fig.appendChild(cap); }
   return fig;
 }
@@ -5426,21 +5470,22 @@ function closeLightbox(){
   document.getElementById('lightboxBackdrop').classList.remove('show');
   document.getElementById('lightboxStage').innerHTML='';
 }
+const GALLERY_MEDIA_SEL='.gphoto img, .gphoto video, .gphoto-ba img, .gphoto-ba video, .potw-photo img, .potw-photo video';
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLightbox(); });
 // The plain pointer plus a tooltip reading Open, rather than a zoom cursor.
 // Set on hover so every photo wall gets it without each render remembering to.
 document.addEventListener('mouseover', e=>{
-  const img = e.target.closest && e.target.closest('.gphoto img, .gphoto-ba img, .potw-photo img');
+  const img = e.target.closest && e.target.closest(GALLERY_MEDIA_SEL);
   if(img && !img.title) img.title='Open';
 });
 // Delegated, so every photo wall gets it for free â the gallery grid, project of
 // the week, the team grid and the group sheet all render into the same classes.
 document.addEventListener('click', e=>{
-  const img = e.target.closest && e.target.closest('.gphoto img, .gphoto-ba img, .potw-photo img');
+  const img = e.target.closest && e.target.closest(GALLERY_MEDIA_SEL);
   if(!img) return;
   const pair = img.closest('.gphoto-ba');
   if(pair){
-    const shots = pair.querySelectorAll('img');
+    const shots = pair.querySelectorAll('img, video');
     openLightboxPair(shots[0] && shots[0].src, shots[1] && shots[1].src);
   } else if(img.dataset.before && img.dataset.after){
     openLightboxPair(img.dataset.before, img.dataset.after);   // featured card shows one shot, opens both
