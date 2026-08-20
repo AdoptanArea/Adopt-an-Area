@@ -574,7 +574,7 @@
   .gphoto-ba > div{ flex:1; position:relative; overflow:hidden; }
   .gphoto-ba img{ width:100%; height:100%; object-fit:cover; display:block; }
   .gphoto-ba .ba-label{ position:absolute; bottom:5px; left:5px; background:rgba(0,0,0,0.6); color:#fff; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
-  .gphoto img, .gphoto-ba img, .potw-photo img{ cursor:zoom-in; }
+  .gphoto img, .gphoto-ba img, .potw-photo img{ cursor:pointer; }
   .gbody{padding:10px 12px;}
   .gcaption{font-size:12.5px; font-weight:700;}
   .gwho{font-size:11px; color:var(--text-dim); margin-top:3px;}
@@ -5411,6 +5411,12 @@ function closeLightbox(){
   document.getElementById('lightboxStage').innerHTML='';
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLightbox(); });
+// The plain pointer plus a tooltip reading Open, rather than a zoom cursor.
+// Set on hover so every photo wall gets it without each render remembering to.
+document.addEventListener('mouseover', e=>{
+  const img = e.target.closest && e.target.closest('.gphoto img, .gphoto-ba img, .potw-photo img');
+  if(img && !img.title) img.title='Open';
+});
 // Delegated, so every photo wall gets it for free â the gallery grid, project of
 // the week, the team grid and the group sheet all render into the same classes.
 document.addEventListener('click', e=>{
