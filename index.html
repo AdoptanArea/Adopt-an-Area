@@ -770,6 +770,7 @@
       <!-- Only exists for an approved municipality account — see renderCouncilPage(). -->
       <button data-page="council" onclick="showPage('council')" id="navCouncilBtn" style="display:none;">Council</button>
       <button data-page="gallery" onclick="showPage('gallery')">Gallery</button>
+      <button data-page="groups" onclick="showPage('groups')">Groups</button>
       <button data-page="sponsors" onclick="showPage('sponsors')">Sponsors</button>
       <button data-page="learn" onclick="showPage('learn')">Learn</button>
     </nav>
@@ -1214,7 +1215,7 @@
             <label class="field-label" style="margin-top:6px;">Who can see this group?</label>
             <div class="task-opt" data-vis="public" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--green);"></div>
-              <div><b>Public — anyone can look</b><span class="desc">Your group shows up in the gallery search. People can see your photos and the areas you've claimed.</span></div>
+              <div><b>Public — anyone can look</b><span class="desc">Your group shows up on the Groups page. People can see your photos and the areas you've claimed.</span></div>
             </div>
             <div class="task-opt" data-vis="private" onclick="selectTeamVisibility(this)">
               <div class="dot" style="background:var(--gray);"></div>
@@ -1519,16 +1520,6 @@
         </div>
       </div>
 
-      <div class="gsearch">
-        <b style="font-size:14px;">Find a group</b>
-        <p class="fineprint" style="color:var(--text-dim); font-size:11.5px; margin:6px 0 10px;">Search public groups by name or town to see their photos and the areas they've claimed.</p>
-        <div class="gsearch-box">
-          <span class="gs-icon">🔍</span>
-          <input type="text" id="groupSearchInput" placeholder="Search groups — e.g. Kruisfontein Clean-up" oninput="renderGroupResults()" autocomplete="off">
-        </div>
-        <div id="groupResults"></div>
-      </div>
-
       <p class="eyebrow" style="margin-top:4px;">Photo wall</p>
       <div class="gallery-grid" id="galleryGrid"></div>
       <div class="email-card">
@@ -1536,6 +1527,31 @@
         <p>Done a clean-up? Email your before &amp; after photo and we'll add it here.</p>
         <a class="btn btn-primary" href="mailto:adoptanareainfo@gmail.com?subject=My%20cleanup%20photo">Email your photo</a>
         <p class="fineprint">adoptanareainfo@gmail.com</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- GROUPS -->
+<div class="page" id="page-groups">
+  <section>
+    <div class="wrap-wide">
+      <p class="eyebrow">Who's out there</p>
+      <h2 style="margin-bottom:6px;">Find a group</h2>
+      <p class="lead">Search public groups by name or town to see their photos and the areas they've claimed. Private groups stay out of here.</p>
+
+      <div class="gsearch" style="margin-top:18px;">
+        <div class="gsearch-box">
+          <span class="gs-icon">🔍</span>
+          <input type="text" id="groupSearchInput" placeholder="Search groups — e.g. Kruisfontein Clean-up" oninput="renderGroupResults()" autocomplete="off">
+        </div>
+        <div id="groupResults"></div>
+      </div>
+
+      <div class="email-card">
+        <div style="font-size:26px;">👥</div>
+        <p>Groups are started from My Area — name it, hand out the join pin, and it shows up here if you make it public.</p>
+        <button class="btn btn-primary" onclick="showPage('myarea')">Start or join a group</button>
       </div>
     </div>
   </section>
@@ -1626,7 +1642,7 @@
         <div class="step"><div class="step-num">1</div><div><h4>Go to My Area</h4><p>Sign in first if you haven't — groups are tied to your account.</p></div></div>
         <div class="step"><div class="step-num">2</div><div><h4>Find "Your groups"</h4><p>Every group you're in is listed there by name. Tap one to open it and see its photos, its members and its settings. You can be in as many as you like — your street, your church, the school clean-up — and "Start or join another group" adds the next one.</p></div></div>
         <div class="step"><div class="step-num">3</div><div><h4>Starting one?</h4><p>Give it a name, choose public or private, and tap "Create group." You'll be its admin, and you'll get a join pin to hand out to neighbours.</p></div></div>
-        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up in the Gallery search, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Public or private?</h4><p>Public groups show up on the Groups page, so anyone can see the areas you've claimed — and your photos too, unless an admin sets those to members only. Private groups stay between members. You can switch later from inside the group.</p></div></div>
         <div class="step"><div class="step-num">5</div><div><h4>Joining one?</h4><p>Ask one of the group's admins for the join pin, type it in, and tap "Join group." Only admins can see the pin, post photos, and decide who else becomes an admin.</p></div></div>
       </div>
       <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">It's like a WhatsApp group. Everyone in it sees the same photos, and the admins are the ones who put them up, give out the join pin and change the settings. If the group is private, the photos stay between members. If it's public, anyone in town can find the group in the Gallery, though the admins can still keep the photos for members only.</p>
@@ -3404,8 +3420,8 @@ function renderTeamVisibility(){
   chip.className = pub ? 'pubchip' : 'privchip';
   chip.textContent = pub ? 'Public' : 'Private';
   document.getElementById('myTeamVisNote').textContent = pub
-    ? 'Anyone can find this group in the gallery search and see the areas you\'ve claimed.'
-    : 'The group stays out of the gallery search. Nobody outside it sees anything.';
+    ? 'Anyone can find this group on the Groups page and see the areas you\'ve claimed.'
+    : 'The group stays off the Groups page. Nobody outside it sees anything.';
   const visBtn=document.getElementById('myTeamVisBtn');
   visBtn.textContent = pub ? 'Make private' : 'Make public';
   visBtn.style.display = admin ? 'block' : 'none';
