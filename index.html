@@ -593,8 +593,11 @@ ZZO3_END_UNUSED
   /* Group search — browsing public groups from the gallery */
   .gsearch{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:18px; }
   .gsearch-box{position:relative;}
-  .gsearch-box input{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:11px 14px 11px 38px; font-size:14px; font-family:inherit; }
-  .gsearch-box input:focus{outline:none; border-color:var(--green);}
+  /* input[type=text] further down the sheet matches just as strongly and comes
+     later, so it was winning and taking the room made for the magnifier with it.
+     Naming the type here settles it whatever the order. */
+  .gsearch-box input[type=text]{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:11px 14px 11px 38px; font-size:14px; font-family:inherit; }
+  .gsearch-box input[type=text]:focus{outline:none; border-color:var(--green);}
   .gsearch-box .gs-icon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:13.5px; opacity:0.5; pointer-events:none; }
   .grow{ display:flex; align-items:center; gap:11px; padding:12px 2px; border-top:1px solid var(--border); cursor:pointer; }
   .grow:first-child{border-top:none; padding-top:14px;}
