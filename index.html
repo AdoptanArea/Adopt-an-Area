@@ -673,6 +673,16 @@ ZZO3_END_UNUSED
 
   /* Sponsors */
   #page-sponsors{background:var(--soft2);}
+
+  /* "What you can sponsor" — four small bubbles in one line across, rather than
+     four full-width cards stacked down the page. They share the width evenly, so
+     all four are on screen at once even on a phone. */
+  .spon-ways{ display:flex; gap:7px; margin-top:12px; }
+  .spon-way{ flex:1 1 0; min-width:0; background:var(--soft); border-radius:var(--radius-md); padding:11px 8px; text-align:center; }
+  .spon-way .icon-badge{ width:28px; height:28px; border-radius:9px; font-size:14px; margin:0 auto 7px auto; }
+  .spon-way h4{ margin:0 0 4px 0; font-size:11.5px; font-weight:700; line-height:1.25; }
+  .spon-way p{ margin:0; font-size:10px; line-height:1.4; color:var(--text-dim); }
+
   .sponsor-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
   .sponsor-slot{ background:#fff; border:1.5px dashed #D6DAD2; border-radius:var(--radius-md); height:74px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:650; color:var(--gray); text-align:center; padding:6px; }
   .sponsor-slot input{border:none; background:none; font-family:inherit; text-align:center; font-size:11.5px; font-weight:650; color:var(--text); width:100%;}
@@ -764,6 +774,11 @@ ZZO3_END_UNUSED
     .walk-grid{grid-template-columns:1fr 1fr;}
     .gallery-grid{grid-template-columns:1fr 1fr 1fr;}
     .sponsor-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
+    .spon-ways{gap:12px;}
+    .spon-way{padding:16px 14px;}
+    .spon-way .icon-badge{width:34px; height:34px; font-size:16px;}
+    .spon-way h4{font-size:13.5px;}
+    .spon-way p{font-size:12px; line-height:1.5;}
     h1{font-size:40px;}
     #page-home section h2{font-size:40px;}
     .jumpbar button{ flex:0 0 auto; padding:8px 15px; font-size:12.5px; }
@@ -1630,10 +1645,11 @@ ZZO3_END_UNUSED
       <p class="lead">Hardware stores, dealerships, agricultural suppliers — anyone who wants their name behind a cleaner town. Email us and we'll sort out exactly what goes where, and for how long.</p>
 
       <p class="eyebrow" style="margin-top:24px;">What you can sponsor</p>
-      <div class="cardgrid">
-        <div class="infocard"><div class="icon-badge">🎗️</div><div><h4>The rotating banner</h4><p>A small logo in the ticker that scrolls at the bottom of every page — like the boards around a rugby pitch. Can be shown everywhere, or only to people in your own town.</p></div></div>
-        <div class="infocard"><div class="icon-badge">🏢</div><div><h4>A major sponsor spot</h4><p>A bigger, permanent card on this page for businesses backing the project in a real way — helping fund equipment, bins, or a big clean-up day.</p></div></div>
-        <div class="infocard"><div class="icon-badge">🌳</div><div><h4>Sponsor a project</h4><p>Fund a specific clean-up — a tree-planting day, clearing a bad verge, bins for a busy corner — and we'll credit you on that project in the gallery.</p></div></div>
+      <div class="spon-ways">
+        <div class="spon-way"><div class="icon-badge">🎗️</div><h4>Rotating banner</h4><p>A logo in the ticker at the bottom of every page.</p></div>
+        <div class="spon-way"><div class="icon-badge">🏢</div><h4>Major sponsor spot</h4><p>A bigger, lasting card here — gear, bins, a big clean-up.</p></div>
+        <div class="spon-way"><div class="icon-badge">🌳</div><h4>Sponsor a project</h4><p>Fund one clean-up, credited to you in the gallery.</p></div>
+        <div class="spon-way"><div class="icon-badge">💚</div><h4>Keep the site going</h4><p>Help pay for the site itself, and what's still to come.</p></div>
       </div>
 
       <p class="eyebrow" style="margin-top:26px;">Major sponsors</p>
@@ -1644,7 +1660,7 @@ ZZO3_END_UNUSED
 
       <div class="sponsor-cta">
         <h4>Want to sponsor Adopt an Area?</h4>
-        <p>Email us what you'd like to sponsor and where — the banner, a page spot, a specific project, or all three.</p>
+        <p>Email us what you'd like to sponsor and where — the banner, a page spot, a specific project, keeping the site running, or all of it.</p>
         <a class="btn" href="mailto:adoptanareainfo@gmail.com?subject=Sponsorship%20enquiry">Email to sponsor</a>
       </div>
     </div>
