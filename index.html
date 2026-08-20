@@ -1319,32 +1319,39 @@ ZZO3_END_UNUSED
         <!-- Who may run clean-up events. Visible to you, and to anyone you've made
              a deputy — they can tick hosts, but only you can appoint a deputy. -->
         <div id="eventHostTools" style="display:none;">
-          <p class="eyebrow">Who may do what</p>
-          <div class="admin-card">
+          <details class="prefbox">
+            <summary>Who may do what<span class="pf-sub">Events, gallery, photo checks</span></summary>
+            <div class="pf-body">
             <p class="fineprint" style="margin:0 0 10px 0;">Three things to hand out here. <b>Events</b> lets somebody start a clean-up: a group with a day and a meeting spot that lands on the home page of everyone within 50km. <b>Gallery</b> lets them post to the photo wall. <b>Photo checks</b> lets them decide which groups may show their photos to the whole town. A <b>deputy</b> hands out that same one to other people — appointing a deputy stays with you. Untaking any of them leaves what's already up alone; it just stops the next one.</p>
             <input type="text" id="eventPeopleSearch" placeholder="Search by name" oninput="renderEventPeople()" autocomplete="off" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff;">
             <div id="eventPeopleList" style="margin-top:10px;"></div>
-          </div>
+            </div>
+          </details>
         </div>
 
         <!-- Groups asking to have their photo wall opened up. Whoever may answer
              sees this, site admin or not. -->
         <div id="photoReviewTools" style="display:none;">
-          <p class="eyebrow">Groups waiting to show their photos</p>
-          <div class="admin-card">
+          <details class="prefbox">
+            <summary>Groups and their photos<span class="pf-sub" id="photoReviewCount">—</span></summary>
+            <div class="pf-body">
             <p class="fineprint" style="margin:0 0 10px 0;">A public group is findable from the day it's made — its name, its town, the areas it looks after. Its photos are a separate thing, and they stay between its members until somebody here says yes. Open the group and look through what's on its wall before you do: once it's yes, the whole town can see it. Saying no later takes it straight back down again.</p>
             <div id="photoReviewList"></div>
-          </div>
+            </div>
+          </details>
         </div>
 
         <div id="adminTools" style="display:none;">
           <p class="eyebrow">Team tools (admin)</p>
-          <div class="admin-card">
-            <b style="font-size:14px;">📷 Managing gallery photos</b>
+          <details class="prefbox">
+            <summary>📷 Managing gallery photos<span class="pf-sub">Where to post</span></summary>
+            <div class="pf-body">
             <p class="fineprint">Head to the Gallery page — admin upload tools live there now, right where you can see what's already posted.</p>
-          </div>
-          <div class="admin-card">
-            <b style="font-size:14px;">Rotating banner logos</b>
+            </div>
+          </details>
+          <details class="prefbox">
+            <summary>Rotating banner logos<span class="pf-sub">The scrolling ticker</span></summary>
+            <div class="pf-body">
             <p class="fineprint">Edit the text and choose which town(s) each one shows to.</p>
             <div id="adminSponsorEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
             <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
@@ -1357,9 +1364,11 @@ ZZO3_END_UNUSED
               <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newTickerLogo').click()" id="newTickerLogoLabel">+ Logo (optional, uses emoji if skipped)</button>
               <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addTickerSponsor()">Add</button>
             </div>
-          </div>
-          <div class="admin-card">
-            <b style="font-size:14px;">Major sponsors</b>
+            </div>
+          </details>
+          <details class="prefbox">
+            <summary>Major sponsors<span class="pf-sub">The big cards</span></summary>
+            <div class="pf-body">
             <p class="fineprint">The bigger, permanent cards on the Sponsors page.</p>
             <div id="adminMajorEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
             <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
@@ -1373,9 +1382,11 @@ ZZO3_END_UNUSED
               <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newMajorLogo').click()" id="newMajorLogoLabel">+ Logo (optional, uses emoji if skipped)</button>
               <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addMajorSponsor()">Add</button>
             </div>
-          </div>
-          <div class="admin-card">
-            <b style="font-size:14px;">Logo slot grid</b>
+            </div>
+          </details>
+          <details class="prefbox">
+            <summary>Logo slot grid<span class="pf-sub">The small tiles</span></summary>
+            <div class="pf-body">
             <p class="fineprint">The small "Your logo here" tiles on the Sponsors page.</p>
             <div id="adminSlotEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
             <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
@@ -1384,17 +1395,22 @@ ZZO3_END_UNUSED
               <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newSlotLogo').click()" id="newSlotLogoLabel">+ Logo (optional)</button>
               <button class="btn btn-secondary" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addSponsorSlot()">Add slot</button>
             </div>
-          </div>
-          <div class="admin-card">
-            <b style="font-size:14px;">Everyone's claimed areas</b>
+            </div>
+          </details>
+          <details class="prefbox">
+            <summary>Everyone's claimed areas<span class="pf-sub">Customer service</span></summary>
+            <div class="pf-body">
             <p class="fineprint" style="margin-bottom:10px;">Customer-service view — open anyone's area to edit or release it on their behalf.</p>
             <div id="adminAllAreas"></div>
-          </div>
-          <div class="admin-card">
-            <b style="font-size:14px;">Council access requests</b>
+            </div>
+          </details>
+          <details class="prefbox">
+            <summary>Council access requests<span class="pf-sub"><span id="councilAppCount">—</span></span></summary>
+            <div class="pf-body">
             <p class="fineprint" style="margin-bottom:10px;">Approving one hands that person their municipality's rules page — and the contact details of every resident in their district. Check they really work there before you tap it.</p>
             <div id="councilAppList"></div>
-          </div>
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -4125,6 +4141,9 @@ async function loadPhotoRequests(){
 function drawPhotoRequests(){
   const box=document.getElementById('photoReviewList');
   if(!box) return;
+  const waiting=photoRequests.filter(g=>g.photos_asked).length;
+  const tally=document.getElementById('photoReviewCount');
+  if(tally) tally.textContent = waiting ? waiting+(waiting===1?' waiting':' waiting') : 'Nothing waiting';
   if(!photoRequests.length){ box.innerHTML='<p class="fineprint" style="margin:0;">Nothing waiting, and nothing said yes to yet.</p>'; return; }
   box.innerHTML='';
   photoRequests.forEach(g=>{
@@ -5369,6 +5388,8 @@ async function loadCouncilApplications(){
 function renderCouncilApplications(){
   const el=document.getElementById('councilAppList');
   if(!el) return;
+  const tally=document.getElementById('councilAppCount');
+  if(tally) tally.textContent = councilApps.length ? councilApps.length+' waiting' : 'Nothing waiting';
   if(!councilApps.length){
     el.innerHTML='<p style="font-size:12.5px; color:var(--text-dim);">Nothing waiting.</p>';
     return;
