@@ -259,7 +259,13 @@
   .walk-card img{ cursor:zoom-in; }
   .lightbox-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.87); z-index:2000; display:none; align-items:center; justify-content:center; padding:20px; cursor:zoom-out; }
   .lightbox-backdrop.show{ display:flex; }
-  .lightbox-backdrop img{ max-width:100%; max-height:100%; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  /* One figure, or two. A before/after pair sits side by side so you can compare
+     the shots at size instead of squinting at the thumbnail. */
+  .lightbox-stage{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%; max-height:100%; }
+  .lightbox-fig{ flex:1 1 0; min-width:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:9px; }
+  .lightbox-fig img{ max-width:100%; max-height:calc(100vh - 120px); object-fit:contain; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .lightbox-fig figcaption{ color:#fff; font-size:12px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; opacity:0.82; }
+  .lightbox-close{ position:fixed; top:calc(14px + var(--safe-top)); right:14px; width:38px; height:38px; border:none; border-radius:50%; background:rgba(255,255,255,0.18); color:#fff; font-size:21px; font-family:inherit; line-height:1; cursor:pointer; }
 
   details.learn-section{ background:var(--soft); border-radius:var(--radius-lg); padding:4px 18px; margin-bottom:12px; }
   details.learn-section summary{ padding:17px 0; font-size:15.5px; font-weight:800; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; }
@@ -568,6 +574,7 @@
   .gphoto-ba > div{ flex:1; position:relative; overflow:hidden; }
   .gphoto-ba img{ width:100%; height:100%; object-fit:cover; display:block; }
   .gphoto-ba .ba-label{ position:absolute; bottom:5px; left:5px; background:rgba(0,0,0,0.6); color:#fff; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
+  .gphoto img, .gphoto-ba img, .potw-photo img{ cursor:zoom-in; }
   .gbody{padding:10px 12px;}
   .gcaption{font-size:12.5px; font-weight:700;}
   .gwho{font-size:11px; color:var(--text-dim); margin-top:3px;}
@@ -1650,7 +1657,8 @@
 </div>
 
 <div class="lightbox-backdrop" id="lightboxBackdrop" onclick="closeLightbox()">
-  <img id="lightboxImg" src="" alt="">
+  <button class="lightbox-close" type="button" aria-label="Close" onclick="closeLightbox()">&times;</button>
+  <div class="lightbox-stage" id="lightboxStage"></div>
 </div>
 
 <div class="tour-bar" id="tourBar">
@@ -4374,7 +4382,9 @@ function renderFeatured(){
   if(!featured){ card.style.display='none'; return; }
   card.style.display='block';
   const heroImg = featured.after_url || featured.image_url;
-  document.getElementById('potwPhoto').innerHTML = heroImg ? `<img src="${heroImg}" style="width:100%; height:100%; object-fit:cover;">` : '📷';
+  const heroPair = (featured.before_url && featured.after_url)
+    ? ` data-before="${escHtml(featured.before_url)}" data-after="${escHtml(featured.after_url)}"` : '';
+  document.getElementById('potwPhoto').innerHTML = heroImg ? `<img src="${escHtml(heroImg)}"${heroPair} style="width:100%; height:100%; object-fit:cover;">` : '📷';
   document.getElementById('potwTitle').textContent = featured.caption;
   document.getElementById('potwCaption').textContent = featured.who;
 }
@@ -5371,13 +5381,51 @@ function hasStoredSession(){
 })();
 
 // ================= LIGHTBOX =================
-function openLightbox(src){
-  document.getElementById('lightboxImg').src=src;
+// Built as nodes rather than innerHTML â the sources come straight out of the
+// database and a stray quote in a filename shouldn't be able to write markup.
+function lightboxFigure(src, label){
+  const fig=document.createElement('figure');
+  fig.className='lightbox-fig';
+  const img=document.createElement('img');
+  img.src=src; img.alt=label||'';
+  fig.appendChild(img);
+  if(label){ const cap=document.createElement('figcaption'); cap.textContent=label; fig.appendChild(cap); }
+  return fig;
+}
+function showLightbox(figs){
+  const stage=document.getElementById('lightboxStage');
+  stage.innerHTML='';
+  figs.forEach(f=>stage.appendChild(f));
   document.getElementById('lightboxBackdrop').classList.add('show');
+}
+function openLightbox(src){
+  if(!src) return;
+  showLightbox([lightboxFigure(src, '')]);
+}
+function openLightboxPair(beforeSrc, afterSrc){
+  if(!beforeSrc || !afterSrc) return openLightbox(beforeSrc||afterSrc);
+  showLightbox([lightboxFigure(beforeSrc,'Before'), lightboxFigure(afterSrc,'After')]);
 }
 function closeLightbox(){
   document.getElementById('lightboxBackdrop').classList.remove('show');
+  document.getElementById('lightboxStage').innerHTML='';
 }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLightbox(); });
+// Delegated, so every photo wall gets it for free â the gallery grid, project of
+// the week, the team grid and the group sheet all render into the same classes.
+document.addEventListener('click', e=>{
+  const img = e.target.closest && e.target.closest('.gphoto img, .gphoto-ba img, .potw-photo img');
+  if(!img) return;
+  const pair = img.closest('.gphoto-ba');
+  if(pair){
+    const shots = pair.querySelectorAll('img');
+    openLightboxPair(shots[0] && shots[0].src, shots[1] && shots[1].src);
+  } else if(img.dataset.before && img.dataset.after){
+    openLightboxPair(img.dataset.before, img.dataset.after);   // featured card shows one shot, opens both
+  } else {
+    openLightbox(img.src);
+  }
+});
 
 // ================= GUIDED TOUR =================
 // Each step can auto-advance on a real event fired from elsewhere in the code
