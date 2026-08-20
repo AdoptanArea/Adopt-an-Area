@@ -683,6 +683,35 @@ ZZO3_END_UNUSED
   .spon-way h4{ margin:0 0 4px 0; font-size:11.5px; font-weight:700; line-height:1.25; }
   .spon-way p{ margin:0; font-size:10px; line-height:1.4; color:var(--text-dim); }
 
+  /* A sponsor's short clip — the bakkie-drives-in kind. Muted, looping, no
+     controls: it plays where it sits, says its piece in ten seconds and never
+     takes the page over. It only runs while it is actually on screen (see
+     watchSponsorVideos), so a page nobody scrolled to costs the reader no data. */
+  .vidad{ display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+  .vidad video{ display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:#0C0F0C; }
+  .vidad-cap{ padding:8px 10px; display:flex; align-items:center; gap:8px; }
+  .vidad-cap b{ font-size:12px; font-weight:750; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vidad-tag{ font-size:9px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--gray); flex-shrink:0; }
+  .vidad-ph{ background:#fff; border:1.5px dashed #D6DAD2; border-radius:var(--radius-md); padding:14px 12px; text-align:center; }
+  .vidad-ph b{ display:block; font-size:12.5px; margin-bottom:4px; }
+  .vidad-ph span{ font-size:11px; color:var(--text-dim); line-height:1.5; }
+
+  /* A row of clips: side by side where there's width, a swipe on a phone. */
+  .vidstrip{ display:flex; gap:12px; overflow-x:auto; padding:2px 0 8px 0; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+  .vidstrip > *{ flex:0 0 78%; max-width:330px; scroll-snap-align:start; }
+  #home-sponsor-video{ padding-top:6px; }
+
+  /* The Sponsors page with a clip down each side of the text. Under 1180px there
+     is no side to speak of, so the clips fall in under the intro instead — the
+     rails and the in-flow strip hold the same cards, and only one is ever shown. */
+  .spon-layout{ max-width:1080px; margin:0 auto; padding:0 20px; }
+  .spon-rail{ display:none; flex-direction:column; gap:12px; position:sticky; top:calc(var(--safe-top) + 78px); }
+  @media (min-width:1180px){
+    .spon-layout{ max-width:1460px; display:grid; grid-template-columns:216px minmax(0,1fr) 216px; gap:26px; align-items:start; }
+    .spon-rail{ display:flex; }
+    .spon-flow{ display:none; }
+  }
+
   .sponsor-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
   .sponsor-slot{ background:#fff; border:1.5px dashed #D6DAD2; border-radius:var(--radius-md); height:74px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:650; color:var(--gray); text-align:center; padding:6px; }
   .sponsor-slot input{border:none; background:none; font-family:inherit; text-align:center; font-size:11.5px; font-weight:650; color:var(--text); width:100%;}
@@ -1039,6 +1068,17 @@ ZZO3_END_UNUSED
       <h2>Every question, on one page</h2>
       <p class="lead">Whether you need permission before you start, where the bags actually go, what to do about a corner that keeps getting dumped on — and how every part of this site works, from your first sign-in to running a group.</p>
       <button class="btn btn-primary" onclick="showPage('learn')" style="margin-top:16px;">Open the Learn page</button>
+    </div>
+  </section>
+
+  <!-- The paid video spot. Last thing on the page on purpose: it can't get between
+       anybody and what they came for, and somebody who has read this far is the
+       one worth showing it to. The whole band is gone when nobody has bought one —
+       an empty advert slot on the front page looks worse than no advert at all. -->
+  <section id="home-sponsor-video" style="display:none;">
+    <div class="wrap-wide">
+      <p class="eyebrow">Sponsored</p>
+      <div class="vidstrip" id="homeVideoStrip"></div>
     </div>
   </section>
 </div>
@@ -1430,6 +1470,26 @@ ZZO3_END_UNUSED
             </div>
           </details>
           <details class="prefbox">
+            <summary>Video spots<span class="pf-sub">The paid clips</span></summary>
+            <div class="pf-body">
+            <p class="fineprint">A short advert — six to fifteen seconds, the kind where the bakkie drives in and the logo lands. It plays silently down the sides of the Sponsors page and at the foot of the home page, and only while somebody is looking at it. Ask them for a landscape mp4 under 50MB; sound is never played, so it doesn't matter if it has any.</p>
+            <div id="adminVideoEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+            <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
+              <b style="font-size:12.5px;">+ Add a video spot</b>
+              <input type="text" id="newAdName" placeholder="Business name" style="width:100%; margin-top:8px; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+              <input type="text" id="newAdLink" placeholder="Their website or Facebook page (optional)" style="width:100%; margin-top:6px; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+              <select id="newAdPlacement" style="width:100%; margin-top:6px; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+                <option value="both">Both — home page and Sponsors page</option>
+                <option value="home">Home page only</option>
+                <option value="side">Sponsors page only</option>
+              </select>
+              <input type="file" id="newAdVideo" accept="video/*" style="display:none;" onchange="stageAdVideo(event)">
+              <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newAdVideo').click()" id="newAdVideoLabel">+ Choose the clip (mp4, up to 50MB)</button>
+              <button class="btn btn-secondary" id="addAdVideoBtn" style="margin-top:8px; padding:9px 14px; font-size:12.5px;" onclick="addVideoSponsor()">Add</button>
+            </div>
+            </div>
+          </details>
+          <details class="prefbox">
             <summary>Everyone's claimed areas<span class="pf-sub">Customer service</span></summary>
             <div class="pf-body">
             <p class="fineprint" style="margin-bottom:10px;">Customer-service view — open anyone's area to edit or release it on their behalf.</p>
@@ -1639,10 +1699,16 @@ ZZO3_END_UNUSED
 <!-- SPONSORS -->
 <div class="page" id="page-sponsors">
   <section>
-    <div class="wrap-wide">
+    <div class="spon-layout">
+      <aside class="spon-rail" id="sponRailLeft"></aside>
+      <div class="spon-main">
       <p class="eyebrow">Support the project</p>
       <h2 style="margin-bottom:6px;">Local businesses can back this</h2>
       <p class="lead">Hardware stores, dealerships, agricultural suppliers — anyone who wants their name behind a cleaner town. Email us and we'll sort out exactly what goes where, and for how long.</p>
+
+      <!-- On a wide screen the clips run down the two rails either side of this
+           text; on anything narrower they land here instead. -->
+      <div class="spon-flow" id="sponFlow" style="margin-top:16px;"></div>
 
       <p class="eyebrow" style="margin-top:24px;">What you can sponsor</p>
       <div class="spon-ways">
@@ -1660,9 +1726,11 @@ ZZO3_END_UNUSED
 
       <div class="sponsor-cta">
         <h4>Want to sponsor Adopt an Area?</h4>
-        <p>Email us what you'd like to sponsor and where — the banner, a page spot, a specific project, keeping the site running, or all of it.</p>
+        <p>Email us what you'd like to sponsor and where — the banner, a page spot, a short video advert, a specific project, keeping the site running, or all of it.</p>
         <a class="btn" href="mailto:adoptanareainfo@gmail.com?subject=Sponsorship%20enquiry">Email to sponsor</a>
       </div>
+      </div>
+      <aside class="spon-rail" id="sponRailRight"></aside>
     </div>
   </section>
   <footer><div class="wrap"><p>Adopt an Area — a community project. We're just looking after what's around us.</p></div></footer>
@@ -3319,6 +3387,7 @@ async function afterAuth(){
   await loadMyTeams();
   renderMyAreas();
   renderSponsorBar();
+  renderVideoSponsors();
   updateGalleryAdminVisibility();
   renderGallery();
   await loadMyCouncil();
@@ -3344,6 +3413,7 @@ async function signOut(){
   renderEvents();
   renderMyAreas();
   renderSponsorBar();
+  renderVideoSponsors();
   updateGalleryAdminVisibility();
   renderGallery();
   showPage('home');
@@ -4730,7 +4800,7 @@ function renderGallery(){
 }
 
 // ================= SPONSORS =================
-let tickerSponsors=[], majorSponsors=[], sponsorSlots=[];
+let tickerSponsors=[], majorSponsors=[], sponsorSlots=[], videoSponsors=[];
 let stagedLogos={ticker:null, major:null, slot:null};
 function stageLogo(evt, kind){
   const file=evt.target.files[0];
@@ -4749,12 +4819,18 @@ async function loadSponsors(){
   const {data:ticker} = await sb.from('sponsor_ticker').select('*').order('created_at');
   const {data:major} = await sb.from('major_sponsors').select('*').order('created_at');
   const {data:slots} = await sb.from('sponsor_slots').select('*').order('created_at');
+  // The video spots came later than the rest. If supabase-sponsor-videos.sql hasn't
+  // been run yet this comes back empty rather than throwing, and the page carries on
+  // exactly as it did before — the rails just show "your clip here".
+  const {data:vids} = await sb.from('sponsor_videos').select('*').order('created_at');
   tickerSponsors=(ticker||[]).map(t=>({id:t.id, emoji:t.emoji, text:t.text, logoUrl:t.logo_url, targetTowns:t.target_towns||['all']}));
   majorSponsors=major||[];
   sponsorSlots=slots||[];
+  videoSponsors=vids||[];
   renderMajorSponsors();
   renderSponsorGrid();
   renderSponsorBar();
+  renderVideoSponsors();
 }
 function renderMajorSponsors(){
   const grid=document.getElementById('majorSponsorGrid');
@@ -4829,6 +4905,36 @@ function renderAdminSponsorEditor(){
       const thumb = s.logo_url ? `<img src="${s.logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:5px;">` : '';
       row.innerHTML=`${thumb}<span style="flex:1; font-size:12.5px;">${s.text}</span><button style="background:var(--red-tint); color:var(--red); border:none; border-radius:8px; padding:5px 9px; font-family:inherit; font-weight:700; cursor:pointer;" onclick="deleteSponsorSlot(${i})">✕</button>`;
       swrap.appendChild(row);
+    });
+  }
+  const vwrap=document.getElementById('adminVideoEditor');
+  if(vwrap){
+    vwrap.innerHTML='';
+    videoSponsors.forEach((v,i)=>{
+      const tt=v.target_towns||['all'];
+      const row=document.createElement('div');
+      row.style.cssText='background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px;';
+      const townChecks=targetableTowns({targetTowns:tt}).map(t=>`<label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-right:8px;"><input type="checkbox" data-i="${i}" data-town="${t.id}" ${tt.includes(t.id)?'checked':''} onchange="onAdTownToggle(this)">${t.name}</label>`).join('')
+        || '<span style="font-size:11px; color:var(--text-dim);">Nothing claimed anywhere yet — this clip plays everywhere.</span>';
+      const opt=(val,label)=>`<option value="${val}" ${(v.placement||'both')===val?'selected':''}>${label}</option>`;
+      row.innerHTML=`
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+          <video src="${escHtml(v.video_url)}#t=0.1" muted playsinline preload="metadata" style="width:74px; aspect-ratio:16/9; object-fit:cover; border-radius:7px; background:#0C0F0C; flex-shrink:0;"></video>
+          <div style="flex:1; min-width:0;">
+            <b style="font-size:12.5px;">${escHtml(v.name||'')}</b>
+            <div style="font-size:11px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(v.link_url||'No link')}</div>
+          </div>
+          <button style="background:var(--red-tint); color:var(--red); border:none; border-radius:10px; padding:6px 10px; font-family:inherit; font-weight:700; cursor:pointer;" onclick="deleteVideoSponsor(${i})">✕</button>
+        </div>
+        <select style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; font-family:inherit; margin-bottom:8px;" onchange="onAdPlacement(${i}, this.value)">
+          ${opt('both','Both — home page and Sponsors page')}
+          ${opt('home','Home page only')}
+          ${opt('side','Sponsors page only')}
+        </select>
+        <label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-bottom:4px; font-weight:700;"><input type="checkbox" ${tt.includes('all')?'checked':''} onchange="onAdAllToggle(${i}, this.checked)">Play in all towns</label>
+        <div style="display:flex; flex-wrap:wrap;">${townChecks}</div>
+      `;
+      vwrap.appendChild(row);
     });
   }
 }
@@ -4907,6 +5013,76 @@ async function deleteSponsorSlot(i){
   await loadSponsors();
   renderAdminSponsorEditor();
 }
+// ---- Admin: the video spots ----
+let stagedAdVideo=null;
+function stageAdVideo(evt){
+  const file=evt.target.files[0];
+  if(!file) return;
+  if(file.size > MAX_UPLOAD_MB*1024*1024){
+    showBanner(`That clip is ${Math.round(file.size/1048576)}MB — keep it under ${MAX_UPLOAD_MB}MB`, 4200);
+    evt.target.value=''; return;
+  }
+  stagedAdVideo=file;
+  document.getElementById('newAdVideoLabel').textContent='✓ '+file.name.slice(0,22);
+}
+async function uploadSponsorVideo(file){
+  const path=`${Date.now()}_${file.name.replace(/[^A-Za-z0-9._-]/g,'_')}`;
+  const {error} = await sb.storage.from('sponsor-videos').upload(path, file, {contentType:file.type||undefined});
+  if(error){ showBanner(error.message, 4200); return null; }
+  const {data} = sb.storage.from('sponsor-videos').getPublicUrl(path);
+  return data.publicUrl;
+}
+async function addVideoSponsor(){
+  const name=document.getElementById('newAdName').value.trim();
+  const link=document.getElementById('newAdLink').value.trim();
+  const placement=document.getElementById('newAdPlacement').value;
+  if(!name){ showBanner('Whose advert is it?', 2600); return; }
+  if(!stagedAdVideo){ showBanner('Pick the clip first', 2600); return; }
+  const btn=document.getElementById('addAdVideoBtn');
+  const was=btn.textContent; btn.disabled=true; btn.textContent='Uploading…';
+  try{
+    const video_url = await uploadSponsorVideo(stagedAdVideo);
+    if(!video_url) return;
+    const {error} = await sb.from('sponsor_videos').insert({name, video_url, link_url:link||null, placement, target_towns:['all']});
+    if(error){ showBanner(error.message, 4200); return; }
+    document.getElementById('newAdName').value=''; document.getElementById('newAdLink').value='';
+    document.getElementById('newAdVideoLabel').textContent='+ Choose the clip (mp4, up to 50MB)';
+    document.getElementById('newAdVideo').value=''; stagedAdVideo=null;
+    await loadSponsors();
+    renderAdminSponsorEditor();
+  } finally { btn.disabled=false; btn.textContent=was; }
+}
+async function deleteVideoSponsor(i){
+  const v=videoSponsors[i];
+  if(!confirm(`Take down the ${v.name} advert?`)) return;
+  await sb.from('sponsor_videos').delete().eq('id', v.id);
+  await loadSponsors();
+  renderAdminSponsorEditor();
+}
+async function saveVideoRow(i){
+  const v=videoSponsors[i];
+  await sb.from('sponsor_videos').update({placement:v.placement, target_towns:v.target_towns}).eq('id', v.id);
+}
+function onAdPlacement(i, val){
+  videoSponsors[i].placement=val;
+  renderVideoSponsors();
+  saveVideoRow(i);
+}
+function onAdAllToggle(i, checked){
+  videoSponsors[i].target_towns = checked ? ['all'] : [];
+  renderAdminSponsorEditor();
+  renderVideoSponsors();
+  saveVideoRow(i);
+}
+function onAdTownToggle(el){
+  const i=parseInt(el.dataset.i), townId=el.dataset.town;
+  let tt=(videoSponsors[i].target_towns||[]).filter(x=>x!=='all');
+  if(el.checked){ tt.push(townId); } else { tt=tt.filter(x=>x!==townId); }
+  videoSponsors[i].target_towns = tt.length ? tt : ['all'];
+  renderAdminSponsorEditor();
+  renderVideoSponsors();
+  saveVideoRow(i);
+}
 function visibleTickerSponsors(){
   if(currentUser && currentUser.town){
     const local = tickerSponsors.filter(s=>s.targetTowns.includes('all') || s.targetTowns.includes(currentUser.town));
@@ -4922,6 +5098,78 @@ function renderSponsorBar(){
     return `<span class="sb-chip"><span class="sb-dot">${icon}</span>${s.text}</span>`;
   }).join('');
   track.innerHTML = `<div class="sb-marquee">${chips}${chips}</div>`;
+}
+
+// ---- The video spots --------------------------------------------------------
+// The paid one. A short silent clip — a bakkie pulling in, a shop front, a team
+// at work — that runs at the foot of the home page and down the sides of the
+// Sponsors page. Two rules keep it from taking the site over: it never has
+// sound, and it never plays unless it is on the screen in front of somebody.
+//
+// Where a clip is pointed at a town, that is where it shows — no fallback to
+// everywhere, unlike the ticker. Somebody paying for Humansdorp is paying for
+// Humansdorp, and showing it in Cape Town would be selling something twice.
+function videoSponsorsFor(where){
+  const here = videoSponsors.filter(v => (v.placement||'both')==='both' || (v.placement||'both')===where);
+  return here.filter(v=>{
+    const tt = v.target_towns || ['all'];
+    return tt.includes('all') || !!(currentUser && currentUser.town && tt.includes(currentUser.town));
+  });
+}
+// Only a real web address gets to be a link. A sponsor hands over whatever they
+// have written on the side of their bakkie, and "www.x.co.za" is not a URL until
+// it has a scheme on the front of it.
+function sponsorLink(url){
+  const u=(url||'').trim();
+  if(!u) return null;
+  if(/^https?:\/\//i.test(u)) return u;
+  if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u)) return 'https://'+u;
+  return null;
+}
+function videoAdCard(v){
+  // #t=0.1 is what makes iOS draw a frame rather than a black rectangle before
+  // the clip starts — the same trick the gallery tiles use.
+  const poster = v.poster_url ? ` poster="${escHtml(v.poster_url)}"` : '';
+  const media = `<video src="${escHtml(v.video_url)}#t=0.1"${poster} muted loop playsinline preload="metadata" aria-label="Advert for ${escHtml(v.name||'a sponsor')}"></video>`;
+  const cap = `<div class="vidad-cap"><b>${escHtml(v.name||'')}</b><span class="vidad-tag">Sponsored</span></div>`;
+  const href = sponsorLink(v.link_url);
+  return href
+    ? `<a class="vidad" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${media}${cap}</a>`
+    : `<div class="vidad">${media}${cap}</div>`;
+}
+const VIDEO_SPOT_PITCH = `<div class="vidad-ph"><b>Your clip could run here</b><span>Ten seconds, no sound needed — beside this page and at the foot of the home page. This one is a paid spot; email us for what it costs.</span></div>`;
+function renderVideoSponsors(){
+  const band=document.getElementById('home-sponsor-video'), strip=document.getElementById('homeVideoStrip');
+  if(band && strip){
+    const list=videoSponsorsFor('home');
+    strip.innerHTML=list.map(videoAdCard).join('');
+    band.style.display = list.length ? 'block' : 'none';
+  }
+  const left=document.getElementById('sponRailLeft'), right=document.getElementById('sponRailRight'), flow=document.getElementById('sponFlow');
+  if(left && right && flow){
+    // The rails and the in-flow strip hold the same cards; the stylesheet shows
+    // whichever the screen has room for, so only one copy is ever on screen.
+    const cards=videoSponsorsFor('side').map(videoAdCard);
+    left.innerHTML  = cards.length ? cards.filter((_,i)=>i%2===0).join('') : VIDEO_SPOT_PITCH;
+    right.innerHTML = cards.length ? cards.filter((_,i)=>i%2===1).join('') : '';
+    flow.innerHTML  = cards.length ? `<div class="vidstrip">${cards.join('')}</div>` : VIDEO_SPOT_PITCH;
+  }
+  watchSponsorVideos();
+}
+// Nothing plays until it is actually looked at, and it stops again the moment it
+// scrolls away. On a phone data costs money.
+let sponsorVideoWatcher=null;
+function watchSponsorVideos(){
+  if(!('IntersectionObserver' in window)) return;
+  if(!sponsorVideoWatcher){
+    sponsorVideoWatcher=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){ const p=e.target.play(); if(p&&p.catch) p.catch(()=>{}); }
+        else { e.target.pause(); }
+      });
+    }, {threshold:0.4});
+  }
+  document.querySelectorAll('.vidad video').forEach(v=>sponsorVideoWatcher.observe(v));
 }
 
 // ================= MUNICIPALITY RULES =================
@@ -5927,7 +6175,7 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 sb.auth.onAuthStateChange((event)=>{
-  if(event==='SIGNED_OUT'){ currentUser=null; councilApps=[]; loadMyCouncil(); renderCouncilApplications(); renderMyAreas(); renderSponsorBar(); updateGalleryAdminVisibility(); renderGallery(); }
+  if(event==='SIGNED_OUT'){ currentUser=null; councilApps=[]; loadMyCouncil(); renderCouncilApplications(); renderMyAreas(); renderSponsorBar(); renderVideoSponsors(); updateGalleryAdminVisibility(); renderGallery(); }
 });
 </script>
 </body>
