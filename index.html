@@ -260,17 +260,21 @@
   /* The viewer. No grey wash over the page — a photo opens onto the same white
      the rest of the site is, frosted just enough that the words behind it stop
      competing with the picture. */
-  .lightbox-backdrop{ position:fixed; inset:0; background:rgba(255,255,255,0.93); backdrop-filter:blur(16px) saturate(1.05); -webkit-backdrop-filter:blur(16px) saturate(1.05); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:calc(58px + var(--safe-top)) 16px calc(74px + var(--safe-bottom)) 16px; cursor:zoom-out; }
+  /* A photo opens as a card floating over the page, not a room with the lights
+     off. The page stays there behind it — barely veiled and softened a touch, so
+     the picture is plainly the thing in front without the rest going grey. */
+  .lightbox-backdrop{ position:fixed; inset:0; background:rgba(255,255,255,0.34); backdrop-filter:blur(2.5px); -webkit-backdrop-filter:blur(2.5px); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:calc(58px + var(--safe-top)) 16px calc(74px + var(--safe-bottom)) 16px; cursor:zoom-out; }
   .lightbox-backdrop.show{ display:flex; }
   /* One figure, or two. A before/after pair sits side by side so you can compare
-     the shots at size instead of squinting at the thumbnail. Held well short of
-     the full screen — a photo you can take in at a glance beats one you have to
-     look around. */
-  .lightbox-stage{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%; max-width:min(470px, 80vw); max-height:100%; }
-  .lightbox-fig{ flex:1 1 0; min-width:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:9px; }
-  .lightbox-fig img, .lightbox-fig video{ max-width:100%; max-height:min(58vh, 470px); object-fit:contain; border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,0.20); background:#fff; }
-  .lightbox-fig figcaption{ color:var(--text); font-size:12px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; opacity:0.7; text-align:center; }
-  .lightbox-close{ position:fixed; top:calc(14px + var(--safe-top)); right:14px; width:38px; height:38px; border:1px solid var(--border); border-radius:50%; background:#fff; color:var(--text); font-size:21px; font-family:inherit; line-height:1; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.10); }
+     the shots at size instead of squinting at the thumbnail. Opening a photo has
+     to make it bigger than the tile you tapped — on a wide screen that means
+     using the room, capped only so a huge shot doesn't run off the edges. */
+  .lightbox-stage{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%; max-width:min(1040px, 94vw); max-height:100%; }
+  .lightbox-fig{ flex:1 1 0; min-width:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .lightbox-fig img, .lightbox-fig video{ max-width:100%; max-height:min(80vh, 860px); object-fit:contain; border-radius:14px; box-shadow:0 24px 70px rgba(0,0,0,0.30); background:#fff; }
+  /* Its own little plate, since there's a live page behind it now. */
+  .lightbox-fig figcaption{ color:var(--text); font-size:12px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; background:rgba(255,255,255,0.94); border:1px solid var(--border); border-radius:999px; padding:5px 12px; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.10); }
+  .lightbox-close{ position:fixed; top:calc(14px + var(--safe-top)); right:14px; width:38px; height:38px; border:1px solid var(--border); border-radius:50%; background:#fff; color:var(--text); font-size:21px; font-family:inherit; line-height:1; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.14); }
   /* Paging, parked at the bottom where a thumb already is rather than over the
      picture. Hidden altogether when there's only the one photo. */
   .lightbox-pager{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + var(--safe-bottom)); display:none; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); border-radius:999px; padding:5px; box-shadow:0 8px 24px rgba(0,0,0,0.13); cursor:default; }
