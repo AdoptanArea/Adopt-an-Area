@@ -692,10 +692,6 @@ ZZO3_END_UNUSED
   .vidad-cap{ padding:8px 10px; display:flex; align-items:center; gap:8px; }
   .vidad-cap b{ font-size:12px; font-weight:750; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .vidad-tag{ font-size:9px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--gray); flex-shrink:0; }
-  .vidad-ph{ background:#fff; border:1.5px dashed #D6DAD2; border-radius:var(--radius-md); padding:14px 12px; text-align:center; }
-  .vidad-ph b{ display:block; font-size:12.5px; margin-bottom:4px; }
-  .vidad-ph span{ font-size:11px; color:var(--text-dim); line-height:1.5; }
-
   /* A row of clips: side by side where there's width, a swipe on a phone. */
   .vidstrip{ display:flex; gap:12px; overflow-x:auto; padding:2px 0 8px 0; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
   .vidstrip > *{ flex:0 0 78%; max-width:330px; scroll-snap-align:start; }
@@ -703,13 +699,16 @@ ZZO3_END_UNUSED
 
   /* The Sponsors page with a clip down each side of the text. Under 1180px there
      is no side to speak of, so the clips fall in under the intro instead — the
-     rails and the in-flow strip hold the same cards, and only one is ever shown. */
+     rails and the in-flow strip hold the same cards, and only one is ever shown.
+     The sides only exist once a clip has been sold (has-clips): with nothing to
+     put in them the page goes back to its ordinary single column rather than
+     leaving two empty margins behind. */
   .spon-layout{ max-width:1080px; margin:0 auto; padding:0 20px; }
   .spon-rail{ display:none; flex-direction:column; gap:12px; position:sticky; top:calc(var(--safe-top) + 78px); }
   @media (min-width:1180px){
-    .spon-layout{ max-width:1460px; display:grid; grid-template-columns:216px minmax(0,1fr) 216px; gap:26px; align-items:start; }
-    .spon-rail{ display:flex; }
-    .spon-flow{ display:none; }
+    .spon-layout.has-clips{ max-width:1460px; display:grid; grid-template-columns:216px minmax(0,1fr) 216px; gap:26px; align-items:start; }
+    .spon-layout.has-clips .spon-rail{ display:flex; }
+    .spon-layout.has-clips .spon-flow{ display:none; }
   }
 
   .sponsor-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
@@ -4843,6 +4842,16 @@ function renderMajorSponsors(){
     d.innerHTML=`<div class="icon-badge">${icon}</div><div><h4>${s.name}</h4><p>${s.blurb}</p></div>`;
     grid.appendChild(d);
   });
+  // The video spot is explained here, alongside the other big cards, because this
+  // is where somebody thinking about spending money is already reading. The rails
+  // down the sides of this page stay empty until there's a real clip to put in
+  // them — an advert for the advert space, sitting in the advert space, is the
+  // sort of thing that makes a page look unsold.
+  const pitch=document.createElement('div');
+  pitch.className='infocard';
+  pitch.style.cssText='background:#fff; border:1.5px dashed #D6DAD2;';
+  pitch.innerHTML=`<div class="icon-badge">🎬</div><div><h4>A video spot</h4><p>Ten seconds, no sound needed — the kind where the bakkie drives in and the logo lands. It plays down the side of this page and at the foot of the home page, and you choose where: your own town only, a few towns, or the whole country. This one is a paid spot — <a href="mailto:adoptanareainfo@gmail.com?subject=Video%20spot%20enquiry" style="color:var(--green); font-weight:700;">email us for what it costs</a>.</p></div>`;
+  grid.appendChild(pitch);
 }
 function renderSponsorGrid(){
   const grid=document.getElementById('sponsorGrid');
@@ -5137,7 +5146,6 @@ function videoAdCard(v){
     ? `<a class="vidad" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${media}${cap}</a>`
     : `<div class="vidad">${media}${cap}</div>`;
 }
-const VIDEO_SPOT_PITCH = `<div class="vidad-ph"><b>Your clip could run here</b><span>Ten seconds, no sound needed — beside this page and at the foot of the home page. This one is a paid spot; email us for what it costs.</span></div>`;
 function renderVideoSponsors(){
   const band=document.getElementById('home-sponsor-video'), strip=document.getElementById('homeVideoStrip');
   if(band && strip){
@@ -5148,11 +5156,15 @@ function renderVideoSponsors(){
   const left=document.getElementById('sponRailLeft'), right=document.getElementById('sponRailRight'), flow=document.getElementById('sponFlow');
   if(left && right && flow){
     // The rails and the in-flow strip hold the same cards; the stylesheet shows
-    // whichever the screen has room for, so only one copy is ever on screen.
+    // whichever the screen has room for, so only one copy is ever on screen. With
+    // nothing sold both are empty and the page reads as a normal page — what a
+    // video spot is gets explained up in the major-sponsor cards instead.
     const cards=videoSponsorsFor('side').map(videoAdCard);
-    left.innerHTML  = cards.length ? cards.filter((_,i)=>i%2===0).join('') : VIDEO_SPOT_PITCH;
-    right.innerHTML = cards.length ? cards.filter((_,i)=>i%2===1).join('') : '';
-    flow.innerHTML  = cards.length ? `<div class="vidstrip">${cards.join('')}</div>` : VIDEO_SPOT_PITCH;
+    left.innerHTML  = cards.filter((_,i)=>i%2===0).join('');
+    right.innerHTML = cards.filter((_,i)=>i%2===1).join('');
+    flow.innerHTML  = cards.length ? `<div class="vidstrip">${cards.join('')}</div>` : '';
+    const layout=document.querySelector('.spon-layout');
+    if(layout) layout.classList.toggle('has-clips', cards.length>0);
   }
   watchSponsorVideos();
 }
