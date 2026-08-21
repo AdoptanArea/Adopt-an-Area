@@ -581,14 +581,15 @@ ZZO3_END_UNUSED
   .acard-body{ display:flex; align-items:center; gap:11px; padding:11px 13px; cursor:pointer; }
   .acard-body .adot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
 
-  /* The admin's own strip at the top of the Gallery. Green and boxed off so it
-     reads as a tool rather than as part of the wall underneath it. */
-  .gal-adminbar{ background:var(--green-tint); border:1.5px solid #B6DFC6; border-radius:var(--radius-lg); padding:13px; margin-bottom:20px; }
-  .gal-adminbar-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:11px; }
-  .gal-adminbar-tag{ background:var(--green); color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; }
-  .gal-adminbar-note{ font-size:11.5px; font-weight:650; color:var(--green-dark); }
-  .gal-adminbar .admin-card{ background:#fff; border:1px solid #CFE8D8; margin-top:0; }
-  .gal-adminbar .gal-adminbar-switch{ margin-top:11px; color:var(--green-dark); font-weight:650; }
+  /* The admin's own strip, green and boxed off so it reads as a tool rather than
+     as part of the page it sits against. Top of the Gallery, foot of My Area. */
+  .adminbubble{ background:var(--green-tint); border:1.5px solid #B6DFC6; border-radius:var(--radius-lg); padding:13px; margin-bottom:20px; }
+  .adminbubble-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:11px; }
+  .adminbubble-tag{ background:var(--green); color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; }
+  .adminbubble-note{ font-size:11.5px; font-weight:650; color:var(--green-dark); }
+  .adminbubble .admin-card{ background:#fff; border:1px solid #CFE8D8; margin-top:0; }
+  .adminbubble .prefbox{ background:#fff; border-color:#CFE8D8; }
+  .adminbubble .adminbubble-switch{ margin-top:11px; color:var(--green-dark); font-weight:650; }
   /* Gallery */
   .potw{ background:linear-gradient(155deg, var(--gold) 0%, #A8761F 100%); border-radius:var(--radius-lg); padding:4px; margin-bottom:16px; }
   .potw-inner{ background:rgba(255,255,255,0.97); border-radius:20px; padding:16px; }
@@ -1430,6 +1431,16 @@ ZZO3_END_UNUSED
           </div>
         </template>
 
+
+        <!-- The admin's tools sit under the page rather than through it, so
+             everything above this bubble is My Area exactly as a member sees it.
+             Which of the three boxes inside show still depends on what the person
+             has been trusted with — see renderMyAreas(). -->
+        <div id="myAreaAdminBubble" class="adminbubble" style="display:none; margin-top:22px;">
+          <div class="adminbubble-head">
+            <span class="adminbubble-tag">🔒 Admin — only you see this</span>
+            <span class="adminbubble-note">Everything above is the page as a member sees it</span>
+          </div>
         <!-- Who may run clean-up events. Visible to you, and to anyone you've made
              a deputy — they can tick hosts, but only you can appoint a deputy. -->
         <div id="eventHostTools" style="display:none;">
@@ -1552,6 +1563,7 @@ ZZO3_END_UNUSED
             </div>
           </details>
         </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1666,10 +1678,10 @@ ZZO3_END_UNUSED
            bubble is the gallery exactly as a visitor sees it. The one thing that
            would give the game away is the per-photo Delete link, so that is off
            until the switch below asks for it. -->
-      <div id="galleryAdminTools" class="gal-adminbar" style="display:none;">
-        <div class="gal-adminbar-head">
-          <span class="gal-adminbar-tag">🔒 Admin — only you see this</span>
-          <span class="gal-adminbar-note">Everything below is the page as a visitor sees it</span>
+      <div id="galleryAdminTools" class="adminbubble" style="display:none;">
+        <div class="adminbubble-head">
+          <span class="adminbubble-tag">🔒 Admin — only you see this</span>
+          <span class="adminbubble-note">Everything below is the page as a visitor sees it</span>
         </div>
         <div class="admin-card">
           <b style="font-size:14px;">Add to the gallery</b>
@@ -1700,7 +1712,7 @@ ZZO3_END_UNUSED
           <label class="checkrow" id="featuredRow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
           <button class="btn btn-primary" id="galleryPostBtn" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
         </div>
-        <label class="checkrow gal-adminbar-switch"><input type="checkbox" id="galleryShowDelete" onchange="renderGallery()"> Show the Delete link on the photos below</label>
+        <label class="checkrow adminbubble-switch"><input type="checkbox" id="galleryShowDelete" onchange="renderGallery()"> Show the Delete link on the photos below</label>
       </div>
 
       <p class="eyebrow">Community wall</p>
@@ -3519,6 +3531,10 @@ function renderMyAreas(){
   }
   document.getElementById('adminTools').style.display = currentUser.admin ? 'block' : 'none';
   if(currentUser.admin){ renderAdminSponsorEditor(); renderAdminAllAreas(); renderCouncilApplications(); }
+  // The bubble is only there to hold whichever of those three showed up. Nobody
+  // trusted with any of them gets an empty green box at the foot of their page.
+  const bubble=document.getElementById('myAreaAdminBubble');
+  if(bubble) bubble.style.display = (mayGrant || currentUser.canOkPhotos || currentUser.admin) ? 'block' : 'none';
 }
 function renderAdminAllAreas(){
   const list=document.getElementById('adminAllAreas');
