@@ -706,7 +706,18 @@ ZZO3_END_UNUSED
      controls: it plays where it sits, says its piece in ten seconds and never
      takes the page over. It only runs while it is actually on screen (see
      watchSponsorVideos), so a page nobody scrolled to costs the reader no data. */
-  .vidad{ display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+  .vidad{ position:relative; display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+  /* Sound is off until somebody asks for it. Nothing on this site is allowed to
+     start talking at you — the button is how a clip gets a voice, and turning one
+     on turns every other one off. */
+  .vidad-sound{ position:absolute; top:8px; right:8px; width:34px; height:34px; border-radius:50%; border:none;
+                background:rgba(12,15,12,0.55); color:#fff; font-size:15px; line-height:1; cursor:pointer;
+                display:flex; align-items:center; justify-content:center; font-family:inherit;
+                -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); padding:0; }
+  .vidad-sound:hover{ background:rgba(12,15,12,0.75); }
+  .vidad-sound.on{ background:var(--green); }
+  .vidad-name{ color:inherit; text-decoration:none; }
+  .vidad-name:hover{ text-decoration:underline; }
   .vidad video{ display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:#0C0F0C; }
   /* Which way up the clip is. A shop's TV advert is landscape; something shot on
      a phone at a clean-up is portrait. object-fit:cover would crop the wrong one
@@ -1549,7 +1560,7 @@ ZZO3_END_UNUSED
           <details class="prefbox">
             <summary>Video spots<span class="pf-sub">The paid clips</span></summary>
             <div class="pf-body">
-            <p class="fineprint">A short advert — six to fifteen seconds, the kind where the bakkie drives in and the logo lands. It plays silently down the sides of the Sponsors page and at the foot of the home page, and only while somebody is looking at it. Wide or upright both work; sound is never played, so it doesn't matter if it has any. The clip is downloaded in full before it reaches the screen, so it plays without stopping to think — that works best under about 12MB, which ten seconds of good-looking mp4 comfortably fits in.</p>
+            <p class="fineprint">A short advert — six to fifteen seconds, the kind where the bakkie drives in and the logo lands. It plays silently down the sides of the Sponsors page and at the foot of the home page, and only while somebody is looking at it. Wide or upright both work. It always starts silent — there's a speaker button on the clip, and the sound only comes on if somebody presses it, so send one with audio if they have it. The clip is downloaded in full before it reaches the screen, so it plays without stopping to think — that works best under about 12MB, which ten seconds of good-looking mp4 comfortably fits in.</p>
             <div id="adminVideoEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
             <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
               <b style="font-size:12.5px;">+ Add a video spot</b>
@@ -4954,7 +4965,7 @@ function renderMajorSponsors(){
   const pitch=document.createElement('div');
   pitch.className='infocard';
   pitch.style.cssText='background:#fff; border:1.5px dashed #D6DAD2;';
-  pitch.innerHTML=`<div class="icon-badge">🎬</div><div><h4>A video spot</h4><p>Ten seconds, no sound needed — the kind where the bakkie drives in and the logo lands. It plays down the side of this page and at the foot of the home page, and you choose where: your own town only, a few towns, or the whole country. This one is a paid spot — <a href="mailto:adoptanareainfo@gmail.com?subject=Video%20spot%20enquiry" style="color:var(--green); font-weight:700;">email us for what it costs</a>.</p></div>`;
+  pitch.innerHTML=`<div class="icon-badge">🎬</div><div><h4>A video spot</h4><p>Ten seconds — the kind where the bakkie drives in and the logo lands. It starts silent, with a speaker button for anyone who wants to hear it. It plays down the side of this page and at the foot of the home page, and you choose where: your own town only, a few towns, or the whole country. This one is a paid spot — <a href="mailto:adoptanareainfo@gmail.com?subject=Video%20spot%20enquiry" style="color:var(--green); font-weight:700;">email us for what it costs</a>.</p></div>`;
   grid.appendChild(pitch);
 }
 function renderSponsorGrid(){
@@ -5337,12 +5348,52 @@ function videoAdCard(v){
   // before the clip is anywhere near the screen.
   const poster = v.poster_url ? ` poster="${escHtml(v.poster_url)}"` : '';
   const media = `<video src="${escHtml(v.video_url)}#t=0.1"${poster} muted loop playsinline preload="metadata" aria-label="Advert for ${escHtml(v.name||'a sponsor')}"></video>`;
-  const cap = `<div class="vidad-cap"><b>${escHtml(v.name||'')}</b><span class="vidad-tag">Sponsored</span></div>`;
+  const sound = `<button type="button" class="vidad-sound" aria-label="Turn the sound on">&#128263;</button>`;
   const href = sponsorLink(v.link_url);
+  // The whole card opens the sponsor's page, but the name is a real link too, so
+  // it can be tabbed to and read out. Nothing is nested inside anything clickable:
+  // the card listens for the click itself (wireSponsorCards), which keeps the
+  // sound button and the link from fighting over the same tap.
+  const nameHtml = href
+    ? `<b><a class="vidad-name" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${escHtml(v.name||'')}</a></b>`
+    : `<b>${escHtml(v.name||'')}</b>`;
+  const cap = `<div class="vidad-cap">${nameHtml}<span class="vidad-tag">Sponsored</span></div>`;
   const cls = 'vidad'+videoShapeClass(v);
-  return href
-    ? `<a class="${cls}" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${media}${cap}</a>`
-    : `<div class="${cls}">${media}${cap}</div>`;
+  const open = href ? ` data-href="${escHtml(href)}"` : '';
+  return `<div class="${cls}"${open}>${media}${sound}${cap}</div>`;
+}
+// Sound: off until asked for, and only ever one clip at a time. Turning one on
+// pauses nothing — it just moves the voice from whichever clip had it.
+function setAdSoundBtn(btn, on){
+  btn.innerHTML = on ? '&#128266;' : '&#128263;';
+  btn.setAttribute('aria-label', on ? 'Turn the sound off' : 'Turn the sound on');
+  btn.classList.toggle('on', on);
+}
+function toggleAdSound(btn){
+  const card=btn.closest('.vidad'), v=card && card.querySelector('video');
+  if(!v) return;
+  const turnOn = v.muted;
+  document.querySelectorAll('.vidad video').forEach(o=>{ if(o!==v) o.muted=true; });
+  document.querySelectorAll('.vidad-sound').forEach(b=>{ if(b!==btn) setAdSoundBtn(b, false); });
+  v.muted = !turnOn;
+  setAdSoundBtn(btn, turnOn);
+  if(turnOn){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }
+}
+function wireSponsorCards(){
+  document.querySelectorAll('.vidad-sound').forEach(btn=>{
+    if(btn.dataset.wired) return;
+    btn.dataset.wired='1';
+    btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); toggleAdSound(btn); });
+  });
+  document.querySelectorAll('.vidad[data-href]').forEach(card=>{
+    if(card.dataset.wired) return;
+    card.dataset.wired='1';
+    card.style.cursor='pointer';
+    card.addEventListener('click', e=>{
+      if(e.target.closest('.vidad-sound') || e.target.closest('a')) return;
+      window.open(card.dataset.href, '_blank', 'noopener');
+    });
+  });
 }
 function renderVideoSponsors(){
   const band=document.getElementById('home-sponsor-video'), strip=document.getElementById('homeVideoStrip');
@@ -5371,6 +5422,7 @@ function renderVideoSponsors(){
     const layout=document.querySelector('.spon-layout');
     if(layout) layout.classList.toggle('has-clips', cards.length>0);
   }
+  wireSponsorCards();
   watchSponsorVideos();
 }
 // Two passes over the same clips, and the gap between them is what stops the
@@ -5404,8 +5456,16 @@ function watchSponsorVideos(){
   if(!sponsorVideoWatcher){
     sponsorVideoWatcher=new IntersectionObserver(entries=>{
       entries.forEach(e=>{
-        if(e.isIntersecting){ const p=e.target.play(); if(p&&p.catch) p.catch(()=>{}); }
-        else { e.target.pause(); }
+        const v=e.target;
+        if(e.isIntersecting){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); return; }
+        v.pause();
+        // Sound doesn't follow you down the page. Scroll a clip away and it goes
+        // quiet again, so coming back to it starts silent like everything else.
+        if(!v.muted){
+          v.muted=true;
+          const btn=v.parentElement && v.parentElement.querySelector('.vidad-sound');
+          if(btn) setAdSoundBtn(btn, false);
+        }
       });
     }, {threshold:0.4});
   }
