@@ -581,6 +581,14 @@ ZZO3_END_UNUSED
   .acard-body{ display:flex; align-items:center; gap:11px; padding:11px 13px; cursor:pointer; }
   .acard-body .adot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
 
+  /* The admin's own strip at the top of the Gallery. Green and boxed off so it
+     reads as a tool rather than as part of the wall underneath it. */
+  .gal-adminbar{ background:var(--green-tint); border:1.5px solid #B6DFC6; border-radius:var(--radius-lg); padding:13px; margin-bottom:20px; }
+  .gal-adminbar-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:11px; }
+  .gal-adminbar-tag{ background:var(--green); color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; }
+  .gal-adminbar-note{ font-size:11.5px; font-weight:650; color:var(--green-dark); }
+  .gal-adminbar .admin-card{ background:#fff; border:1px solid #CFE8D8; margin-top:0; }
+  .gal-adminbar .gal-adminbar-switch{ margin-top:11px; color:var(--green-dark); font-weight:650; }
   /* Gallery */
   .potw{ background:linear-gradient(155deg, var(--gold) 0%, #A8761F 100%); border-radius:var(--radius-lg); padding:4px; margin-bottom:16px; }
   .potw-inner{ background:rgba(255,255,255,0.97); border-radius:20px; padding:16px; }
@@ -1654,21 +1662,16 @@ ZZO3_END_UNUSED
 <div class="page" id="page-gallery">
   <section style="background:var(--soft2);">
     <div class="wrap-wide">
-      <p class="eyebrow">Community wall</p>
-      <h2 style="margin-bottom:6px;">See what people are doing</h2>
-      <p class="lead">Curated by the team so it stays genuine.</p>
-
-      <div class="potw" id="potwCard" style="display:none;">
-        <div class="potw-inner">
-          <span class="potw-badge">🏆 Project of the week</span>
-          <div class="potw-photo" id="potwPhoto">🌳</div>
-          <h3 id="potwTitle">—</h3>
-          <p id="potwCaption"></p>
+      <!-- Admin tools sit above the page, not inside it, so everything under this
+           bubble is the gallery exactly as a visitor sees it. The one thing that
+           would give the game away is the per-photo Delete link, so that is off
+           until the switch below asks for it. -->
+      <div id="galleryAdminTools" class="gal-adminbar" style="display:none;">
+        <div class="gal-adminbar-head">
+          <span class="gal-adminbar-tag">🔒 Admin — only you see this</span>
+          <span class="gal-adminbar-note">Everything below is the page as a visitor sees it</span>
         </div>
-      </div>
-
-      <div id="galleryAdminTools" style="display:none;">
-        <div class="admin-card" style="margin-bottom:16px;">
+        <div class="admin-card">
           <b style="font-size:14px;">Add to the gallery</b>
           <p class="fineprint" style="margin-bottom:10px;">Posts straight to the public wall — photos or short videos, up to 50MB each.</p>
           <div class="segctrl" style="margin-bottom:12px;">
@@ -1696,6 +1699,20 @@ ZZO3_END_UNUSED
           <label class="checkrow"><input type="checkbox" id="photoBigProject"> This is a bigger project</label>
           <label class="checkrow" id="featuredRow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
           <button class="btn btn-primary" id="galleryPostBtn" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
+        </div>
+        <label class="checkrow gal-adminbar-switch"><input type="checkbox" id="galleryShowDelete" onchange="renderGallery()"> Show the Delete link on the photos below</label>
+      </div>
+
+      <p class="eyebrow">Community wall</p>
+      <h2 style="margin-bottom:6px;">See what people are doing</h2>
+      <p class="lead">Curated by the team so it stays genuine.</p>
+
+      <div class="potw" id="potwCard" style="display:none;">
+        <div class="potw-inner">
+          <span class="potw-badge">🏆 Project of the week</span>
+          <div class="potw-photo" id="potwPhoto">🌳</div>
+          <h3 id="potwTitle">—</h3>
+          <p id="potwCaption"></p>
         </div>
       </div>
 
@@ -4719,6 +4736,11 @@ function stagePhoto(evt, kind){
 // The database says the same thing — see supabase-trusted-posters.sql — so this
 // is about what's worth showing, not about holding anybody back.
 function mayPostGallery(){ return !!(currentUser && (currentUser.admin || currentUser.canPostGallery)); }
+// Off unless the admin has ticked it, and off again for anyone who isn't one.
+function showGalleryDelete(){
+  const box=document.getElementById('galleryShowDelete');
+  return !!(box && box.checked && mayPostGallery());
+}
 function updateGalleryAdminVisibility(){
   document.getElementById('galleryAdminTools').style.display = mayPostGallery() ? 'block' : 'none';
   // The hero on the home page stays the site admin's pick.
@@ -4831,8 +4853,9 @@ function renderGallery(){
       photoHtml = `<div class="gphoto">📷</div>`;
     }
     // Your own back, or anything at all if you're the site admin. Same rule as
-    // the delete policy on gallery_photos.
-    const mayDelete = currentUser && (currentUser.admin || (currentUser.canPostGallery && g.posted_by===currentUser.id));
+    // the delete policy on gallery_photos. It stays hidden until the switch in
+    // the admin bubble asks for it, so the wall reads as a visitor's by default.
+    const mayDelete = showGalleryDelete() && currentUser && (currentUser.admin || (currentUser.canPostGallery && g.posted_by===currentUser.id));
     const delBtn = mayDelete ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
     card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${delBtn}</div>`;
     grid.appendChild(card);
