@@ -725,11 +725,18 @@ ZZO3_END_UNUSED
      put in them the page goes back to its ordinary single column rather than
      leaving two empty margins behind. */
   .spon-layout{ max-width:1080px; margin:0 auto; padding:0 20px; }
-  .spon-rail{ display:none; flex-direction:column; gap:14px; position:sticky; top:calc(var(--safe-top) + 78px); }
-  /* An upright clip gets the whole width of the rail, which on a laptop comes out
-     around half the height of the screen — the size a phone-shot advert wants to
-     be. The cap stops it growing past the window on a very wide monitor. */
-  .spon-rail .vidad.is-portrait video{ max-height:56vh; }
+  /* The rail is pinned: it stays where it is while the page scrolls past, so a
+     sponsor's ten seconds are on screen for the whole read rather than sliding
+     away with the paragraph they started next to. */
+  .spon-rail{ --stack:1; display:none; flex-direction:column; gap:14px;
+              position:sticky; top:calc(var(--safe-top) + 78px);
+              max-height:calc(100svh - var(--safe-top) - 100px); }
+  /* One upright clip fills about half the height of the screen — the size a
+     phone-shot advert wants to be. Two or three share that height between them
+     instead of the lower ones hanging off the bottom where nobody sees them.
+     --stack is however many ended up in this rail; the app sets it. */
+  .spon-rail .vidad video{ max-height:calc((100svh - var(--safe-top) - 130px) / var(--stack)); }
+  .spon-rail .vidad.is-portrait video{ max-height:min(56vh, calc((100svh - var(--safe-top) - 130px) / var(--stack))); }
   @media (min-width:1180px){
     /* The rails widen with the window rather than staying a fixed sliver, so an
        upright clip is properly tall instead of a postage stamp. */
@@ -5288,9 +5295,16 @@ function renderVideoSponsors(){
     // nothing sold both are empty and the page reads as a normal page — what a
     // video spot is gets explained up in the major-sponsor cards instead.
     const cards=videoSponsorsFor('side').map(videoAdCard);
-    left.innerHTML  = cards.filter((_,i)=>i%2===0).join('');
-    right.innerHTML = cards.filter((_,i)=>i%2===1).join('');
+    const leftCards=cards.filter((_,i)=>i%2===0), rightCards=cards.filter((_,i)=>i%2===1);
+    left.innerHTML  = leftCards.join('');
+    right.innerHTML = rightCards.join('');
     flow.innerHTML  = cards.length ? `<div class="vidstrip">${cards.join('')}</div>` : '';
+    // How many ended up in each rail. The stylesheet divides the height of the
+    // screen by it, so two or three clips share the side between them and all of
+    // them stay in view while the rail is pinned — rather than the second one
+    // hanging below the fold where it plays to nobody.
+    left.style.setProperty('--stack', Math.max(1, leftCards.length));
+    right.style.setProperty('--stack', Math.max(1, rightCards.length));
     const layout=document.querySelector('.spon-layout');
     if(layout) layout.classList.toggle('has-clips', cards.length>0);
   }
