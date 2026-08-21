@@ -697,13 +697,26 @@ ZZO3_END_UNUSED
   .vidad-cap{ padding:8px 10px; display:flex; align-items:center; gap:8px; }
   .vidad-cap b{ font-size:12px; font-weight:750; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .vidad-tag{ font-size:9px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--gray); flex-shrink:0; }
-  /* A row of clips: side by side where there's width, a swipe on a phone. An
-     upright clip gets a narrower card so it doesn't tower over the page. */
-  .vidstrip{ display:flex; gap:12px; overflow-x:auto; padding:2px 0 8px 0; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; align-items:flex-start; }
-  .vidstrip > *{ flex:0 0 78%; max-width:330px; scroll-snap-align:start; }
-  .vidstrip > .is-portrait{ flex:0 0 52%; max-width:200px; }
-  .vidstrip > .is-square{ flex:0 0 62%; max-width:250px; }
+  /* On a phone the clips stack, each one the full width of the screen — an advert
+     you have to swipe half of is an advert nobody watches. Where there's room they
+     go back to standing next to each other in a row. */
+  .vidstrip{ display:flex; flex-direction:column; gap:14px; }
+  .vidstrip > *{ width:100%; }
+  /* An upright clip is already tall at full width; this stops it from running off
+     the bottom of the screen and taking the caption with it. */
+  .vidstrip > .is-portrait video{ max-height:76vh; }
   #home-sponsor-video{ padding-top:6px; }
+  @media (max-width:759px){
+    /* Edge to edge, like a board along the side of a field. */
+    #home-sponsor-video .vidstrip{ margin-left:-20px; margin-right:-20px; }
+    #home-sponsor-video .vidad{ border-radius:0; border-left:none; border-right:none; }
+  }
+  @media (min-width:760px){
+    .vidstrip{ flex-direction:row; align-items:flex-start; gap:12px; }
+    .vidstrip > *{ flex:1 1 0; max-width:360px; }
+    .vidstrip > .is-portrait{ flex:0 0 250px; max-width:250px; }
+    .vidstrip > .is-square{ flex:0 0 290px; max-width:290px; }
+  }
 
   /* The Sponsors page with a clip down each side of the text. Under 1180px there
      is no side to speak of, so the clips fall in under the intro instead — the
@@ -712,12 +725,16 @@ ZZO3_END_UNUSED
      put in them the page goes back to its ordinary single column rather than
      leaving two empty margins behind. */
   .spon-layout{ max-width:1080px; margin:0 auto; padding:0 20px; }
-  .spon-rail{ display:none; flex-direction:column; gap:12px; position:sticky; top:calc(var(--safe-top) + 78px); }
-  /* An upright clip at the full width of the rail is a tower. Narrow it and centre
-     it instead, so it sits beside the text rather than looming over it. */
-  .spon-rail .vidad.is-portrait{ width:160px; margin:0 auto; }
+  .spon-rail{ display:none; flex-direction:column; gap:14px; position:sticky; top:calc(var(--safe-top) + 78px); }
+  /* An upright clip gets the whole width of the rail, which on a laptop comes out
+     around half the height of the screen — the size a phone-shot advert wants to
+     be. The cap stops it growing past the window on a very wide monitor. */
+  .spon-rail .vidad.is-portrait video{ max-height:56vh; }
   @media (min-width:1180px){
-    .spon-layout.has-clips{ max-width:1460px; display:grid; grid-template-columns:216px minmax(0,1fr) 216px; gap:26px; align-items:start; }
+    /* The rails widen with the window rather than staying a fixed sliver, so an
+       upright clip is properly tall instead of a postage stamp. */
+    .spon-layout.has-clips{ max-width:1560px; display:grid; gap:26px; align-items:start;
+                            grid-template-columns:clamp(200px, 18vw, 290px) minmax(0,1fr) clamp(200px, 18vw, 290px); }
     .spon-layout.has-clips .spon-rail{ display:flex; }
     .spon-layout.has-clips .spon-flow{ display:none; }
   }
