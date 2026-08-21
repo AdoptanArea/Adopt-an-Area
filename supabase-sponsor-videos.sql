@@ -27,17 +27,40 @@
 -- paying for Humansdorp is paying for Humansdorp, and giving them Cape Town too
 -- would be selling the same ten seconds twice.
 
+-- orientation is which way up the clip was filmed. A dealership hands over the
+-- wide advert from their TV campaign; somebody at a clean-up sends what their
+-- phone shot, held upright. The card changes shape to match, rather than cropping
+-- an upright clip down to a letterbox. The app works it out from the file when
+-- you upload one, and you can overrule it afterwards.
+
 create table if not exists public.sponsor_videos (
   id           uuid primary key default gen_random_uuid(),
   name         text not null,
   video_url    text not null,
-  poster_url   text,                                    -- optional still frame
+  poster_url   text,                                    -- still frame, lifted from the clip
   link_url     text,                                    -- optional, opens in a new tab
   placement    text not null default 'both'
                check (placement in ('both','home','side')),
+  orientation  text not null default 'landscape'
+               check (orientation in ('landscape','portrait','square')),
   target_towns text[] not null default '{all}',
   created_at   timestamptz not null default now()
 );
+
+-- Safe to run again over a table made before orientation existed. The check has
+-- to be added separately for the same reason — a column added later doesn't take
+-- the one written into create table above.
+alter table public.sponsor_videos
+  add column if not exists orientation text not null default 'landscape';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'sponsor_videos_orientation_check') then
+    alter table public.sponsor_videos
+      add constraint sponsor_videos_orientation_check
+      check (orientation in ('landscape','portrait','square'));
+  end if;
+end $$;
 
 alter table public.sponsor_videos enable row level security;
 

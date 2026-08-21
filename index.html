@@ -689,12 +689,20 @@ ZZO3_END_UNUSED
      watchSponsorVideos), so a page nobody scrolled to costs the reader no data. */
   .vidad{ display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
   .vidad video{ display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:#0C0F0C; }
+  /* Which way up the clip is. A shop's TV advert is landscape; something shot on
+     a phone at a clean-up is portrait. object-fit:cover would crop the wrong one
+     to ribbons, so the frame changes shape instead of the picture. */
+  .vidad.is-portrait video{ aspect-ratio:9/16; }
+  .vidad.is-square video{ aspect-ratio:1/1; }
   .vidad-cap{ padding:8px 10px; display:flex; align-items:center; gap:8px; }
   .vidad-cap b{ font-size:12px; font-weight:750; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .vidad-tag{ font-size:9px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--gray); flex-shrink:0; }
-  /* A row of clips: side by side where there's width, a swipe on a phone. */
-  .vidstrip{ display:flex; gap:12px; overflow-x:auto; padding:2px 0 8px 0; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+  /* A row of clips: side by side where there's width, a swipe on a phone. An
+     upright clip gets a narrower card so it doesn't tower over the page. */
+  .vidstrip{ display:flex; gap:12px; overflow-x:auto; padding:2px 0 8px 0; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; align-items:flex-start; }
   .vidstrip > *{ flex:0 0 78%; max-width:330px; scroll-snap-align:start; }
+  .vidstrip > .is-portrait{ flex:0 0 52%; max-width:200px; }
+  .vidstrip > .is-square{ flex:0 0 62%; max-width:250px; }
   #home-sponsor-video{ padding-top:6px; }
 
   /* The Sponsors page with a clip down each side of the text. Under 1180px there
@@ -705,6 +713,9 @@ ZZO3_END_UNUSED
      leaving two empty margins behind. */
   .spon-layout{ max-width:1080px; margin:0 auto; padding:0 20px; }
   .spon-rail{ display:none; flex-direction:column; gap:12px; position:sticky; top:calc(var(--safe-top) + 78px); }
+  /* An upright clip at the full width of the rail is a tower. Narrow it and centre
+     it instead, so it sits beside the text rather than looming over it. */
+  .spon-rail .vidad.is-portrait{ width:160px; margin:0 auto; }
   @media (min-width:1180px){
     .spon-layout.has-clips{ max-width:1460px; display:grid; grid-template-columns:216px minmax(0,1fr) 216px; gap:26px; align-items:start; }
     .spon-layout.has-clips .spon-rail{ display:flex; }
@@ -1471,7 +1482,7 @@ ZZO3_END_UNUSED
           <details class="prefbox">
             <summary>Video spots<span class="pf-sub">The paid clips</span></summary>
             <div class="pf-body">
-            <p class="fineprint">A short advert — six to fifteen seconds, the kind where the bakkie drives in and the logo lands. It plays silently down the sides of the Sponsors page and at the foot of the home page, and only while somebody is looking at it. Ask them for a landscape mp4 under 50MB; sound is never played, so it doesn't matter if it has any.</p>
+            <p class="fineprint">A short advert — six to fifteen seconds, the kind where the bakkie drives in and the logo lands. It plays silently down the sides of the Sponsors page and at the foot of the home page, and only while somebody is looking at it. Wide or upright both work; sound is never played, so it doesn't matter if it has any. The clip is downloaded in full before it reaches the screen, so it plays without stopping to think — that works best under about 12MB, which ten seconds of good-looking mp4 comfortably fits in.</p>
             <div id="adminVideoEditor" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
             <div style="background:#fff; border:1px dashed var(--border); border-radius:12px; padding:10px; margin-top:4px;">
               <b style="font-size:12.5px;">+ Add a video spot</b>
@@ -1481,6 +1492,12 @@ ZZO3_END_UNUSED
                 <option value="both">Both — home page and Sponsors page</option>
                 <option value="home">Home page only</option>
                 <option value="side">Sponsors page only</option>
+              </select>
+              <select id="newAdOrientation" style="width:100%; margin-top:6px; border:1.5px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:inherit;">
+                <option value="auto">Which way up — work it out from the clip</option>
+                <option value="landscape">Wide — a TV advert, filmed sideways</option>
+                <option value="portrait">Upright — filmed on a phone, held up</option>
+                <option value="square">Square</option>
               </select>
               <input type="file" id="newAdVideo" accept="video/*" style="display:none;" onchange="stageAdVideo(event)">
               <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px; font-size:12px;" onclick="document.getElementById('newAdVideo').click()" id="newAdVideoLabel">+ Choose the clip (mp4, up to 50MB)</button>
@@ -4926,9 +4943,13 @@ function renderAdminSponsorEditor(){
       const townChecks=targetableTowns({targetTowns:tt}).map(t=>`<label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-right:8px;"><input type="checkbox" data-i="${i}" data-town="${t.id}" ${tt.includes(t.id)?'checked':''} onchange="onAdTownToggle(this)">${t.name}</label>`).join('')
         || '<span style="font-size:11px; color:var(--text-dim);">Nothing claimed anywhere yet — this clip plays everywhere.</span>';
       const opt=(val,label)=>`<option value="${val}" ${(v.placement||'both')===val?'selected':''}>${label}</option>`;
+      const shape=v.orientation||'landscape';
+      const oopt=(val,label)=>`<option value="${val}" ${shape===val?'selected':''}>${label}</option>`;
+      const thumbRatio = shape==='portrait' ? '9/16' : (shape==='square' ? '1/1' : '16/9');
+      const thumbWidth = shape==='portrait' ? '44px' : '74px';
       row.innerHTML=`
         <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-          <video src="${escHtml(v.video_url)}#t=0.1" muted playsinline preload="metadata" style="width:74px; aspect-ratio:16/9; object-fit:cover; border-radius:7px; background:#0C0F0C; flex-shrink:0;"></video>
+          <video src="${escHtml(v.video_url)}#t=0.1"${v.poster_url?` poster="${escHtml(v.poster_url)}"`:''} muted playsinline preload="metadata" style="width:${thumbWidth}; aspect-ratio:${thumbRatio}; object-fit:cover; border-radius:7px; background:#0C0F0C; flex-shrink:0;"></video>
           <div style="flex:1; min-width:0;">
             <b style="font-size:12.5px;">${escHtml(v.name||'')}</b>
             <div style="font-size:11px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(v.link_url||'No link')}</div>
@@ -4939,6 +4960,11 @@ function renderAdminSponsorEditor(){
           ${opt('both','Both — home page and Sponsors page')}
           ${opt('home','Home page only')}
           ${opt('side','Sponsors page only')}
+        </select>
+        <select style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; font-family:inherit; margin-bottom:8px;" onchange="onAdOrientation(${i}, this.value)">
+          ${oopt('landscape','Wide — a TV advert, filmed sideways')}
+          ${oopt('portrait','Upright — filmed on a phone, held up')}
+          ${oopt('square','Square')}
         </select>
         <label style="font-size:11px; display:flex; align-items:center; gap:4px; margin-bottom:4px; font-weight:700;"><input type="checkbox" ${tt.includes('all')?'checked':''} onchange="onAdAllToggle(${i}, this.checked)">Play in all towns</label>
         <div style="display:flex; flex-wrap:wrap;">${townChecks}</div>
@@ -5023,16 +5049,72 @@ async function deleteSponsorSlot(i){
   renderAdminSponsorEditor();
 }
 // ---- Admin: the video spots ----
-let stagedAdVideo=null;
-function stageAdVideo(evt){
+let stagedAdVideo=null, stagedAdShot=null;
+function shapeFromSize(w,h){
+  if(!w||!h) return 'landscape';
+  if(h > w*1.15) return 'portrait';
+  if(Math.abs(w-h) <= w*0.12) return 'square';
+  return 'landscape';
+}
+// Opens the file where it sits — nothing is uploaded — to read how big the picture
+// is and to lift one frame out of it. The frame becomes the poster: what somebody
+// sees the instant the card appears, instead of a black rectangle waiting for the
+// first byte. Every step is wrapped, because a codec the browser can't open must
+// leave the upload working, just without the extra.
+function grabPosterFrame(file){
+  return new Promise(resolve=>{
+    let done=false, url=null;
+    const finish=(blob,w,h)=>{
+      if(done) return;
+      done=true;
+      if(url) try{ URL.revokeObjectURL(url); }catch(_){}
+      resolve({blob:blob||null, w:w||0, h:h||0});
+    };
+    try{
+      url=URL.createObjectURL(file);
+      const v=document.createElement('video');
+      v.muted=true; v.playsInline=true; v.preload='auto'; v.src=url;
+      const shoot=()=>{
+        const w=v.videoWidth||0, h=v.videoHeight||0;
+        if(!w||!h) return finish(null,0,0);
+        try{
+          const c=document.createElement('canvas');
+          const scale=Math.min(1, 900/Math.max(w,h));
+          c.width=Math.round(w*scale); c.height=Math.round(h*scale);
+          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+          c.toBlob(b=>finish(b,w,h), 'image/jpeg', 0.82);
+        }catch(_){ finish(null,w,h); }
+      };
+      // A frame or two in, rather than the very first: adverts often open on black.
+      v.addEventListener('loadeddata', ()=>{
+        try{ v.currentTime = Math.min(0.5, (v.duration||2)/4); }
+        catch(_){ shoot(); }
+      });
+      v.addEventListener('seeked', shoot);
+      v.addEventListener('error', ()=>finish(null, v.videoWidth||0, v.videoHeight||0));
+      setTimeout(()=>finish(null, v.videoWidth||0, v.videoHeight||0), 9000);
+    }catch(_){ finish(null,0,0); }
+  });
+}
+async function stageAdVideo(evt){
   const file=evt.target.files[0];
   if(!file) return;
   if(file.size > MAX_UPLOAD_MB*1024*1024){
     showBanner(`That clip is ${Math.round(file.size/1048576)}MB — keep it under ${MAX_UPLOAD_MB}MB`, 4200);
     evt.target.value=''; return;
   }
-  stagedAdVideo=file;
-  document.getElementById('newAdVideoLabel').textContent='✓ '+file.name.slice(0,22);
+  stagedAdVideo=file; stagedAdShot=null;
+  const label=document.getElementById('newAdVideoLabel');
+  label.textContent='✓ '+file.name.slice(0,22)+' — reading…';
+  stagedAdShot = await grabPosterFrame(file);
+  const shape=shapeFromSize(stagedAdShot.w, stagedAdShot.h);
+  const sel=document.getElementById('newAdOrientation');
+  if(sel && sel.value==='auto') sel.dataset.auto=shape;
+  const said = stagedAdShot.w ? ` — ${stagedAdShot.w}×${stagedAdShot.h}, ${shape==='portrait'?'upright':shape==='square'?'square':'wide'}` : '';
+  label.textContent='✓ '+file.name.slice(0,22)+said;
+  if(file.size > 12*1024*1024){
+    showBanner('That clip will play, but it is big — under 12MB starts quicker', 4200);
+  }
 }
 async function uploadSponsorVideo(file){
   const path=`${Date.now()}_${file.name.replace(/[^A-Za-z0-9._-]/g,'_')}`;
@@ -5041,10 +5123,21 @@ async function uploadSponsorVideo(file){
   const {data} = sb.storage.from('sponsor-videos').getPublicUrl(path);
   return data.publicUrl;
 }
+async function uploadAdPoster(blob, forFile){
+  if(!blob) return null;
+  const base=(forFile.name||'clip').replace(/\.[^.]+$/,'').replace(/[^A-Za-z0-9._-]/g,'_');
+  const path=`${Date.now()}_${base}_poster.jpg`;
+  const {error} = await sb.storage.from('sponsor-videos').upload(path, blob, {contentType:'image/jpeg'});
+  if(error) return null;                       // no poster is a nuisance, not a failure
+  const {data} = sb.storage.from('sponsor-videos').getPublicUrl(path);
+  return data.publicUrl;
+}
 async function addVideoSponsor(){
   const name=document.getElementById('newAdName').value.trim();
   const link=document.getElementById('newAdLink').value.trim();
   const placement=document.getElementById('newAdPlacement').value;
+  const sel=document.getElementById('newAdOrientation');
+  const orientation = sel.value==='auto' ? (sel.dataset.auto || 'landscape') : sel.value;
   if(!name){ showBanner('Whose advert is it?', 2600); return; }
   if(!stagedAdVideo){ showBanner('Pick the clip first', 2600); return; }
   const btn=document.getElementById('addAdVideoBtn');
@@ -5052,11 +5145,13 @@ async function addVideoSponsor(){
   try{
     const video_url = await uploadSponsorVideo(stagedAdVideo);
     if(!video_url) return;
-    const {error} = await sb.from('sponsor_videos').insert({name, video_url, link_url:link||null, placement, target_towns:['all']});
+    const poster_url = await uploadAdPoster(stagedAdShot && stagedAdShot.blob, stagedAdVideo);
+    const {error} = await sb.from('sponsor_videos').insert({name, video_url, poster_url, link_url:link||null, placement, orientation, target_towns:['all']});
     if(error){ showBanner(error.message, 4200); return; }
     document.getElementById('newAdName').value=''; document.getElementById('newAdLink').value='';
     document.getElementById('newAdVideoLabel').textContent='+ Choose the clip (mp4, up to 50MB)';
-    document.getElementById('newAdVideo').value=''; stagedAdVideo=null;
+    document.getElementById('newAdVideo').value=''; stagedAdVideo=null; stagedAdShot=null;
+    sel.value='auto'; delete sel.dataset.auto;
     await loadSponsors();
     renderAdminSponsorEditor();
   } finally { btn.disabled=false; btn.textContent=was; }
@@ -5070,10 +5165,19 @@ async function deleteVideoSponsor(i){
 }
 async function saveVideoRow(i){
   const v=videoSponsors[i];
-  await sb.from('sponsor_videos').update({placement:v.placement, target_towns:v.target_towns}).eq('id', v.id);
+  const {error} = await sb.from('sponsor_videos')
+    .update({placement:v.placement, orientation:v.orientation||'landscape', target_towns:v.target_towns})
+    .eq('id', v.id);
+  if(error) showBanner(error.message, 4200);
 }
 function onAdPlacement(i, val){
   videoSponsors[i].placement=val;
+  renderVideoSponsors();
+  saveVideoRow(i);
+}
+function onAdOrientation(i, val){
+  videoSponsors[i].orientation=val;
+  renderAdminSponsorEditor();
   renderVideoSponsors();
   saveVideoRow(i);
 }
@@ -5135,16 +5239,23 @@ function sponsorLink(url){
   if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u)) return 'https://'+u;
   return null;
 }
+function videoShapeClass(v){
+  const o=(v.orientation||'landscape');
+  return o==='portrait' ? ' is-portrait' : (o==='square' ? ' is-square' : '');
+}
 function videoAdCard(v){
   // #t=0.1 is what makes iOS draw a frame rather than a black rectangle before
-  // the clip starts — the same trick the gallery tiles use.
+  // the clip starts — the same trick the gallery tiles use. preload starts at
+  // metadata and is turned up to the whole file by the warm-up below, well
+  // before the clip is anywhere near the screen.
   const poster = v.poster_url ? ` poster="${escHtml(v.poster_url)}"` : '';
   const media = `<video src="${escHtml(v.video_url)}#t=0.1"${poster} muted loop playsinline preload="metadata" aria-label="Advert for ${escHtml(v.name||'a sponsor')}"></video>`;
   const cap = `<div class="vidad-cap"><b>${escHtml(v.name||'')}</b><span class="vidad-tag">Sponsored</span></div>`;
   const href = sponsorLink(v.link_url);
+  const cls = 'vidad'+videoShapeClass(v);
   return href
-    ? `<a class="vidad" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${media}${cap}</a>`
-    : `<div class="vidad">${media}${cap}</div>`;
+    ? `<a class="${cls}" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer sponsored">${media}${cap}</a>`
+    : `<div class="${cls}">${media}${cap}</div>`;
 }
 function renderVideoSponsors(){
   const band=document.getElementById('home-sponsor-video'), strip=document.getElementById('homeVideoStrip');
@@ -5168,11 +5279,34 @@ function renderVideoSponsors(){
   }
   watchSponsorVideos();
 }
-// Nothing plays until it is actually looked at, and it stops again the moment it
-// scrolls away. On a phone data costs money.
-let sponsorVideoWatcher=null;
+// Two passes over the same clips, and the gap between them is what stops the
+// stuttering. The warm-up runs a screen and a half early: while the clip is still
+// well below the fold its preload is turned up from "metadata" to the whole file,
+// so by the time anybody sees it the ten seconds are already downloaded and it
+// plays straight through — at full quality, since nothing here touches the file.
+// The watcher then only starts and stops it. A short clip that is fully buffered
+// loops for as long as it's on screen without going back to the network.
+//
+// The clip still costs nothing until somebody scrolls towards it, which is the
+// point of doing it this way rather than preloading the lot on page load.
+let sponsorVideoWatcher=null, sponsorVideoWarmer=null;
 function watchSponsorVideos(){
   if(!('IntersectionObserver' in window)) return;
+  if(!sponsorVideoWarmer){
+    sponsorVideoWarmer=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(!e.isIntersecting) return;
+        const v=e.target;
+        sponsorVideoWarmer.unobserve(v);          // one full download is enough
+        if(v.preload==='auto') return;
+        v.preload='auto';
+        // load() starts the download but rewinds the clip, so it is only safe
+        // before anything has started playing — which is the normal case, the
+        // warm-up being most of a screen ahead of the watcher.
+        if(v.paused && !v.currentTime){ try{ v.load(); }catch(_){} }
+      });
+    }, {rootMargin:'900px 0px'});
+  }
   if(!sponsorVideoWatcher){
     sponsorVideoWatcher=new IntersectionObserver(entries=>{
       entries.forEach(e=>{
@@ -5181,7 +5315,10 @@ function watchSponsorVideos(){
       });
     }, {threshold:0.4});
   }
-  document.querySelectorAll('.vidad video').forEach(v=>sponsorVideoWatcher.observe(v));
+  document.querySelectorAll('.vidad video').forEach(v=>{
+    sponsorVideoWarmer.observe(v);
+    sponsorVideoWatcher.observe(v);
+  });
 }
 
 // ================= MUNICIPALITY RULES =================
