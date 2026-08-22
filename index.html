@@ -2290,6 +2290,11 @@ function onProvinceChange(){
   const p=selectedProvince();
   const inp=document.getElementById('townInput');
   inp.value=''; closeTownList();
+  // The town went with the province, so the lists go back to the whole country
+  // until a town in the new province is picked.
+  pickedTown=null; townOnly=true;
+  drawAllAreas();
+  renderAreaListBelow();
   if(!p){
     inp.disabled=true; inp.placeholder='Select a province first';
     setMapHeading(null);
@@ -2372,6 +2377,11 @@ function pickTown(di,ti){
   inp.value=name; inp.blur();
   closeTownList();
   currentTown={id:slug(town), name, district:d.name, province:p.name, center:null, bbox:null};
+  // The lists beside the map narrow to the town you just picked.
+  pickedTown={id:slug(town), name};
+  townOnly=true;
+  drawAllAreas();
+  renderAreaListBelow();
   setMapHeading(d.name);
   // "What am I allowed to do here?" is a property of where you just moved to.
   renderTownRulesCard();
@@ -2447,8 +2457,40 @@ const polyLayer = L.layerGroup().addTo(leafletMap);
 // every row carries its colour, it's the colour key too.
 const FILTER_KEYS = ['green','orange','red','gray','helper'];
 let mapFilter = new Set(FILTER_KEYS);
-const shownAreas   = ()=> seedAreas.filter(a=>mapFilter.has(a.status));
-const shownHelpers = ()=> mapFilter.has('helper') ? helperAreas : [];
+
+// Picking a town is a statement about where you're looking, so the lists beside
+// the map follow the map there. Before that the map is the whole country and the
+// lists say so — note that currentTown starts on the home town for the address
+// search's sake, which is not the same as somebody having chosen it, so the scope
+// hangs off pickedTown instead.
+//
+// townOnly is the way back out: the filter menu carries "Cape Town only" and
+// "Everywhere", because somebody who zooms out to look around the country
+// shouldn't have to unpick their town to see what's on it.
+let pickedTown = null;
+let townOnly = true;
+const scopeTown  = ()=> (pickedTown && townOnly) ? pickedTown : null;
+const inTownScope = a => { const s=scopeTown(); return !s || a.townId===s.id; };
+const townAreas   = ()=> seedAreas.filter(inTownScope);
+const townHelpers = ()=> helperAreas.filter(inTownScope);
+const shownAreas   = ()=> townAreas().filter(a=>mapFilter.has(a.status));
+const shownHelpers = ()=> mapFilter.has('helper') ? townHelpers() : [];
+function setTownOnly(on, e){
+  if(e) e.stopPropagation();
+  townOnly = !!on;
+  drawAllAreas();
+  renderAreaListBelow();
+}
+// Everything that flies you to one area has to make sure it's actually showing:
+// its kind may be filtered off, and it may be in a different town from the one
+// the lists are narrowed to.
+function revealArea(a){
+  const key = a.offer!==undefined ? 'helper' : a.status;
+  let changed=false;
+  if(!mapFilter.has(key)){ mapFilter.add(key); changed=true; }
+  if(!inTownScope(a)){ townOnly=false; changed=true; }
+  if(changed){ drawAllAreas(); renderAreaListBelow(); }
+}
 
 // The event is passed through so the click doesn't reach the close-on-outside-tap
 // handler: renderMapFilters() rebuilds the rows, which detaches the element that was
@@ -2492,15 +2534,31 @@ document.addEventListener('click', e=>{
 function renderMapFilters(){
   const menu = document.getElementById('filterMenu');
   if(!menu) return;
-  const counts = {green:0, orange:0, red:0, gray:0, helper:helperAreas.length};
-  seedAreas.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
+  // Counted inside whatever the lists are showing, so the numbers next to each kind
+  // are the numbers you'd get by picking it.
+  const scoped = townAreas(), scopedHelpers = townHelpers();
+  const counts = {green:0, orange:0, red:0, gray:0, helper:scopedHelpers.length};
+  scoped.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
   const allOn = FILTER_KEYS.every(k=>mapFilter.has(k));
-  const total = seedAreas.length + helperAreas.length;
+  const total = scoped.length + scopedHelpers.length;
+  const everywhere = seedAreas.length + helperAreas.length;
   const tick = on => `<span class="fm-tick">${on?'✓':''}</span>`;
 
-  let html = `<button class="fm-row ${allOn?'':'off'}" onclick="setMapFilter('all', event)">`
-           + `<span class="dot" style="background:var(--text)"></span>Show all`
-           + `<span class="fm-count">${total}</span>${tick(allOn)}</button><div class="fm-sep"></div>`;
+  let html = '';
+  // Where, before what kind: the town rows only appear once a town has been picked.
+  if(pickedTown){
+    const inTown = seedAreas.filter(a=>a.townId===pickedTown.id).length
+                 + helperAreas.filter(a=>a.townId===pickedTown.id).length;
+    html += `<button class="fm-row ${townOnly?'':'off'}" onclick="setTownOnly(true, event)">`
+          + `<span class="dot" style="background:var(--green)"></span>${escHtml(pickedTown.name)} only`
+          + `<span class="fm-count">${inTown}</span>${tick(townOnly)}</button>`
+          + `<button class="fm-row ${townOnly?'off':''}" onclick="setTownOnly(false, event)">`
+          + `<span class="dot" style="background:var(--gray)"></span>Everywhere`
+          + `<span class="fm-count">${everywhere}</span>${tick(!townOnly)}</button><div class="fm-sep"></div>`;
+  }
+  html += `<button class="fm-row ${allOn?'':'off'}" onclick="setMapFilter('all', event)">`
+        + `<span class="dot" style="background:var(--text)"></span>Show all`
+        + `<span class="fm-count">${total}</span>${tick(allOn)}</button><div class="fm-sep"></div>`;
   FILTER_KEYS.forEach(k=>{
     const on = mapFilter.has(k);
     html += `<button class="fm-row ${on?'':'off'}" onclick="setMapFilter('${k}', event)">`
@@ -2511,10 +2569,11 @@ function renderMapFilters(){
 
   // The button says what you're looking at, so the state is readable with the menu shut.
   const shown = shownAreas().length + shownHelpers().length;
+  const where = scopeTown() ? ' in ' + scopeTown().name : '';
   const sum = document.getElementById('filterSummary');
-  if(allOn)                  sum.textContent = `Showing all ${total}`;
-  else if(mapFilter.size===1) sum.textContent = `${statusMeta[[...mapFilter][0]].label} · ${shown}`;
-  else                        sum.textContent = `${mapFilter.size} kinds · ${shown}`;
+  if(allOn)                   sum.textContent = `Showing all ${total}${where}`;
+  else if(mapFilter.size===1) sum.textContent = `${statusMeta[[...mapFilter][0]].label} · ${shown}${where}`;
+  else                        sum.textContent = `${mapFilter.size} kinds · ${shown}${where}`;
 }
 
 function drawAllAreas(){
@@ -2548,10 +2607,14 @@ async function loadAreas(){
 function renderMapStats(){
   const row = document.getElementById('mapStats');
   if(!row) return;
-  const taken = seedAreas.filter(a=>a.status!=='gray');
-  const towns = new Set([...taken, ...helperAreas].map(a=>a.townId).filter(Boolean)).size;
-  const need  = seedAreas.filter(a=>a.status==='red').length;
-  const help  = helperAreas.length;
+  // Counted over whatever the map is showing. Narrowed to one town the "towns live"
+  // pill can only ever say one, so it's dropped rather than stating the obvious.
+  const scope = scopeTown();
+  const areas = townAreas(), helps = townHelpers();
+  const taken = areas.filter(a=>a.status!=='gray');
+  const towns = scope ? 0 : new Set([...taken, ...helps].map(a=>a.townId).filter(Boolean)).size;
+  const need  = areas.filter(a=>a.status==='red').length;
+  const help  = helps.length;
   const pills = [
     [towns, towns===1 ? 'town live'    : 'towns live'],
     [taken.length, taken.length===1 ? 'area adopted' : 'areas adopted'],
@@ -2564,11 +2627,18 @@ function renderAreaListBelow(){
   renderMapStats();
   renderMapFilters();
   const empty = m=>`<p style="font-size:13px; color:var(--text-dim);">${m}</p>`;
+  // An empty list because you're standing in a quiet town is not the same as an
+  // empty list because of the filters, and neither is a dead end: the way out sits
+  // in the sentence that explains it.
+  const scope = scopeTown();
+  const widen = `<button onclick="setTownOnly(false)" style="background:none; border:none; padding:0; font:inherit; font-weight:700; color:var(--green); cursor:pointer;">show the whole country</button>`;
+  const nothingHere = kind =>
+    scope ? `Nothing ${kind} in ${escHtml(scope.name)} yet — ${widen}.` : `Nothing ${kind} yet.`;
   const areas = shownAreas(), helpers = shownHelpers();
   const list=document.getElementById('areaListBelow');
   // The list mirrors the map, so it says why it's empty: nothing there at all, or
   // nothing left after the filters.
-  if(areas.length===0){ list.innerHTML = empty(seedAreas.length ? 'No claimed areas match the filters you’ve picked.' : 'Nothing claimed yet.'); }
+  if(areas.length===0){ list.innerHTML = empty(townAreas().length ? 'No claimed areas match the filters you’ve picked.' : nothingHere('claimed')); }
   else{
     list.innerHTML='';
     areas.forEach(a=>{
@@ -2583,7 +2653,10 @@ function renderAreaListBelow(){
     });
   }
   const hlist=document.getElementById('helperListBelow');
-  if(helpers.length===0){ hlist.innerHTML = empty(helperAreas.length ? 'Hidden by the filters you’ve picked.' : 'Nobody offering help yet.'); }
+  if(helpers.length===0){
+    hlist.innerHTML = empty(townHelpers().length ? 'Hidden by the filters you’ve picked.'
+                          : (scope ? `Nobody offering help in ${escHtml(scope.name)} yet — ${widen}.` : 'Nobody offering help yet.'));
+  }
   else{
     hlist.innerHTML='';
     helpers.forEach(a=>{
@@ -2677,7 +2750,7 @@ function areaThumbSVG(a){
 // Tapping the picture is the same as tapping the area on the map — so if the filters
 // have that kind of area hidden, turn it back on first or there'd be nothing to see.
 function showAreaOnMap(a){
-  if(!mapFilter.has(a.status)){ mapFilter.add(a.status); drawAllAreas(); renderAreaListBelow(); }
+  revealArea(a);
   showPage('map');
   // showPage re-measures the map 80ms from now; flying before that lands off-centre,
   // because Leaflet is still working from the size the container had while hidden.
@@ -3077,8 +3150,7 @@ function goSearchResult(i){
   document.getElementById('mapSearchInput').value=a.name;
   // Searching for something the filters are hiding should show it, not fly you to
   // an empty patch of map.
-  const key = a.offer!==undefined ? 'helper' : a.status;
-  if(!mapFilter.has(key)){ mapFilter.add(key); drawAllAreas(); renderAreaListBelow(); }
+  revealArea(a);
   clearStreetHighlight();
   flashArea(a);
 }
