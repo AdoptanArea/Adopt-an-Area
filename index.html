@@ -27,6 +27,10 @@
     --red:#E5484D; --red-tint:#FCE7E7;
     --blue:#2E7DD1; --blue-tint:#E8F1FC;
     --gray:#9A9DA0; --gray-tint:#F1F1F0;
+    /* The fourth kind of claim: somebody looking after a place in a particular way
+       — the storm water pipes, the hedges, the grass. Brown so it reads as ground
+       work next to the green/orange/red, and it is nobody else's colour. */
+    --brown:#8A5A2B; --brown-tint:#F3EAE0;
     --gold:#C8952A; --gold-tint:#FBF1DE;
     --radius-lg:24px; --radius-md:16px; --radius-sm:10px;
     /* Installed to the home screen, the page runs edge to edge under the status bar
@@ -809,6 +813,13 @@ ZZO3_END_UNUSED
   .task-opt .dot{margin-top:4px; width:11px; height:11px; border-radius:50%;}
   .task-opt b{font-size:14px; font-weight:700; display:block;}
   .task-opt span.desc{font-size:12px; color:var(--text-dim);}
+  /* The jobs behind "Other" — tick as many as apply. Chips rather than a column of
+     checkboxes: there are half a dozen of them and they read at a glance. */
+  .jobs-list{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:4px; }
+  .job-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--soft); border:1.5px solid transparent;
+             border-radius:20px; padding:8px 12px; font-size:12.5px; font-weight:650; cursor:pointer; }
+  .job-chip.on{ background:var(--brown-tint); border-color:var(--brown); color:#5E3D1C; }
+  .job-chip .jc-tick{ font-size:11px; color:var(--brown); width:9px; }
   input[type=text],input[type=email],input[type=password]{ width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; }
   input[type=text]:focus,input[type=email]:focus,input[type=password]:focus{outline:none; border-color:var(--green);}
   .segctrl{display:flex; background:var(--soft); border-radius:14px; padding:4px; gap:4px;}
@@ -1073,11 +1084,12 @@ ZZO3_END_UNUSED
         <div class="stepshot">
           <p class="ss-eyebrow">Step 4</p>
           <h4>Pick Your Colour</h4>
-          <p>Green — handled. Orange — trash only. Red — you'd like a hand.</p>
+          <p>Green — handled. Orange — trash only. Red — you'd like a hand. Brown — a job or two, like the grass or the storm water pipes.</p>
           <div class="ss-mock ss-colors">
             <span style="background:#22945A;"></span>
             <span style="background:#E38B1F;"></span>
             <span style="background:#E5484D;"></span>
+            <span style="background:#8A5A2B;"></span>
           </div>
         </div>
         <div class="stepshot">
@@ -1092,7 +1104,7 @@ ZZO3_END_UNUSED
         <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--green)"></span>Full control</div>
         <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--orange)"></span>Trash only</div>
         <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--red)"></span>Needs help</div>
-        <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--gray)"></span>Available</div>
+        <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--brown)"></span>Other</div>
         <div class="ck-chip" style="background:rgba(255,255,255,0.08); color:#fff;"><span class="dot" style="background:var(--blue)"></span>Offering help</div>
       </div>
 
@@ -1928,14 +1940,14 @@ ZZO3_END_UNUSED
             <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--green)"></span>Full control</div>
             <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--orange)"></span>Trash only</div>
             <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--red)"></span>Needs help</div>
-            <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--gray)"></span>Available</div>
+            <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--brown)"></span>Other</div>
             <div class="ck-chip" style="background:#fff;"><span class="dot" style="background:var(--blue)"></span>Offering help</div>
           </div>
           <div class="steps">
             <div class="step"><div class="step-num" style="background:var(--green);">&nbsp;</div><div><h4>Green — full control</h4><p>You're on top of it. Grass cut, litter picked, nothing needed from anyone.</p></div></div>
             <div class="step"><div class="step-num" style="background:var(--orange);">&nbsp;</div><div><h4>Orange — trash only</h4><p>You'll keep the litter off it, but the cutting and clearing is more than you can take on.</p></div></div>
             <div class="step"><div class="step-num" style="background:var(--red);">&nbsp;</div><div><h4>Red — needs help</h4><p>You've claimed it so somebody knows it matters, and you'd like a hand with it.</p></div></div>
-            <div class="step"><div class="step-num" style="background:var(--gray);">&nbsp;</div><div><h4>Grey — available</h4><p>Nobody has claimed it yet. Fair game for whoever gets there first.</p></div></div>
+            <div class="step"><div class="step-num" style="background:var(--brown);">&nbsp;</div><div><h4>Brown — other</h4><p>One or two jobs rather than the whole place: the storm water pipes, the overgrown hedge, the grass, the trees you planted. You tick which ones, and the map says so.</p></div></div>
             <div class="step"><div class="step-num" style="background:var(--blue);">&nbsp;</div><div><h4>Blue dashes — offering help</h4><p>Not a claimed yard. Somebody with a tractor, a bakkie or a free Saturday, covering a wider stretch.</p></div></div>
           </div>
           <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">You can change a colour any time from My Area — it's meant to move as things do.</p>
@@ -2012,7 +2024,15 @@ ZZO3_END_UNUSED
     <div class="task-opt sel" data-status="green" onclick="selectTask(this)"><span class="dot" style="background:var(--green)"></span><div><b>Full control</b><span class="desc">I'll handle everything here</span></div></div>
     <div class="task-opt" data-status="orange" onclick="selectTask(this)"><span class="dot" style="background:var(--orange)"></span><div><b>Trash only</b><span class="desc">I'll only do trash pickup</span></div></div>
     <div class="task-opt" data-status="red" onclick="selectTask(this)"><span class="dot" style="background:var(--red)"></span><div><b>Needs help</b><span class="desc">I'd like a hand with something</span></div></div>
+    <div class="task-opt" data-status="brown" onclick="selectTask(this)"><span class="dot" style="background:var(--brown)"></span><div><b>Other</b><span class="desc">One or two jobs, not the whole place</span></div></div>
     <div id="helpDetailWrap" style="display:none;"><label class="field-label">What kind of help?</label><input type="text" id="helpDetailInput" placeholder="e.g. Bush clearing, funding, manpower"></div>
+    <!-- Filled by renderJobPicker() from OTHER_JOBS, so the list only has to be
+         written down once. Tick as many as apply — somebody who cuts the grass
+         usually clears the hedge too. -->
+    <div id="jobsWrap" style="display:none;">
+      <label class="field-label">What do you do here?</label>
+      <div id="jobsList" class="jobs-list"></div>
+    </div>
   </div>
   <div id="helperFields" style="display:none;">
     <label class="field-label">Your name / group</label>
@@ -2024,7 +2044,7 @@ ZZO3_END_UNUSED
   <input type="text" id="contactInput" placeholder="082 000 0000">
   <button class="btn btn-primary" style="width:100%; margin-top:22px; justify-content:center;" onclick="submitClaim()" id="claimSubmitBtn">Confirm</button>
   <button style="width:100%; margin-top:8px; border:none; background:var(--soft); color:var(--text); border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="reshapeBtn" onclick="startReshape()">✎ Edit boundary shape</button>
-  <button style="width:100%; margin-top:8px; border:none; background:var(--red-tint); color:#B23338; border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="releaseBtn" onclick="releaseArea()">Release this area — no longer available</button>
+  <button style="width:100%; margin-top:8px; border:none; background:var(--red-tint); color:#B23338; border-radius:14px; padding:13px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; display:none;" id="releaseBtn" onclick="releaseArea()">Let go of this area — take it off the map</button>
   <button style="width:100%; margin-top:8px; border:none; background:none; color:var(--red); border-radius:14px; padding:10px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; display:none;" id="deleteBtn" onclick="deleteAreaConfirm()">Delete permanently</button>
 </div>
 
@@ -2422,18 +2442,50 @@ async function flyToTown(town, province, district){
   showBanner("Couldn't pin " + town + ' — pan and zoom to find your street', 3600);
 }
 
+// Every colour on the map is somebody doing something. There is no colour for
+// "available" any more: an area nobody has claimed is simply not on the map, which
+// is what an empty map already meant. Released areas are removed rather than turned
+// grey — see releaseArea().
 const statusMeta = {
   green:{color:'#22945A', label:'Full control'},
   orange:{color:'#E38B1F', label:'Trash only'},
   red:{color:'#E5484D', label:'Needs help'},
-  gray:{color:'#9A9DA0', label:'Available'},
+  brown:{color:'#8A5A2B', label:'Other'},
   helper:{color:'#2E7DD1', label:'Offering help'}
 };
+// What "other" can be. Add a line and it appears everywhere — the claim sheet, the
+// lists, My Area — because nothing anywhere hard-codes these. The key is what goes
+// in the database, so a label can be reworded later without touching anybody's
+// existing claim.
+const OTHER_JOBS = [
+  {key:'stormwater', label:'Cleaning storm water pipes'},
+  {key:'hedges',     label:'Clearing overgrown hedges'},
+  {key:'grass',      label:'Cutting grass'},
+  {key:'trees',      label:'Planting trees'},
+  {key:'flowers',    label:'Planting flowers and shrubs'},
+  {key:'paint',      label:'Painting kerbs, poles and railings'},
+  {key:'dumping',    label:'Clearing an illegal dumping spot'}
+];
+const jobLabel = k => (OTHER_JOBS.find(j=>j.key===k)||{}).label || k;
+// A brown area says what it is by its jobs; with none picked it just says "Other".
+const jobsText = a => (a.jobs && a.jobs.length) ? a.jobs.map(jobLabel).join(' · ') : statusMeta.brown.label;
+// Anything whose status this version doesn't know — an "available" row left over
+// from before — has no colour and no place on the map. metaFor keeps a stray row
+// from throwing while it's still in the database.
+const metaFor = a => statusMeta[a && a.status] || statusMeta.green;
+// One line describing a claim, wherever it gets listed. Two of the kinds carry
+// detail of their own — what help is wanted, which jobs are being done — and the
+// detail is more use than the label it would otherwise repeat.
+function areaDesc(a){
+  if(a.status==='red')   return 'Needs help' + (a.help ? ' — '+a.help : '');
+  if(a.status==='brown') return jobsText(a);
+  return metaFor(a).label;
+}
 
 let seedAreas = [];
 let helperAreas = [];
 
-function mapAreaRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townName:r.town_name, status:r.status, help:r.help_detail, phone:r.phone, by:r.owner_name, ownerId:r.owner_id, coords:r.coords}; }
+function mapAreaRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townName:r.town_name, status:r.status, jobs:r.other_jobs||[], help:r.help_detail, phone:r.phone, by:r.owner_name, ownerId:r.owner_id, coords:r.coords}; }
 function mapHelperRow(r){ return {_id:r.id, name:r.name, townId:r.town_id, townName:r.town_name, offer:r.offer, phone:r.phone, by:r.owner_name, ownerId:r.owner_id, coords:r.coords}; }
 
 function centroid(coords){ let lat=0,lng=0; coords.forEach(c=>{lat+=c[0]; lng+=c[1];}); return [lat/coords.length, lng/coords.length]; }
@@ -2455,7 +2507,7 @@ const polyLayer = L.layerGroup().addTo(leafletMap);
 // Once a town has a few dozen areas on it the map turns into a wall of colour and
 // nobody can read it. The filter menu narrows it to one kind at a time — and since
 // every row carries its colour, it's the colour key too.
-const FILTER_KEYS = ['green','orange','red','gray','helper'];
+const FILTER_KEYS = ['green','orange','red','brown','helper'];
 let mapFilter = new Set(FILTER_KEYS);
 
 // Picking a town is a statement about where you're looking, so the lists beside
@@ -2537,7 +2589,7 @@ function renderMapFilters(){
   // Counted inside whatever the lists are showing, so the numbers next to each kind
   // are the numbers you'd get by picking it.
   const scoped = townAreas(), scopedHelpers = townHelpers();
-  const counts = {green:0, orange:0, red:0, gray:0, helper:scopedHelpers.length};
+  const counts = {green:0, orange:0, red:0, brown:0, helper:scopedHelpers.length};
   scoped.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
   const allOn = FILTER_KEYS.every(k=>mapFilter.has(k));
   const total = scoped.length + scopedHelpers.length;
@@ -2582,7 +2634,7 @@ function drawAllAreas(){
   // drawn to highlight.
   seedAreas.forEach(a=>{ a._layer = null; });
   helperAreas.forEach(a=>{ a._layer = null; });
-  shownAreas().forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta[a.status].color, weight:2.5, fillOpacity:0.32}).addTo(polyLayer); });
+  shownAreas().forEach(a=>{ a._layer = L.polygon(a.coords, {color:metaFor(a).color, weight:2.5, fillOpacity:0.32}).addTo(polyLayer); });
   shownHelpers().forEach(a=>{ a._layer = L.polygon(a.coords, {color:statusMeta.helper.color, weight:2.5, dashArray:'10,6', fillOpacity:0.14}).addTo(polyLayer); });
 }
 
@@ -2593,7 +2645,10 @@ initProvinceDropdown();
 async function loadAreas(){
   const {data:areas} = await sb.from('areas').select('*').order('created_at');
   const {data:helpers} = await sb.from('helper_areas').select('*').order('created_at');
-  seedAreas = (areas||[]).map(mapAreaRow);
+  // Rows whose status this version no longer has a colour for — the old "available"
+  // ones — are left out here, in one place, so nothing downstream has to know they
+  // ever existed. supabase-other-jobs.sql has the line that clears them out for good.
+  seedAreas = (areas||[]).map(mapAreaRow).filter(a=>statusMeta[a.status]);
   helperAreas = (helpers||[]).map(mapHelperRow);
   drawAllAreas();
   renderAreaListBelow();
@@ -2601,9 +2656,9 @@ async function loadAreas(){
 }
 
 
-// The counts under the map. Real numbers off what's loaded, not typed in:
-// adopted means somebody's name is on it, so grey (still available) doesn't count,
-// and a town is "live" the moment anything at all is happening in it.
+// The counts under the map. Real numbers off what's loaded, not typed in: every
+// area on the map is one somebody has put their name to, and a town is "live" the
+// moment anything at all is happening in it.
 function renderMapStats(){
   const row = document.getElementById('mapStats');
   if(!row) return;
@@ -2611,7 +2666,7 @@ function renderMapStats(){
   // pill can only ever say one, so it's dropped rather than stating the obvious.
   const scope = scopeTown();
   const areas = townAreas(), helps = townHelpers();
-  const taken = areas.filter(a=>a.status!=='gray');
+  const taken = areas;
   const towns = scope ? 0 : new Set([...taken, ...helps].map(a=>a.townId).filter(Boolean)).size;
   const need  = areas.filter(a=>a.status==='red').length;
   const help  = helps.length;
@@ -2642,11 +2697,11 @@ function renderAreaListBelow(){
   else{
     list.innerHTML='';
     areas.forEach(a=>{
-      const desc = a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label;
+      const desc = areaDesc(a);
       const div=document.createElement('div');
       div.className='arow';
       div.onclick=()=>flashArea(a);
-      div.innerHTML=`<span class="adot" style="background:${statusMeta[a.status].color}"></span>
+      div.innerHTML=`<span class="adot" style="background:${metaFor(a).color}"></span>
         <div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · ${a.by}</div></div>
         ${a.phone?`<button class="contact-btn" onclick="event.stopPropagation(); window.location.href='tel:${a.phone}'">Contact</button>`:''}`;
       list.appendChild(div);
@@ -2741,7 +2796,7 @@ function areaThumbSVG(a){
       tiles+=`<image x="${(tx-tx0)*256}" y="${(ty-ty0)*256}" width="256" height="256" href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tz}/${ty}/${wx}"/>`;
     }
   }
-  const col=(statusMeta[a.status]||statusMeta.gray).color;
+  const col=metaFor(a).color;
   const pts=co.map(c=>`${(merX(c[1],world)*s-left).toFixed(1)},${(merY(c[0],world)*s-top).toFixed(1)}`).join(' ');
   return open
        + `<g transform="translate(${(tx0*256*s-left).toFixed(2)},${(ty0*256*s-top).toFixed(2)}) scale(${s})">${tiles}</g>`
@@ -3337,11 +3392,27 @@ function closeSheet(){
   document.getElementById('reshapeBtn').style.display='none';
   document.getElementById('deleteBtn').style.display='none';
 }
+let selectedJobs = [];
+function renderJobPicker(){
+  const list=document.getElementById('jobsList');
+  if(!list) return;
+  list.innerHTML = OTHER_JOBS.map(j=>{
+    const on = selectedJobs.includes(j.key);
+    return `<button type="button" class="job-chip ${on?'on':''}" onclick="toggleJob('${j.key}')">`
+         + `<span class="jc-tick">${on?'✓':''}</span>${escHtml(j.label)}</button>`;
+  }).join('');
+}
+function toggleJob(key){
+  selectedJobs = selectedJobs.includes(key) ? selectedJobs.filter(k=>k!==key) : selectedJobs.concat([key]);
+  renderJobPicker();
+}
 function selectTask(el){
   document.querySelectorAll('#mineFields .task-opt').forEach(o=>o.classList.remove('sel'));
   el.classList.add('sel');
   selectedStatus=el.dataset.status;
-  document.getElementById('helpDetailWrap').style.display = selectedStatus==='red' ? 'block' : 'none';
+  document.getElementById('helpDetailWrap').style.display = selectedStatus==='red'   ? 'block' : 'none';
+  document.getElementById('jobsWrap').style.display       = selectedStatus==='brown' ? 'block' : 'none';
+  if(selectedStatus==='brown') renderJobPicker();
 }
 function openEditSheet(area, type){
   editingArea=area; editingType=type; reshaping=false; claimMode=null; yardPoints=null;
@@ -3362,6 +3433,9 @@ function openEditSheet(area, type){
     selectedStatus=area.status;
     document.getElementById('helpDetailWrap').style.display = area.status==='red' ? 'block' : 'none';
     document.getElementById('helpDetailInput').value=area.help||'';
+    selectedJobs = (area.jobs||[]).slice();
+    document.getElementById('jobsWrap').style.display = area.status==='brown' ? 'block' : 'none';
+    renderJobPicker();
   }
   document.getElementById('contactInput').value=area.phone||'';
   renderClaimRulesHint(area.townId);
@@ -3394,9 +3468,13 @@ async function saveReshape(){
   reshaping=false;
   await finishClaimFlow();
 }
+// Letting go of an area takes it off the map. It used to be left there in grey,
+// marked "available", which put a colour on the map for a thing nobody was doing —
+// and an unclaimed area is exactly what a blank map already shows.
 async function releaseArea(){
   if(!editingArea) return;
-  await sb.from('areas').update({status:'gray', owner_name:'Unclaimed', owner_id:null, phone:'', help_detail:''}).eq('id', editingArea._id);
+  if(!confirm('Let go of "'+editingArea.name+'"? It comes off the map, and anyone can claim that ground again.')) return;
+  await sb.from('areas').delete().eq('id', editingArea._id);
   await finishClaimFlow();
 }
 async function deleteAreaConfirm(){
@@ -3418,6 +3496,9 @@ async function submitClaim(){
       await sb.from('areas').update({
         name: document.getElementById('areaNameInput').value || editingArea.name,
         status: selectedStatus,
+        // The jobs belong to "Other". Switch a brown area to green and they go with
+        // it, rather than sitting in the row waiting to reappear.
+        other_jobs: selectedStatus==='brown' ? selectedJobs : [],
         help_detail: document.getElementById('helpDetailInput').value,
         phone: document.getElementById('contactInput').value
       }).eq('id', editingArea._id);
@@ -3441,6 +3522,7 @@ async function submitClaim(){
       name: document.getElementById('areaNameInput').value || 'My yard',
       town_id: currentTown.id, town_name: currentTown.name,
       status: selectedStatus,
+      other_jobs: selectedStatus==='brown' ? selectedJobs : [],
       help_detail: document.getElementById('helpDetailInput').value,
       phone: document.getElementById('contactInput').value,
       owner_id: currentUser.id, owner_name: currentUser.name,
@@ -3460,6 +3542,7 @@ async function finishClaimFlow(){
   document.getElementById('claimSubmitBtn').textContent='Confirm';
   document.getElementById('areaNameInput').value=''; document.getElementById('contactInput').value=''; document.getElementById('helpDetailInput').value='';
   document.getElementById('helperNameInput').value=''; document.getElementById('helperOfferInput').value='';
+  selectedJobs=[]; document.getElementById('jobsWrap').style.display='none'; renderJobPicker();
   closeSheet();
   document.getElementById('mapBanner').classList.remove('show');
   await loadAreas();
@@ -3612,8 +3695,8 @@ function renderMyAreas(){
       const card=document.createElement('div');
       card.className='acard';
       card.innerHTML=`<button class="athumb" aria-label="Show ${escHtml(a.name)} on the map">${areaThumbSVG(a)}<span class="athumb-tap">📍 Tap to see it on the map</span></button>
-        <div class="acard-body"><span class="adot" style="background:${statusMeta[a.status].color}"></span>
-        <div style="flex:1;"><div class="arow-name">${escHtml(a.name)}</div><div class="arow-desc">${escHtml(a.townName)} · ${statusMeta[a.status].label}</div></div>
+        <div class="acard-body"><span class="adot" style="background:${metaFor(a).color}"></span>
+        <div style="flex:1;"><div class="arow-name">${escHtml(a.name)}</div><div class="arow-desc">${escHtml(a.townName)} · ${escHtml(areaDesc(a))}</div></div>
         <span class="contact-btn">Edit</span></div>`;
       card.querySelector('.athumb').onclick=()=>showAreaOnMap(a);
       card.querySelector('.acard-body').onclick=()=>openEditSheet(a,'mine');
@@ -3653,8 +3736,8 @@ function renderAdminAllAreas(){
     const div=document.createElement('div');
     div.className='arow';
     div.onclick=()=>openEditSheet(a, isHelper?'helper':'mine');
-    const desc = isHelper ? a.offer : (a.status==='red' ? ('Needs help'+(a.help?' — '+a.help:'')) : statusMeta[a.status].label);
-    div.innerHTML=`<span class="adot" style="background:${isHelper?statusMeta.helper.color:statusMeta[a.status].color}"></span><div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · by ${a.by}</div></div><span class="contact-btn">Edit</span>`;
+    const desc = isHelper ? a.offer : areaDesc(a);
+    div.innerHTML=`<span class="adot" style="background:${isHelper?statusMeta.helper.color:metaFor(a).color}"></span><div><div class="arow-name">${a.name}</div><div class="arow-desc">${a.townName} · ${desc} · by ${a.by}</div></div><span class="contact-btn">Edit</span>`;
     list.appendChild(div);
   });
 }
@@ -4783,7 +4866,7 @@ async function openGroupProfile(id){
     areaBox.innerHTML='<p class="gs-note" style="padding-top:0;">This group hasn\'t claimed an area yet.</p>';
   } else {
     areas.forEach(a=>{
-      const meta=statusMeta[a.status]||statusMeta.gray;
+      const meta=metaFor(a);
       const row=document.createElement('div');
       row.className='arow';
       row.onclick=()=>showGroupAreaOnMap(a);
