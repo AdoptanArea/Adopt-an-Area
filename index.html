@@ -435,8 +435,21 @@
   .map-shell.map-full .ic-expand{ display:none; }
 
   /* During the tour the fixed instruction bar covers the bottom of the map — where
-     the claim buttons live. Shrink the map for the duration so they stay in view. */
-  body.tour-running .map-shell{ height:32vh; height:32svh; min-height:210px; max-height:300px; }
+     the claim buttons live — but only on a screen short enough for the two to meet.
+     Measured mid-tour: from 640px of viewport height up, the buttons already clear
+     the bar, so the map keeps its normal size and the tour costs nothing. Below that
+     it gives back exactly what the bar takes — the 380px is the chrome above the map
+     plus the bar's own height. Under about 500px (a phone on its side) the floor
+     wins and the page has to be scrolled; there isn't room for both otherwise. */
+  @media (max-height: 620px){
+    body.tour-running .map-shell{ height:calc(100vh - 380px); height:calc(100svh - 380px); min-height:120px; max-height:300px; }
+  }
+  /* On a wide screen the map is sized against the sponsor bar (see the 320px further
+     down), and the step bar that replaces it is taller — so the last centimetre of the
+     map ends up behind it, with the claim buttons flush against its top edge. Lift the
+     map's own bottom controls instead of shortening the map: the strip of imagery that
+     goes under the bar is worth less than the size of the map. */
+  body.tour-running .map-shell{ --map-chrome-bottom:22px; }
 
   /* Full screen, for placing boundary points precisely. Sits below the tour bar
      (z-index 950) so the instructions stay readable on top of it.
