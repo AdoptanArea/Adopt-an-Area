@@ -2306,6 +2306,9 @@ function onProvinceChange(){
   inp.disabled=false; inp.placeholder='Search a town or city…';
   setMapHeading(p.name);
   leafletMap.flyTo(p.capital, 7);
+  // Only on a real choice — clearing the box returns above, so going back to "no
+  // province" doesn't shunt the tour on to the town step.
+  fireTourEvent('provincePicked');
 }
 
 // Strips case, accents, spaces and punctuation, so "st francis" finds "St Francis
@@ -2388,6 +2391,7 @@ function pickTown(di,ti){
   // Now that we know where you are, the address search says so and searches there.
   document.getElementById('mapSearchInput').placeholder='Search your address in ' + name;
   flyToTown(name, p, d);
+  fireTourEvent('townPicked');
 }
 
 // Looked up rather than stored. Nominatim is the right tool here — a complete,
@@ -6600,7 +6604,12 @@ document.addEventListener('click', e=>{
 // "trigger" names the event it's waiting for. Next/Skip still work manually too.
 const tourSteps=[
   {title:'Create your account', desc:'Tap "Sign in" top right, then switch to "Create account." This moves on by itself once you\u2019re signed in.', trigger:'signedIn', run:()=>{ showPage('home'); openSignIn(); }},
-  {title:'Search your address', desc:'You are on the Map now. Search for your address, or just have a look around. Tap Next when you\u2019re ready.', trigger:null, run:()=>{ closeSignIn(); showPage('map'); highlight('#mapSearchInput'); }},
+  // Three steps, not one: the map narrows province → town → address, and each
+  // pick is what makes the next box usable. Highlighting the address box while
+  // the province is still unset points at a field that can't do anything yet.
+  {title:'Choose your province', desc:'You are on the Map now. Pick your province in the first box. This moves on by itself once you choose one.', trigger:'provincePicked', run:()=>{ closeSignIn(); showPage('map'); highlight('#provinceSelect'); }},
+  {title:'Choose your town', desc:'Now the box next to it. Start typing your town or city, then tap it in the list. This moves on by itself once you pick one.', trigger:'townPicked', run:()=>{ clearHighlight(); highlight('#townPicker'); }},
+  {title:'Search your address', desc:'Now search for your address, or just have a look around the town. Tap Next when you\u2019re ready.', trigger:null, run:()=>{ clearHighlight(); highlight('#mapSearchInput'); }},
   {title:'Tap "Claim an area"', desc:'This moves on by itself once you tap it.', trigger:'claimModeOn', run:()=>{ clearHighlight(); highlight('#claimBtn'); }},
   {title:'Tap the map to drop a boundary', desc:'This moves on by itself once you tap the map.', trigger:'boundaryDropped', run:()=>{ clearHighlight(); }},
   {title:'Reshape it, then tap "Claim it"', desc:'Drag the white dots until it matches your yard. Moves on once you tap "Claim it."', trigger:'sheetOpened', run:()=>{ clearHighlight(); highlight('#editPanel'); }},
