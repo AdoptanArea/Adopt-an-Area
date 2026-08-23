@@ -2844,6 +2844,57 @@ function onMapSearch(q){
 }
 function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// ================= TOMTOM GEOCODER =================
+// The primary lookup, because it is the only one of the three with South African
+// house numbers: "12 Siebert Street" resolves to the house itself, which no amount of
+// coaxing gets out of OpenStreetMap. Photon and Nominatim stay behind it as a free
+// fallback for when the daily allowance runs out or the service is down.
+//
+// The key is public — it sits in this file, which anyone can read. That is fine
+// PROVIDED the domain whitelist stays switched on in the TomTom dashboard, which locks
+// it to adoptanarea.github.io. There is no card on the account either, so the worst a
+// stolen key could do is exhaust the daily quota, not run up a bill.
+//
+// NOTHING HERE MAY BE CACHED. TomTom's terms let you look an address up as often as
+// you like but not keep the answer. The Overpass cache further down is fine — that is
+// OpenStreetMap data, which is open — but never copy that pattern onto this.
+const TOMTOM_KEY = 'cEGREuCaa4OXTz37mainKWPECkF2X15Q';
+
+async function tomtomSearch(q){
+  if(!TOMTOM_KEY || q.length < 2) return [];
+  const c = (currentTown && currentTown.center) ? currentTown.center : leafletMap.getCenter();
+  const km = /metro/i.test((currentTown && currentTown.district) || '') ? 45 : 15;
+  const url = 'https://api.tomtom.com/search/2/search/' + encodeURIComponent(q) + '.json'
+            + '?key=' + TOMTOM_KEY + '&countrySet=ZA&limit=8&typeahead=true'
+            + '&lat=' + c.lat.toFixed(5) + '&lon=' + c.lng.toFixed(5) + '&radius=' + (km * 1000);
+  const res = await fetch(url);
+  if(!res.ok) return [];
+  const j = await res.json();
+  return (j.results || []).map(r => {
+    const a = r.address || {}, p = r.position || {}, v = r.viewport;
+    const hasNum = !!a.streetNumber;
+    const poiName = (r.type === 'POI' && r.poi) ? r.poi.name : '';
+    const label = poiName
+      || (hasNum ? (a.streetNumber + ' ' + (a.streetName || '')).trim() : '')
+      || a.streetName || a.municipality || a.freeformAddress || 'Unnamed place';
+    return {
+      label,
+      sub: tidySub([a.municipalitySubdivision, a.municipality, a.countrySecondarySubdivision, a.countrySubdivision], label),
+      lat: +p.lat, lon: +p.lon,
+      num: hasNum,
+      // "Point Address" is a surveyed position for that house. "Address Range" is
+      // interpolated between the numbers either side of it, so it lands on the right
+      // stretch of street but not necessarily the right gate — worth saying out loud.
+      precision: r.type === 'Point Address' ? 'exact' : r.type === 'Address Range' ? 'approx' : null,
+      road: r.type === 'Street',
+      roadName: a.streetName || '',
+      bbox: (v && v.topLeftPoint && v.btmRightPoint)
+        ? [[+v.btmRightPoint.lat, +v.topLeftPoint.lon], [+v.topLeftPoint.lat, +v.btmRightPoint.lon]]
+        : null
+    };
+  }).filter(r => isFinite(r.lat) && isFinite(r.lon));
+}
+
 // Both geocoders get normalised to the same shape so the rest of the code doesn't
 // care which one answered: {label, sub, lat, lon, bbox}.
 // OSM's South African admin names carry things no resident would ever say —
@@ -3147,10 +3198,14 @@ async function geocodeSearch(q, localMatches){
   const seq=++searchSeq;
   const forms=queryForms(q), box=townBox();
   let geoResults=[];
+  // TomTom first, and with the RAW query — queryForms() strips house numbers because
+  // they break the OpenStreetMap lookups, but the number is the whole point here.
+  try{ geoResults = await tomtomSearch(q); }catch(e){}
+  if(seq!==searchSeq) return;
   for(const form of forms){
+    if(geoResults.length) break;
     try{ geoResults = await photonSearch(form, searchCenter(), box); }catch(e){}
     if(seq!==searchSeq) return;
-    if(geoResults.length) break;
   }
   if(!geoResults.length){
     try{ geoResults = await nominatimSearch(forms[0], box); }catch(e){ /* both failed — local matches still show */ }
@@ -3184,7 +3239,7 @@ function renderSearchResults(localMatches, geoResults, stillSearching, elsewhere
     html += `<div class="msr-note">Nothing by that name in ${escHtml(currentTown.name)} — these are elsewhere</div>`;
   }
   geoResults.forEach((r,i)=>{
-    html += `<div class="msr-row" onclick="goGeoResult(${i})">📍 ${escHtml(r.label)}<span>${escHtml(r.sub)}</span></div>`;
+    html += `<div class="msr-row" onclick="goGeoResult(${i})">📍 ${escHtml(r.label)}<span>${escHtml(r.sub)}${r.precision==="approx" ? " · approximate" : ""}</span></div>`;
   });
   // Street names differ between map providers — what Bing calls Station Street in
   // Humansdorp, OpenStreetMap calls Voortrekker Road — so "no matches" often means the
@@ -3217,16 +3272,21 @@ function goGeoResult(i){
   const r=window._geo[i];
   document.getElementById('mapSearchResults').classList.remove('show');
   document.getElementById('mapSearchInput').value=r.label;
-  // Asked for a house number? Go in close enough to pick the roof out, since you're
-  // going to have to find it by eye.
+  // Asked for a house number? Go in close enough to pick the roof out.
   const wantedNum = r.num ? null : houseNumberIn(lastQuery);
   if(r.num) leafletMap.flyTo([r.lat, r.lon], 19);
   else if(r.bbox) leafletMap.flyToBounds(r.bbox, {maxZoom:wantedNum?19:18, padding:[50,50]});
   else leafletMap.flyTo([r.lat, r.lon], wantedNum?19:18);
-  // Say why it stopped at the street rather than leaving you wondering. South African
-  // house numbers simply aren't in OpenStreetMap — the street is as close as any
-  // search gets, and the last few metres are yours to point at.
-  if(wantedNum){
+  // An "Address Range" hit is interpolated between the numbers either side of it, so
+  // it lands on the right stretch of street but not necessarily the right gate. Say so
+  // rather than letting it pass as a surveyed position.
+  if(r.precision==='approx'){
+    showBanner('That number is worked out from the ones either side — check the gate', 4600);
+  }
+  // Reaching here means neither TomTom nor OpenStreetMap had that number: TomTom's
+  // South African coverage is good but not complete, and OSM has almost none. The
+  // street is as close as it gets, and the last few metres are yours to point at.
+  else if(wantedNum){
     showBanner('No. ' + wantedNum + ' isn’t in the map — it’s along the marked street', 5200);
   }
   // Trace the street so it's obvious which one it is and where to count from.
