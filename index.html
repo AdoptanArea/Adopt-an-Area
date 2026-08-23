@@ -1190,7 +1190,7 @@ ZZO3_END_UNUSED
           <div class="map-searchbar" id="mapSearchBar">
             <div class="map-search">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6E7268" stroke-width="1.8"/><path d="M20 20L16.5 16.5" stroke="#6E7268" stroke-width="1.8" stroke-linecap="round"/></svg>
-              <input type="text" id="mapSearchInput" placeholder="Search a street or address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
+              <input type="text" id="mapSearchInput" placeholder="Search your address" oninput="onMapSearch(this.value)" onkeydown="onMapSearchKey(event)" autocomplete="off">
               <div class="map-search-results" id="mapSearchResults"></div>
             </div>
           </div>
@@ -2320,7 +2320,7 @@ function onProvinceChange(){
     setMapHeading(null);
     // Drop the search bias too, or it keeps hunting in a town you've deselected.
     currentTown={id:currentTown.id, name:currentTown.name, district:currentTown.district};
-    document.getElementById('mapSearchInput').placeholder='Search a street or address';
+    document.getElementById('mapSearchInput').placeholder='Search your address';
     return;
   }
   inp.disabled=false; inp.placeholder='Search a town or city…';
@@ -2406,7 +2406,7 @@ function pickTown(di,ti){
   // "What am I allowed to do here?" is a property of where you just moved to.
   renderTownRulesCard();
   // Now that we know where you are, the address search says so and searches there.
-  document.getElementById('mapSearchInput').placeholder='Search a street in ' + name;
+  document.getElementById('mapSearchInput').placeholder='Search your address in ' + name;
   flyToTown(name, p, d);
 }
 
@@ -6620,7 +6620,7 @@ document.addEventListener('click', e=>{
 // "trigger" names the event it's waiting for. Next/Skip still work manually too.
 const tourSteps=[
   {title:'Create your account', desc:'Tap "Sign in" top right, then switch to "Create account." This moves on by itself once you\u2019re signed in.', trigger:'signedIn', run:()=>{ showPage('home'); openSignIn(); }},
-  {title:'Search your street', desc:'You are on the Map now. Search for your street, or just have a look around. Tap Next when you\u2019re ready.', trigger:null, run:()=>{ closeSignIn(); showPage('map'); highlight('#mapSearchInput'); }},
+  {title:'Search your address', desc:'You are on the Map now. Search for your address, or just have a look around. Tap Next when you\u2019re ready.', trigger:null, run:()=>{ closeSignIn(); showPage('map'); highlight('#mapSearchInput'); }},
   {title:'Tap "Claim an area"', desc:'This moves on by itself once you tap it.', trigger:'claimModeOn', run:()=>{ clearHighlight(); highlight('#claimBtn'); }},
   {title:'Tap the map to drop a boundary', desc:'This moves on by itself once you tap the map.', trigger:'boundaryDropped', run:()=>{ clearHighlight(); }},
   {title:'Reshape it, then tap "Claim it"', desc:'Drag the white dots until it matches your yard. Moves on once you tap "Claim it."', trigger:'sheetOpened', run:()=>{ clearHighlight(); highlight('#editPanel'); }},
