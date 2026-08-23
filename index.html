@@ -2495,7 +2495,11 @@ const leafletMap = L.map('leafletMap', {zoomControl:false, attributionControl:fa
 // maxNativeZoom keeps Leaflet from requesting tiles the imagery server doesn't have —
 // past that zoom it just upscales the closest available tile (like Google Maps does)
 // instead of showing a "map data not available" placeholder.
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:17, attribution:'Esri, Maxar, Earthstar Geographics'}).addTo(leafletMap);
+// 18 is as deep as the imagery actually goes over Humansdorp: tiles at 19 and 20 come
+// back as the same 2.5KB blank placeholder (identical checksums), while 18 is a real
+// 15KB photograph. This was set to 17, one level too cautious, which threw away the
+// exact level of detail where you can tell one roof from the next.
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:18, attribution:'Esri, Maxar, Earthstar Geographics'}).addTo(leafletMap);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom:20, maxNativeZoom:16, opacity:0.9}).addTo(leafletMap);
 // Bottom right, tiny — Esri's terms want the credit visible, but it doesn't need a
 // line of its own under the map.
@@ -2763,7 +2767,7 @@ function kmBetween(a, b){
 // satellite tiles, laid out by hand at whatever zoom fits the outline, with the
 // outline drawn over them. It's one inline SVG so it scales to whatever width the
 // card is, and the tiles are usually already in the browser's cache from the map.
-const THUMB_W=320, THUMB_H=150, THUMB_MAX_TILE_Z=17;
+const THUMB_W=320, THUMB_H=150, THUMB_MAX_TILE_Z=18;
 const merX=(lng,world)=>(lng+180)/360*world;
 const merY=(lat,world)=>{ const s=Math.sin(lat*Math.PI/180); return (0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*world; };
 function areaThumbSVG(a){
