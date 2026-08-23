@@ -409,12 +409,6 @@
      on this page, and the answer only matters to somebody the search has already
      surprised — so it costs one line until it's opened. Gone in full screen, where
      the search bar pins to the top on its own. */
-  details.map-howto{ background:#fff; border:1px solid var(--border); padding:0 14px; margin-bottom:8px; }
-  details.map-howto summary{ padding:10px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); }
-  details.map-howto summary:after{ font-size:17px; }
-  details.map-howto .faqbody{ padding:0 0 12px 0; font-size:12.5px; }
-  details.map-howto .faqbody p{ margin:0 0 8px 0; }
-  body.map-full-open .map-howto{ display:none; }
   .map-overlay-top{ position:absolute; top:12px; right:12px; z-index:500; display:flex; gap:8px; pointer-events:none; }
   /* On the page now rather than floating over satellite, so it's bordered like the
      province and town controls instead of carrying a drop shadow. */
@@ -1194,20 +1188,6 @@ ZZO3_END_UNUSED
               <div class="map-search-results" id="mapSearchResults"></div>
             </div>
           </div>
-          <!-- Under the box it explains, shut until somebody wants it. Everything in
-               here is a thing the search actually does and people are surprised by:
-               the town narrows it, house numbers aren't in the map data, and street
-               names differ between map providers. -->
-          <details class="faq map-howto">
-            <summary>How to search for a street</summary>
-            <div class="faqbody">
-              <p><b style="color:var(--text);">Pick your province and town first.</b> The search looks inside that town before anywhere else, so a street name that exists in six towns doesn't send you to the wrong one.</p>
-              <p><b style="color:var(--text);">Type two letters and the list starts filling.</b> Select your town and the areas already claimed around here come up.</p>
-              <p><b style="color:var(--text);">A house number is fine — "12 Voortrekker".</b> House numbers aren't in the map data, so it puts you on the right street instead: zoomed right in, with the whole street traced in amber and its name on it. Count along from the corner from there.</p>
-              <p><b style="color:var(--text);">Nothing coming up?</b> Street names differ between map providers — what a signboard calls Station Street, the map data may call Voortrekker Road. Try the street name on its own, without the number and without the "Road", or just the part you're sure of. If the name isn't in your town at all, the search widens out and says so above the results.</p>
-              <div class="faqfix"><b style="color:var(--green);">Quicker:</b> standing in the street you want? Tap the crosshair button in the top corner of the map and it finds you, no typing.</div>
-            </div>
-          </details>
           <div class="map-shell">
             <div id="leafletMap"></div>
             <div class="map-overlay-top">
