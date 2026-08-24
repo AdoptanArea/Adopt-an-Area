@@ -1789,10 +1789,11 @@ ZZO3_END_UNUSED
       </div>
 
       <p class="eyebrow" style="margin-top:4px;">Photo wall</p>
-      <!-- Province, then town — the same two boxes as the Map, and they work the same
-           way: type-to-filter, because some provinces run to sixty towns. It sets
-           itself to your own town on the way in and you move it from there. Left out
-           entirely while no photo carries a town — see fillGalleryPlaceFilter(). -->
+      <!-- Province, then town — the same two boxes as the Map, minus the map itself
+           and the address search that only makes sense over one. Every town in the
+           country is in there, whether it has photos or not: a town with none is an
+           answer too, and the row says how many before you pick it. It sets itself to
+           your own town on the way in — see fillGalleryPlaceFilter(). -->
       <div class="prov-row" id="galleryFilterBar" style="margin-bottom:14px;">
         <select id="galleryProvince" onchange="onGalleryProvinceChange()" aria-label="Province"></select>
         <div class="town-picker" id="galleryTownPicker">
@@ -5353,46 +5354,72 @@ function onGalleryTownKey(e){
   const first=document.querySelector('#galleryTownList .tl-row');
   if(first) first.click();
 }
-// Same ranking as the map's picker — what you typed at the front first, then anywhere
-// in the name, then the district — over the towns of the chosen province that have
-// photos. The first row is the way back to the whole province.
+// How many photos a town has, so a row can say so before you pick it — browsing for
+// somewhere with something on it is half of what this list is for.
+function galleryPhotoCount(townId){
+  return galleryPhotos.filter(p=>p.town_id===townId).length;
+}
+// The map's town picker, minus the map: every town in the chosen province, grouped by
+// district while the box is empty, ranked by what you type once it isn't. Towns with
+// photos say how many; the rest are still listed, and answer "nothing here yet" —
+// which is an answer.
 function renderGalleryTownList(q){
   const list=document.getElementById('galleryTownList');
   if(!list) return;
-  const towns=galleryTownsWithPhotos().filter(t=>!galleryProvinceId || t.province===galleryProvinceId);
+  const prov=provinces.find(p=>p.id===galleryProvinceId);
+  if(!prov){ list.innerHTML='<div class="tl-empty">Choose a province first.</div>'; return; }
   const ql=norm(q||'');
-  const hits = !ql ? towns : towns.map(t=>{
-      const tn=norm(t.name), dn=norm(t.district);
+  const row = (id, name, sub) => {
+    const n=galleryPhotoCount(id);
+    const tail=[sub, n ? (n===1?'1 photo':n+' photos') : ''].filter(Boolean).join(' · ');
+    return `<div class="tl-row" onclick="pickGalleryTown('${escHtml(id)}')">${escHtml(name)}<span>${escHtml(tail)}</span></div>`;
+  };
+  const allRow = `<div class="tl-row" onclick="pickGalleryTown('')">Everywhere in ${escHtml(prov.name)}<span>every town in the province</span></div>`;
+  if(!ql){
+    // Grouped by district, exactly as the map lists them.
+    list.innerHTML = allRow + prov.districts.map(d=>
+      `<div class="tl-group">${escHtml(d.name)}</div>`
+      + d.towns.map(t=>row(slug(t), plainName(t), '')).join('')
+    ).join('');
+    return;
+  }
+  const hits=[];
+  prov.districts.forEach(d=>{
+    const dn=norm(d.name);
+    d.towns.forEach(t=>{
+      const name=plainName(t), tn=norm(name);
       const rank = tn.startsWith(ql) ? 0 : tn.includes(ql) ? 1 : dn.startsWith(ql) ? 2 : dn.includes(ql) ? 3 : -1;
-      return {t, rank};
-    }).filter(x=>x.rank>=0).sort((a,b)=>a.rank-b.rank || a.t.name.localeCompare(b.t.name)).map(x=>x.t);
-  // The first row is the way back to the whole province — or the whole country, when
-  // the province box is on "All of South Africa".
-  const allRow = `<div class="tl-row" onclick="pickGalleryTown('')">Everywhere in ${escHtml(galleryProvinceId ? provinceNameById(galleryProvinceId) : 'South Africa')}<span>every town below</span></div>`;
+      if(rank>=0) hits.push({rank, id:slug(t), name, sub:d.name});
+    });
+  });
+  // A photo can be filed under a town the province lists don't carry — the map's own
+  // starting town is one. It has no province to sit under, so it turns up whenever
+  // what you typed matches it, wherever you are.
+  galleryTownsWithPhotos().filter(t=>!t.province && norm(t.name).includes(ql))
+    .forEach(t=>hits.push({rank:1, id:t.id, name:t.name, sub:'filed by hand'}));
+  hits.sort((a,b)=> a.rank-b.rank || a.name.localeCompare(b.name));
   list.innerHTML = hits.length
-    ? allRow + hits.map(t=>`<div class="tl-row" onclick="pickGalleryTown('${escHtml(t.id)}')">${escHtml(t.name)}<span>${escHtml(t.district)}</span></div>`).join('')
-    : allRow + '<div class="tl-empty">No photos from a town by that name yet.</div>';
+    ? allRow + hits.map(h=>row(h.id, h.name, h.sub)).join('')
+    : allRow + '<div class="tl-empty">No town by that name in ' + escHtml(prov.name) + '.</div>';
 }
-// Fills both boxes and works out where the wall should open. The two boxes stay off
-// the page entirely while no photo carries a town — supabase-gallery-town.sql hasn't
-// been run, or nothing has been posted since — and the wall reads exactly as it did
-// before any of this.
+// Fills both boxes and works out where the wall should open. The boxes are always
+// there — a town with nothing in it is a real answer, and hiding the search until
+// somebody has posted would mean nobody could go looking in the first place.
 function fillGalleryPlaceFilter(){
-  const bar=document.getElementById('galleryFilterBar');
   const psel=document.getElementById('galleryProvince');
   const inp=document.getElementById('galleryTownInput');
-  if(!bar || !psel || !inp) return false;
-  const towns=galleryTownsWithPhotos();
-  bar.style.display = towns.length ? 'flex' : 'none';
-  if(!towns.length){ galleryProvinceId=''; galleryTownId=''; return false; }
-  const provs=galleryProvincesWithPhotos();
+  if(!psel || !inp) return false;
   const html='<option value="">All of South Africa</option>'
-    + provs.map(p=>`<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('');
+    + provinces.map(p=>`<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('');
   if(psel.innerHTML!==html) psel.innerHTML=html;
-  // Your town first, the province it's in if your town has nothing on it yet, the
-  // country if neither does. Worked out once, then the boxes are yours to move.
+  // Where it opens: your own town if there are photos on it, the province it's in if
+  // there are photos anywhere in that, the country if neither. An empty wall is fine
+  // once you've gone looking for it — not as the first thing you're shown. Worked out
+  // once, then the boxes are yours to move.
   if(!galleryPlaceReady){
     galleryPlaceReady=true;
+    const towns=galleryTownsWithPhotos();
+    const provs=galleryProvincesWithPhotos();
     const mine=(currentUser && currentUser.town) || '';
     if(mine && towns.some(t=>t.id===mine)){
       galleryTownId=mine; galleryProvinceId=provinceIdOfTown(mine);
@@ -5400,20 +5427,12 @@ function fillGalleryPlaceFilter(){
       galleryProvinceId=provinceIdOfTown(mine);
     }
   }
-  // A place can lose its last photo while you are standing on it.
-  if(galleryTownId && !towns.some(t=>t.id===galleryTownId)) galleryTownId='';
-  if(galleryProvinceId && !provs.some(p=>p.id===galleryProvinceId)) galleryProvinceId='';
+  if(galleryProvinceId && !provinces.some(p=>p.id===galleryProvinceId)) galleryProvinceId='';
   psel.value=galleryProvinceId;
-  // Unlike the Map's, this box works with no province chosen: the list is only towns
-  // that have photos, so it's short enough to hold the whole country — and a town the
-  // province lists don't know about (an old row filed under one) is reachable only
-  // here.
-  inp.disabled=false;
-  inp.placeholder = galleryProvinceId ? 'Any town in '+provinceNameById(galleryProvinceId) : 'Any town in South Africa';
-  // Read off the photos' own list, not ALL_TOWNS — a town filed under a name the
-  // province lists don't carry still has to show its name in the box.
-  const chosen=towns.find(t=>t.id===galleryTownId);
-  inp.value = chosen ? chosen.name : '';
+  // Same as the map: nothing to type into until a province narrows it down.
+  inp.disabled=!galleryProvinceId;
+  inp.placeholder = galleryProvinceId ? 'Search a town in '+provinceNameById(galleryProvinceId) : 'Select a province first';
+  inp.value = galleryTownId ? (townNameById(galleryTownId) || prettyTownId(galleryTownId)) : '';
   return true;
 }
 function renderGallery(){
