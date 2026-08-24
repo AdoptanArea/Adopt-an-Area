@@ -1789,18 +1789,22 @@ ZZO3_END_UNUSED
       </div>
 
       <p class="eyebrow" style="margin-top:4px;">Photo wall</p>
-      <!-- The wall opens on your own town and widens from there. Everything anyone has
-           ever done, in the order it was posted, is a lot of wall to scroll before you
-           reach anything you recognise. The filter is left out entirely while no photo
-           carries a town — see fillGalleryTownFilter(). -->
-      <div class="gsearch" id="galleryFilterBar" style="margin-bottom:14px;">
-        <div class="gsearch-box">
-          <span class="gs-icon">🔍</span>
-          <input type="text" id="gallerySearchInput" placeholder="Search the wall — caption, who or town" oninput="renderGallery()" autocomplete="off">
+      <!-- Province, then town — the same two boxes as the Map, and they work the same
+           way: type-to-filter, because some provinces run to sixty towns. It sets
+           itself to your own town on the way in and you move it from there. Left out
+           entirely while no photo carries a town — see fillGalleryPlaceFilter(). -->
+      <div class="prov-row" id="galleryFilterBar" style="margin-bottom:14px;">
+        <select id="galleryProvince" onchange="onGalleryProvinceChange()" aria-label="Province"></select>
+        <div class="town-picker" id="galleryTownPicker">
+          <input type="text" id="galleryTownInput" placeholder="Select a province first" disabled autocomplete="off"
+                 oninput="onGalleryTownFilter(this.value)" onfocus="openGalleryTownList()" onkeydown="onGalleryTownKey(event)">
+          <svg class="tp-caret" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="#6E7268" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="town-list" id="galleryTownList"></div>
         </div>
-        <select id="galleryTownFilter" class="place-select" onchange="onGalleryTownPick()" aria-label="Which town to show photos from"></select>
-        <p class="gs-note" id="galleryCount"></p>
       </div>
+      <!-- Only ever an empty wall's explanation. There's no count when there are
+           photos — the photos are the answer to "how many". -->
+      <p class="gs-note" id="galleryEmpty" style="display:none; padding-top:0;"></p>
       <div class="gallery-grid" id="galleryGrid"></div>
       <div class="email-card">
         <div style="font-size:26px;">📷</div>
@@ -2447,6 +2451,9 @@ function onTownKey(e){
 document.addEventListener('click', e=>{
   const tp=document.getElementById('townPicker');
   if(tp && !tp.contains(e.target)) closeTownList();
+  // The gallery's picker is the same thing on another page, and shuts the same way.
+  const gp=document.getElementById('galleryTownPicker');
+  if(gp && !gp.contains(e.target)) closeGalleryTownList();
 });
 
 function pickTown(di,ti){
@@ -3784,7 +3791,7 @@ async function afterAuth(){
   updateGalleryAdminVisibility();
   // Signing in is when we learn which town is yours, so the wall works its default
   // out again rather than staying on whatever it settled for as a stranger.
-  galleryTown=null;
+  resetGalleryPlace();
   fillPhotoTownSelect();
   renderGallery();
   await loadMyCouncil();
@@ -3813,7 +3820,7 @@ async function signOut(){
   renderSponsorBar();
   renderVideoSponsors();
   updateGalleryAdminVisibility();
-  galleryTown=null;          // signed out: no "your town" to open on any more
+  resetGalleryPlace();       // signed out: no town of your own to open on any more
   renderGallery();
   showPage('home');
 }
@@ -5267,61 +5274,159 @@ function galleryMedia(url, attrs){
     : `<img src="${escHtml(url)}"${a}>`;
 }
 // ---- which slice of the wall you're looking at ----
-// Null until the first render works it out: your own town when there's something on
-// it, the whole country when there isn't. After that it's whatever you last chose,
-// for as long as the page is open.
-let galleryTown=null;
+// Province, then town — the same pair the Map uses, and the same rules: no province
+// means the whole country, a province with no town means all of that province. It
+// starts on your own town, so the wall opens on the place you set under My Area.
+let galleryProvinceId='', galleryTownId='', galleryPlaceReady=false;
 const townNameById = id => (ALL_TOWNS.find(t=>t.id===id)||{}).name || '';
-// Built from the photos, so the filter can't offer a town with an empty wall behind it.
+const townById = id => ALL_TOWNS.find(t=>t.id===id);
+// ALL_TOWNS carries the province's name; the select is keyed by its id.
+function provinceIdOfTown(id){
+  const t=townById(id);
+  if(!t) return '';
+  const p=provinces.find(x=>x.name===t.province);
+  return p ? p.id : '';
+}
+const provinceNameById = id => (provinces.find(p=>p.id===id)||{}).name || '';
+// A photo can carry a town the province lists don't hold — an older row filed by hand,
+// or the map's own starting town. Turn the key back into something readable rather
+// than printing 'kruisfontein' at somebody.
+const prettyTownId = id => String(id||'').split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+// Built from the photos, so neither box can offer a place with an empty wall behind it.
 function galleryTownsWithPhotos(){
   const seen=new Map();
-  galleryPhotos.forEach(p=>{ if(p.town_id && !seen.has(p.town_id)) seen.set(p.town_id, townNameById(p.town_id)||p.town_id); });
-  return [...seen].map(([id,name])=>({id,name})).sort((a,b)=>a.name.localeCompare(b.name));
+  galleryPhotos.forEach(p=>{
+    if(!p.town_id || seen.has(p.town_id)) return;
+    const t=townById(p.town_id);
+    seen.set(p.town_id, {id:p.town_id, name:(t&&t.name)||prettyTownId(p.town_id), district:(t&&t.district)||'', province:provinceIdOfTown(p.town_id)});
+  });
+  return [...seen.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
-function setGalleryTown(id){
-  galleryTown=id;
-  const s=document.getElementById('gallerySearchInput');
-  if(s) s.value='';          // the link means "show me that", not "and keep searching"
+function galleryProvincesWithPhotos(){
+  const ids=new Set(galleryTownsWithPhotos().map(t=>t.province).filter(Boolean));
+  return provinces.filter(p=>ids.has(p.id));
+}
+// Back to a blank slate — the next render works the default out again from whoever is
+// signed in now. Used on the way in and out of an account, and when a town is changed.
+function resetGalleryPlace(){
+  galleryProvinceId=''; galleryTownId=''; galleryPlaceReady=false;
+}
+// The way back out to the whole country, from the line that says a wall is empty.
+function clearGalleryPlace(){
+  galleryProvinceId=''; galleryTownId='';
   renderGallery();
 }
-function onGalleryTownPick(){
-  galleryTown=document.getElementById('galleryTownFilter').value;
+function onGalleryProvinceChange(){
+  galleryProvinceId=document.getElementById('galleryProvince').value;
+  galleryTownId='';                     // the town went with the province
+  closeGalleryTownList();
   renderGallery();
 }
-function fillGalleryTownFilter(){
-  const sel=document.getElementById('galleryTownFilter');
-  if(!sel) return 'all';
+function pickGalleryTown(id){
+  galleryTownId=id;
+  // Picking a town from the whole-country list moves the province box with it, so the
+  // two never disagree about where you are.
+  if(id && provinceIdOfTown(id)) galleryProvinceId=provinceIdOfTown(id);
+  document.getElementById('galleryTownInput').blur();
+  closeGalleryTownList();
+  renderGallery();
+}
+function closeGalleryTownList(){
+  const l=document.getElementById('galleryTownList');
+  if(l) l.classList.remove('show');
+}
+function openGalleryTownList(){
+  const inp=document.getElementById('galleryTownInput');
+  if(!inp || inp.disabled) return;
+  inp.select();                          // reopening means changing your mind
+  renderGalleryTownList('');
+  document.getElementById('galleryTownList').classList.add('show');
+}
+function onGalleryTownFilter(v){
+  renderGalleryTownList(v);
+  document.getElementById('galleryTownList').classList.add('show');
+}
+function onGalleryTownKey(e){
+  if(e.key==='Escape'){ closeGalleryTownList(); return; }
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const first=document.querySelector('#galleryTownList .tl-row');
+  if(first) first.click();
+}
+// Same ranking as the map's picker — what you typed at the front first, then anywhere
+// in the name, then the district — over the towns of the chosen province that have
+// photos. The first row is the way back to the whole province.
+function renderGalleryTownList(q){
+  const list=document.getElementById('galleryTownList');
+  if(!list) return;
+  const towns=galleryTownsWithPhotos().filter(t=>!galleryProvinceId || t.province===galleryProvinceId);
+  const ql=norm(q||'');
+  const hits = !ql ? towns : towns.map(t=>{
+      const tn=norm(t.name), dn=norm(t.district);
+      const rank = tn.startsWith(ql) ? 0 : tn.includes(ql) ? 1 : dn.startsWith(ql) ? 2 : dn.includes(ql) ? 3 : -1;
+      return {t, rank};
+    }).filter(x=>x.rank>=0).sort((a,b)=>a.rank-b.rank || a.t.name.localeCompare(b.t.name)).map(x=>x.t);
+  // The first row is the way back to the whole province — or the whole country, when
+  // the province box is on "All of South Africa".
+  const allRow = `<div class="tl-row" onclick="pickGalleryTown('')">Everywhere in ${escHtml(galleryProvinceId ? provinceNameById(galleryProvinceId) : 'South Africa')}<span>every town below</span></div>`;
+  list.innerHTML = hits.length
+    ? allRow + hits.map(t=>`<div class="tl-row" onclick="pickGalleryTown('${escHtml(t.id)}')">${escHtml(t.name)}<span>${escHtml(t.district)}</span></div>`).join('')
+    : allRow + '<div class="tl-empty">No photos from a town by that name yet.</div>';
+}
+// Fills both boxes and works out where the wall should open. The two boxes stay off
+// the page entirely while no photo carries a town — supabase-gallery-town.sql hasn't
+// been run, or nothing has been posted since — and the wall reads exactly as it did
+// before any of this.
+function fillGalleryPlaceFilter(){
+  const bar=document.getElementById('galleryFilterBar');
+  const psel=document.getElementById('galleryProvince');
+  const inp=document.getElementById('galleryTownInput');
+  if(!bar || !psel || !inp) return false;
   const towns=galleryTownsWithPhotos();
-  // Nothing filed under a town yet — supabase-gallery-town.sql hasn't been run, or
-  // nothing has been posted since. A filter with one thing in it is furniture, so it
-  // stays away and the wall reads exactly as it did before any of this.
-  sel.style.display = towns.length ? 'block' : 'none';
-  if(!towns.length){ sel.innerHTML=''; return 'all'; }
-  const mine = (currentUser && currentUser.town) || '';
-  const mineHas = towns.some(t=>t.id===mine);
-  const opts=[];
-  if(mineHas) opts.push(`<option value="${escHtml(mine)}">${escHtml(townNameById(mine))} — your town</option>`);
-  opts.push('<option value="all">Everywhere in South Africa</option>');
-  towns.filter(t=>t.id!==mine).forEach(t=>opts.push(`<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`));
-  const html=opts.join('');
-  if(sel.innerHTML!==html) sel.innerHTML=html;   // rebuilding mid-choice would shut the list
-  if(galleryTown==null) galleryTown = mineHas ? mine : 'all';
-  // The town you were on can lose its last photo, and "your town" goes when you sign
-  // out. Either way, fall back to the whole country rather than an empty wall.
-  if(!Array.prototype.some.call(sel.options, o=>o.value===galleryTown)) galleryTown='all';
-  sel.value=galleryTown;
-  return galleryTown;
+  bar.style.display = towns.length ? 'flex' : 'none';
+  if(!towns.length){ galleryProvinceId=''; galleryTownId=''; return false; }
+  const provs=galleryProvincesWithPhotos();
+  const html='<option value="">All of South Africa</option>'
+    + provs.map(p=>`<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('');
+  if(psel.innerHTML!==html) psel.innerHTML=html;
+  // Your town first, the province it's in if your town has nothing on it yet, the
+  // country if neither does. Worked out once, then the boxes are yours to move.
+  if(!galleryPlaceReady){
+    galleryPlaceReady=true;
+    const mine=(currentUser && currentUser.town) || '';
+    if(mine && towns.some(t=>t.id===mine)){
+      galleryTownId=mine; galleryProvinceId=provinceIdOfTown(mine);
+    } else if(mine && provs.some(p=>p.id===provinceIdOfTown(mine))){
+      galleryProvinceId=provinceIdOfTown(mine);
+    }
+  }
+  // A place can lose its last photo while you are standing on it.
+  if(galleryTownId && !towns.some(t=>t.id===galleryTownId)) galleryTownId='';
+  if(galleryProvinceId && !provs.some(p=>p.id===galleryProvinceId)) galleryProvinceId='';
+  psel.value=galleryProvinceId;
+  // Unlike the Map's, this box works with no province chosen: the list is only towns
+  // that have photos, so it's short enough to hold the whole country — and a town the
+  // province lists don't know about (an old row filed under one) is reachable only
+  // here.
+  inp.disabled=false;
+  inp.placeholder = galleryProvinceId ? 'Any town in '+provinceNameById(galleryProvinceId) : 'Any town in South Africa';
+  // Read off the photos' own list, not ALL_TOWNS — a town filed under a name the
+  // province lists don't carry still has to show its name in the box.
+  const chosen=towns.find(t=>t.id===galleryTownId);
+  inp.value = chosen ? chosen.name : '';
+  return true;
 }
 function renderGallery(){
   const grid=document.getElementById('galleryGrid');
   if(!grid) return;
-  const town=fillGalleryTownFilter();
-  const input=document.getElementById('gallerySearchInput');
-  const q=(input ? input.value : '').trim().toLowerCase();
-  const text = p => [p.caption, p.who, townNameById(p.town_id)].filter(Boolean).join(' ').toLowerCase();
-  // A search is a question about the whole country — typing a town name into it means
-  // to leave your own — so the town filter stands down while there's something in it.
-  const shown = galleryPhotos.filter(p => q ? text(p).includes(q) : (town==='all' || p.town_id===town));
+  fillGalleryPlaceFilter();
+  // A photo with no town of its own belongs to the country rather than to a place: it
+  // shows when nothing is narrowed, and stays out of any one town's wall.
+  const shown = galleryPhotos.filter(p=>{
+    if(galleryTownId) return p.town_id===galleryTownId;
+    if(galleryProvinceId) return !!p.town_id && provinceIdOfTown(p.town_id)===galleryProvinceId;
+    return true;
+  });
   grid.innerHTML='';
   shown.forEach(g=>{
     const card=document.createElement('div');
@@ -5339,29 +5444,23 @@ function renderGallery(){
     // the admin bubble asks for it, so the wall reads as a visitor's by default.
     const mayDelete = showGalleryDelete() && currentUser && (currentUser.admin || (currentUser.canPostGallery && g.posted_by===currentUser.id));
     const delBtn = mayDelete ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
-    const where = g.town_id ? `<div class="gwhere">${escHtml(townNameById(g.town_id)||g.town_id)}</div>` : '';
+    const where = g.town_id ? `<div class="gwhere">${escHtml(townNameById(g.town_id)||prettyTownId(g.town_id))}</div>` : '';
     card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${where}${delBtn}</div>`;
     grid.appendChild(card);
   });
-  renderGalleryCount(shown.length, town, q);
+  renderGalleryEmpty(shown.length);
 }
-// The line under the filter says which wall you're on, and — whenever you're on part
-// of it — how to get to the whole thing without hunting through the dropdown.
-function renderGalleryCount(n, town, q){
-  const note=document.getElementById('galleryCount');
+// No count when there are photos — the photos answer "how many" themselves. The line
+// only shows up when a wall is empty, and then it carries the way out of it.
+function renderGalleryEmpty(n){
+  const note=document.getElementById('galleryEmpty');
   if(!note) return;
-  const wide=`<button class="gs-link" onclick="setGalleryTown('all')">See the whole country</button>`;
-  const photos = n===1 ? '1 photo' : n+' photos';
-  if(q){
-    note.innerHTML = n
-      ? `${photos} across South Africa matching “${escHtml(q)}”.`
-      : `Nothing on the wall matches “${escHtml(q)}”.`;
-    return;
-  }
-  if(town==='all'){ note.innerHTML = photos+' from all over South Africa.'; return; }
-  note.innerHTML = n
-    ? `${photos} from ${escHtml(townNameById(town)||town)}. ${wide}`
-    : `Nothing from ${escHtml(townNameById(town)||town)} yet. ${wide}`;
+  note.style.display = n ? 'none' : 'block';
+  if(n) return;
+  const out=`<button class="gs-link" onclick="clearGalleryPlace()">Show all of South Africa</button>`;
+  note.innerHTML = galleryTownId ? `Nothing from ${escHtml(townNameById(galleryTownId)||prettyTownId(galleryTownId))} yet. ${out}`
+    : galleryProvinceId ? `Nothing from ${escHtml(provinceNameById(galleryProvinceId))} yet. ${out}`
+    : 'Nothing on the wall yet.';
 }
 // Every town in the country, for the admin's posting form — this one isn't limited to
 // towns that already have photos, because it's how the first one gets there.
@@ -6566,7 +6665,7 @@ async function saveMyDetails(){
   document.getElementById('signinBtn').textContent='Hi, '+name.split(' ')[0];
   renderMyAreas();
   // Your town is what the photo wall opens on, so a change of town is a change of wall.
-  galleryTown=null;
+  resetGalleryPlace();
   fillPhotoTownSelect(true);   // follow the new town, even if the form already had the old one
   renderGallery();
   flashSaved('myDetailsSaved');
