@@ -632,6 +632,12 @@ ZZO3_END_UNUSED
   .gbody{padding:10px 12px;}
   .gcaption{font-size:12.5px; font-weight:700;}
   .gwho{font-size:11px; color:var(--text-dim); margin-top:3px;}
+  /* The town, on the card. Once the wall can be narrowed to one place, a photo has to
+     say which place it is — otherwise "everywhere" is a wall of unlabelled towns. */
+  .gwhere{font-size:11px; font-weight:700; color:var(--green); margin-top:3px;}
+  /* A link, not a button, in the middle of a sentence — the way out of one town's wall
+     sits in the line that tells you you're in one. */
+  .gs-link{ background:none; border:none; padding:0; font-family:inherit; font-size:inherit; font-weight:700; color:var(--green); text-decoration:underline; cursor:pointer; }
   .email-card{ background:var(--soft); border:1.5px dashed #C7D2C3; border-radius:var(--radius-md); padding:18px; text-align:center; margin-top:18px; }
   .email-card p{font-size:13px; color:var(--text-dim); margin:6px 0 14px 0; line-height:1.5;}
   .email-card .fineprint{font-size:11.5px; color:var(--text-dim); margin-top:10px;}
@@ -639,10 +645,11 @@ ZZO3_END_UNUSED
      clean-up days the other. Stacked on a phone with groups first — the search box
      lives in that column, and typing has to be the first thing you can reach. */
   .groups-layout{ display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
-  /* Under the clean-up search, not beside it: at half the page width the two would
-     each end up too narrow to read a town name in. */
-  .gev-place{ width:100%; margin-top:8px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; color:var(--text); }
-  .gev-place:focus{ outline:none; border-color:var(--green); }
+  /* Under the search box it belongs to, not beside it: at half the page width the two
+     would each end up too narrow to read a town name in. Shared by the clean-up
+     filter and the gallery's. */
+  .place-select{ width:100%; margin-top:8px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; color:var(--text); }
+  .place-select:focus{ outline:none; border-color:var(--green); }
   /* Group search — browsing public groups from the gallery */
   .gsearch{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:18px; }
   .gsearch-box{position:relative;}
@@ -1758,6 +1765,9 @@ ZZO3_END_UNUSED
           </div>
           <input type="text" id="photoCaption" placeholder="Caption — e.g. Cleared Voortrekker St corner" style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:10px;">
           <input type="text" id="photoWho" placeholder="Who did it — e.g. Marie K." style="width:100%; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; margin-top:8px;">
+          <!-- Which town it's from. Defaults to whoever is posting, so the usual case
+               is nothing to choose. It's what the wall's filter sorts by. -->
+          <select id="photoTown" class="place-select" aria-label="Which town this photo is from"></select>
           <label class="checkrow"><input type="checkbox" id="photoBigProject"> This is a bigger project</label>
           <label class="checkrow" id="featuredRow"><input type="checkbox" id="photoFeatured"> Set as this week's featured project (hero card)</label>
           <button class="btn btn-primary" id="galleryPostBtn" style="margin-top:12px;" onclick="submitGalleryPhoto()">Post to gallery</button>
@@ -1779,6 +1789,18 @@ ZZO3_END_UNUSED
       </div>
 
       <p class="eyebrow" style="margin-top:4px;">Photo wall</p>
+      <!-- The wall opens on your own town and widens from there. Everything anyone has
+           ever done, in the order it was posted, is a lot of wall to scroll before you
+           reach anything you recognise. The filter is left out entirely while no photo
+           carries a town — see fillGalleryTownFilter(). -->
+      <div class="gsearch" id="galleryFilterBar" style="margin-bottom:14px;">
+        <div class="gsearch-box">
+          <span class="gs-icon">🔍</span>
+          <input type="text" id="gallerySearchInput" placeholder="Search the wall — caption, who or town" oninput="renderGallery()" autocomplete="off">
+        </div>
+        <select id="galleryTownFilter" class="place-select" onchange="onGalleryTownPick()" aria-label="Which town to show photos from"></select>
+        <p class="gs-note" id="galleryCount"></p>
+      </div>
       <div class="gallery-grid" id="galleryGrid"></div>
       <div class="email-card">
         <div style="font-size:26px;">📷</div>
@@ -1834,7 +1856,7 @@ ZZO3_END_UNUSED
             </div>
             <!-- Filled from the clean-ups themselves, so it only ever offers a place
                  that has one. -->
-            <select id="eventPlaceFilter" class="gev-place" onchange="renderGroupResults()" aria-label="Filter clean-ups by place"></select>
+            <select id="eventPlaceFilter" class="place-select" onchange="renderGroupResults()" aria-label="Filter clean-ups by place"></select>
             <div id="gEventResults"></div>
             <details class="prefbox" id="gPastEventsBox" style="display:none; margin-top:12px;">
               <summary>Finished<span class="pf-sub" id="gPastEventsCount"></span></summary>
@@ -3760,6 +3782,10 @@ async function afterAuth(){
   renderSponsorBar();
   renderVideoSponsors();
   updateGalleryAdminVisibility();
+  // Signing in is when we learn which town is yours, so the wall works its default
+  // out again rather than staying on whatever it settled for as a stranger.
+  galleryTown=null;
+  fillPhotoTownSelect();
   renderGallery();
   await loadMyCouncil();
   loadCouncilApplications();
@@ -3787,6 +3813,7 @@ async function signOut(){
   renderSponsorBar();
   renderVideoSponsors();
   updateGalleryAdminVisibility();
+  galleryTown=null;          // signed out: no "your town" to open on any more
   renderGallery();
   showPage('home');
 }
@@ -5184,7 +5211,17 @@ async function postGalleryMedia(){
     if(!after_url) return;
   }
   if(isFeatured){ await sb.from('gallery_photos').update({is_featured:false}).eq('is_featured', true); }
-  await sb.from('gallery_photos').insert({image_url, before_url, after_url, caption, who, is_big_project:isBig, is_featured:isFeatured});
+  const townSel=document.getElementById('photoTown');
+  const row={image_url, before_url, after_url, caption, who, is_big_project:isBig, is_featured:isFeatured,
+             town_id:(townSel && townSel.value) || null};
+  // A site running ahead of its database posts the photo anyway, minus the town —
+  // same trick as the teams table. supabase-gallery-town.sql is the migration.
+  let {error} = await sb.from('gallery_photos').insert(row);
+  if(error && /column|does not exist|schema cache/i.test(error.message||'')){
+    delete row.town_id;
+    ({error} = await sb.from('gallery_photos').insert(row));
+  }
+  if(error){ showBanner(error.message, 4200); return; }
   document.getElementById('adminPhotoInput').value=''; document.getElementById('beforePhotoInput').value=''; document.getElementById('afterPhotoInput').value='';
   document.getElementById('singlePickLabel').textContent='+ Choose photo or video';
   document.getElementById('beforePickLabel').textContent='+ Before';
@@ -5229,10 +5266,64 @@ function galleryMedia(url, attrs){
     ? `<video src="${escHtml(url)}#t=0.1"${a} muted playsinline preload="metadata"></video><span class="play-pill">&#9654;</span>`
     : `<img src="${escHtml(url)}"${a}>`;
 }
+// ---- which slice of the wall you're looking at ----
+// Null until the first render works it out: your own town when there's something on
+// it, the whole country when there isn't. After that it's whatever you last chose,
+// for as long as the page is open.
+let galleryTown=null;
+const townNameById = id => (ALL_TOWNS.find(t=>t.id===id)||{}).name || '';
+// Built from the photos, so the filter can't offer a town with an empty wall behind it.
+function galleryTownsWithPhotos(){
+  const seen=new Map();
+  galleryPhotos.forEach(p=>{ if(p.town_id && !seen.has(p.town_id)) seen.set(p.town_id, townNameById(p.town_id)||p.town_id); });
+  return [...seen].map(([id,name])=>({id,name})).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function setGalleryTown(id){
+  galleryTown=id;
+  const s=document.getElementById('gallerySearchInput');
+  if(s) s.value='';          // the link means "show me that", not "and keep searching"
+  renderGallery();
+}
+function onGalleryTownPick(){
+  galleryTown=document.getElementById('galleryTownFilter').value;
+  renderGallery();
+}
+function fillGalleryTownFilter(){
+  const sel=document.getElementById('galleryTownFilter');
+  if(!sel) return 'all';
+  const towns=galleryTownsWithPhotos();
+  // Nothing filed under a town yet — supabase-gallery-town.sql hasn't been run, or
+  // nothing has been posted since. A filter with one thing in it is furniture, so it
+  // stays away and the wall reads exactly as it did before any of this.
+  sel.style.display = towns.length ? 'block' : 'none';
+  if(!towns.length){ sel.innerHTML=''; return 'all'; }
+  const mine = (currentUser && currentUser.town) || '';
+  const mineHas = towns.some(t=>t.id===mine);
+  const opts=[];
+  if(mineHas) opts.push(`<option value="${escHtml(mine)}">${escHtml(townNameById(mine))} — your town</option>`);
+  opts.push('<option value="all">Everywhere in South Africa</option>');
+  towns.filter(t=>t.id!==mine).forEach(t=>opts.push(`<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`));
+  const html=opts.join('');
+  if(sel.innerHTML!==html) sel.innerHTML=html;   // rebuilding mid-choice would shut the list
+  if(galleryTown==null) galleryTown = mineHas ? mine : 'all';
+  // The town you were on can lose its last photo, and "your town" goes when you sign
+  // out. Either way, fall back to the whole country rather than an empty wall.
+  if(!Array.prototype.some.call(sel.options, o=>o.value===galleryTown)) galleryTown='all';
+  sel.value=galleryTown;
+  return galleryTown;
+}
 function renderGallery(){
   const grid=document.getElementById('galleryGrid');
+  if(!grid) return;
+  const town=fillGalleryTownFilter();
+  const input=document.getElementById('gallerySearchInput');
+  const q=(input ? input.value : '').trim().toLowerCase();
+  const text = p => [p.caption, p.who, townNameById(p.town_id)].filter(Boolean).join(' ').toLowerCase();
+  // A search is a question about the whole country — typing a town name into it means
+  // to leave your own — so the town filter stands down while there's something in it.
+  const shown = galleryPhotos.filter(p => q ? text(p).includes(q) : (town==='all' || p.town_id===town));
   grid.innerHTML='';
-  galleryPhotos.forEach(g=>{
+  shown.forEach(g=>{
     const card=document.createElement('div');
     card.className='gcard';
     let photoHtml;
@@ -5248,9 +5339,42 @@ function renderGallery(){
     // the admin bubble asks for it, so the wall reads as a visitor's by default.
     const mayDelete = showGalleryDelete() && currentUser && (currentUser.admin || (currentUser.canPostGallery && g.posted_by===currentUser.id));
     const delBtn = mayDelete ? `<button style="margin-top:6px; background:none; border:none; color:var(--red); font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; padding:0;" onclick="deleteGalleryPhoto('${g.id}')">Delete</button>` : '';
-    card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${delBtn}</div>`;
+    const where = g.town_id ? `<div class="gwhere">${escHtml(townNameById(g.town_id)||g.town_id)}</div>` : '';
+    card.innerHTML = `${photoHtml}<div class="gbody">${g.is_big_project?'<span class="gbadge">🌳 Big project</span>':''}<div class="gcaption">${g.caption}</div><div class="gwho">${g.who}</div>${where}${delBtn}</div>`;
     grid.appendChild(card);
   });
+  renderGalleryCount(shown.length, town, q);
+}
+// The line under the filter says which wall you're on, and — whenever you're on part
+// of it — how to get to the whole thing without hunting through the dropdown.
+function renderGalleryCount(n, town, q){
+  const note=document.getElementById('galleryCount');
+  if(!note) return;
+  const wide=`<button class="gs-link" onclick="setGalleryTown('all')">See the whole country</button>`;
+  const photos = n===1 ? '1 photo' : n+' photos';
+  if(q){
+    note.innerHTML = n
+      ? `${photos} across South Africa matching “${escHtml(q)}”.`
+      : `Nothing on the wall matches “${escHtml(q)}”.`;
+    return;
+  }
+  if(town==='all'){ note.innerHTML = photos+' from all over South Africa.'; return; }
+  note.innerHTML = n
+    ? `${photos} from ${escHtml(townNameById(town)||town)}. ${wide}`
+    : `Nothing from ${escHtml(townNameById(town)||town)} yet. ${wide}`;
+}
+// Every town in the country, for the admin's posting form — this one isn't limited to
+// towns that already have photos, because it's how the first one gets there.
+function fillPhotoTownSelect(force){
+  const sel=document.getElementById('photoTown');
+  if(!sel) return;
+  if(!sel.options.length){
+    sel.innerHTML = '<option value="">Not tied to a town</option>'
+      + ALL_TOWNS.slice().sort((a,b)=>a.name.localeCompare(b.name))
+          .map(t=>`<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join('');
+  }
+  const mine=(currentUser && currentUser.town) || '';
+  if(mine && (force || !sel.value)) sel.value=mine;
 }
 
 // ================= SPONSORS =================
@@ -6441,6 +6565,10 @@ async function saveMyDetails(){
   // redraw the page rather than leave three stale copies of the old one on screen.
   document.getElementById('signinBtn').textContent='Hi, '+name.split(' ')[0];
   renderMyAreas();
+  // Your town is what the photo wall opens on, so a change of town is a change of wall.
+  galleryTown=null;
+  fillPhotoTownSelect(true);   // follow the new town, even if the form already had the old one
+  renderGallery();
   flashSaved('myDetailsSaved');
 }
 
