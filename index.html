@@ -639,7 +639,6 @@ ZZO3_END_UNUSED
      clean-up days the other. Stacked on a phone with groups first — the search box
      lives in that column, and typing has to be the first thing you can reach. */
   .groups-layout{ display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
-  .gev-col h3{ margin:0; font-size:20px; font-weight:800; letter-spacing:-0.01em; }
   /* Under the clean-up search, not beside it: at half the page width the two would
      each end up too narrow to read a town name in. */
   .gev-place{ width:100%; margin-top:8px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; color:var(--text); }
@@ -1795,15 +1794,16 @@ ZZO3_END_UNUSED
 <div class="page" id="page-groups">
   <section>
     <div class="wrap-wide">
-      <p class="eyebrow">Who's out there</p>
-      <h2 style="margin-bottom:6px;">Find a group or a clean-up</h2>
-      <p class="lead">Search public groups and clean-up days by name or town.</p>
-
-      <!-- Two columns, a search box each: the standing groups on the left, the
-           clean-up days on the right. They were one list, where a Saturday that has
-           been and gone sat between two groups you could still join. -->
-      <div class="groups-layout" style="margin-top:18px;">
+      <!-- Two columns, a heading and a search box each — the page's own title
+           included, which is why it sits inside the left column rather than above
+           both: the two headings start on the same line that way. The lists were one
+           list, where a Saturday that had been and gone sat between two groups you
+           could still join. -->
+      <div class="groups-layout">
         <div>
+          <p class="eyebrow">Who's out there</p>
+          <h2 style="margin-bottom:6px;">Find a group</h2>
+          <p class="lead">Search public groups by name or town.</p>
           <div class="gsearch">
             <div class="gsearch-box">
               <span class="gs-icon">🔍</span>
@@ -1825,8 +1825,8 @@ ZZO3_END_UNUSED
              about it, in a way they don't about a group. -->
         <aside class="gev-col">
           <p class="eyebrow">What's on</p>
-          <h3>Clean-up days <span class="ev-badge" aria-hidden="true">📣</span></h3>
-          <p class="gs-note" style="padding-top:6px;">A group with a day and a meeting spot on it. Anyone can come — no pin needed.</p>
+          <h2 style="margin-bottom:6px;">Clean-up days <span class="ev-badge" aria-hidden="true">📣</span></h2>
+          <p class="lead">A group with a day and a spot. Anyone can come.</p>
           <div class="gsearch">
             <div class="gsearch-box">
               <span class="gs-icon">🔍</span>
