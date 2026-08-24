@@ -635,7 +635,12 @@ ZZO3_END_UNUSED
   .email-card{ background:var(--soft); border:1.5px dashed #C7D2C3; border-radius:var(--radius-md); padding:18px; text-align:center; margin-top:18px; }
   .email-card p{font-size:13px; color:var(--text-dim); margin:6px 0 14px 0; line-height:1.5;}
   .email-card .fineprint{font-size:11.5px; color:var(--text-dim); margin-top:10px;}
-
+  /* Two lists side by side on anything wide enough: standing groups one side,
+     clean-up days the other. Stacked on a phone with groups first — the search box
+     lives in that column, and typing has to be the first thing you can reach. */
+  .groups-layout{ display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
+  .gev-col h3{ margin:0; font-size:20px; font-weight:800; letter-spacing:-0.01em; }
+  /* Group search — browsing public groups from the gallery */
   /* Group search — browsing public groups from the gallery */
   .gsearch{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:18px; }
   .gsearch-box{position:relative;}
@@ -894,6 +899,9 @@ ZZO3_END_UNUSED
     #page-home section h2{font-size:40px;}
     .jumpbar button{ flex:0 0 auto; padding:8px 15px; font-size:12.5px; }
     .map-layout{grid-template-columns:1.6fr 1fr; align-items:start;}
+    /* Half and half — both sides are lists of the same kind of thing, and neither
+       has a claim on the extra room. */
+    .groups-layout{grid-template-columns:1fr 1fr;}
     /* Short enough that the claim buttons along its bottom edge stay above the fold.
        The 320px is what's spoken for either side of the map: header, the two pickers
        and the search bar above it, the sponsor bar below. On a tall screen 58% is the
@@ -1785,21 +1793,41 @@ ZZO3_END_UNUSED
   <section>
     <div class="wrap-wide">
       <p class="eyebrow">Who's out there</p>
-      <h2 style="margin-bottom:6px;">Find a group</h2>
-      <p class="lead">Search public groups by name or town to see their photos and the areas they've claimed. Private groups stay out of here.</p>
+      <h2 style="margin-bottom:6px;">Find a group or a clean-up</h2>
+      <p class="lead">Search public groups and clean-up days by name or town. Private groups stay out of here.</p>
 
-      <div class="gsearch" style="margin-top:18px;">
-        <div class="gsearch-box">
-          <span class="gs-icon">🔍</span>
-          <input type="text" id="groupSearchInput" placeholder="Search groups — e.g. Kruisfontein Clean-up" oninput="renderGroupResults()" autocomplete="off">
+      <!-- Two columns off one search box: the standing groups on the left, the
+           clean-up days on the right. They were one list, where a Saturday that has
+           been and gone sat between two groups you could still join. -->
+      <div class="groups-layout" style="margin-top:18px;">
+        <div>
+          <div class="gsearch">
+            <div class="gsearch-box">
+              <span class="gs-icon">🔍</span>
+              <input type="text" id="groupSearchInput" placeholder="Search groups and clean-ups — e.g. Kruisfontein" oninput="renderGroupResults()" autocomplete="off">
+            </div>
+            <div id="groupResults"></div>
+          </div>
+
+          <div class="email-card" style="margin-top:0;">
+            <div style="font-size:26px;">👥</div>
+            <p>Groups are started from My Area — name it, hand out the join pin, and it shows up here if you make it public. Its photos stay between members until Adopt an Area has looked through them.</p>
+            <button class="btn btn-primary" onclick="showPage('myarea')">Start or join a group</button>
+          </div>
         </div>
-        <div id="groupResults"></div>
-      </div>
 
-      <div class="email-card">
-        <div style="font-size:26px;">👥</div>
-        <p>Groups are started from My Area — name it, hand out the join pin, and it shows up here if you make it public. Its photos stay between members until Adopt an Area has looked through them.</p>
-        <button class="btn btn-primary" onclick="showPage('myarea')">Start or join a group</button>
+        <!-- Every public clean-up, not just the ones near you — the home page is where
+             the 50km list lives. Same search box as the column beside it. -->
+        <aside class="gev-col">
+          <p class="eyebrow">What's on</p>
+          <h3>Clean-up days <span class="ev-badge" aria-hidden="true">📣</span></h3>
+          <p class="gs-note" style="padding-top:6px;">A group with a day and a meeting spot on it. Anyone can come — no pin needed. Your home page lists the ones within 50km of you.</p>
+          <div id="gEventResults"></div>
+          <details class="prefbox" id="gPastEventsBox" style="display:none; margin-top:12px;">
+            <summary>Finished<span class="pf-sub" id="gPastEventsCount"></span></summary>
+            <div class="pf-body" id="gPastEventsList"></div>
+          </details>
+        </aside>
       </div>
     </div>
   </section>
@@ -3328,6 +3356,8 @@ function locateMe(){
       hereNow={lat:latitude, lng:longitude};
       try{ sessionStorage.setItem('aaa_here', JSON.stringify(hereNow)); }catch(e){}
       renderEvents();
+      // The Groups page shows how far each clean-up is too, and we've just found out.
+      renderGroupResults();
       showBanner('This is you — now try "Claim an area"', 2600);
       // Same step, other route: "Use my location" puts you at your place without
       // anyone typing an address.
@@ -3738,6 +3768,7 @@ async function signOut(){
   await renderMyGroups();
   renderEventPermission();
   renderEvents();
+  renderGroupResults();
   renderMyAreas();
   renderSponsorBar();
   renderVideoSponsors();
@@ -4869,21 +4900,33 @@ function groupAreas(g){
   const ids=new Set((g._members||[]).map(m=>m.user_id).filter(Boolean));
   return seedAreas.filter(a=>a.ownerId && ids.has(a.ownerId));
 }
+// One search box, two columns. A clean-up day is a group with a date on it, so both
+// lists come out of the same publicGroups array — filtered here rather than fetched
+// twice. Country-wide on this page: the 50km list is the home page's job.
 function renderGroupResults(){
   const box=document.getElementById('groupResults');
   if(!box) return;
   const input=document.getElementById('groupSearchInput');
   const q=(input ? input.value : '').trim().toLowerCase();
-  const matches = q
-    ? publicGroups.filter(g=>(g.name||'').toLowerCase().includes(q) || groupTownName(g).toLowerCase().includes(q))
-    : publicGroups;
+  const hit = g => !q || (g.name||'').toLowerCase().includes(q) || groupTownName(g).toLowerCase().includes(q);
+  const matches = publicGroups.filter(hit);
+  renderPlainGroupRows(box, matches.filter(g=>!isEventTeam(g)), q);
+  renderGroupEvents(matches.filter(isEventTeam), q);
+}
+function renderPlainGroupRows(box, matches, q){
+  const anyGroups = publicGroups.some(g=>!isEventTeam(g));
   box.innerHTML='';
-  if(!publicGroups.length){
-    box.innerHTML='<p class="gs-note">No public groups yet. Start one on My Area and pick "Public" so your town can see what you\'re doing.</p>';
+  if(!anyGroups){
+    // Now that the clean-ups have a column of their own, "nothing here" can mean two
+    // different things — say which one it is rather than claiming the page is empty
+    // while a clean-up sits beside it.
+    box.innerHTML='<p class="gs-note">'+(publicGroups.length
+      ? 'No standing groups yet — everything public at the moment is a clean-up day, beside this.'
+      : 'No public groups yet. Start one on My Area and pick "Public" so your town can see what you\'re doing.')+'</p>';
     return;
   }
   if(!matches.length){
-    box.innerHTML='<p class="gs-note">No group matches "'+escHtml(q)+'". Try the town name instead.</p>';
+    box.innerHTML='<p class="gs-note">No group matches "'+escHtml(q)+'". Try the town name instead — or look in the clean-ups beside this.</p>';
     return;
   }
   const shown = matches.slice(0, 10);
@@ -4894,17 +4937,12 @@ function renderGroupResults(){
     const bits=[town, mem+(mem===1?' member':' members'), areas+(areas===1?' area claimed':' areas claimed')].filter(Boolean);
     const row=document.createElement('div');
     row.className='grow';
-    // A clean-up has a page of its own — the day, the spot, who's coming — so it
-    // opens that instead of the plain group card.
-    row.onclick=()=>{ if(isEventTeam(g)) openEventSheet(g.id); else openGroupProfile(g.id); };
-    // An event says so here, so nobody joins a Saturday that has been and gone.
-    const evTag = isEventTeam(g)
-      ? `<span class="evchip${eventIsOver(g)?' done':''}">${eventIsOver(g)?'Finished':'📅 '+eventDayLabel(g.event_date)}</span>` : '';
+    row.onclick=()=>openGroupProfile(g.id);
     row.innerHTML=(g.logo_url
         ? `<div class="gav" style="overflow:hidden;"><img src="${escHtml(g.logo_url)}" alt="" style="width:100%; height:100%; object-fit:cover;"></div>`
         : `<div class="gav">${escHtml((g.name||'?').charAt(0).toUpperCase())}</div>`)+
       `<div style="flex:1; min-width:0;"><div class="grow-name">${escHtml(g.name||'Unnamed group')}</div><div class="grow-meta">${escHtml(bits.join(' · '))}</div></div>`+
-      evTag + `<span class="chev">›</span>`;
+      `<span class="chev">›</span>`;
     box.appendChild(row);
   });
   if(matches.length>shown.length){
@@ -4913,6 +4951,34 @@ function renderGroupResults(){
     note.textContent=`Showing 10 of ${matches.length} — type a bit more to narrow it down.`;
     box.appendChild(note);
   }
+}
+// Same cards as the home page, so a clean-up looks the same wherever you meet it —
+// distance included when we know where you are. Finished ones fold away underneath:
+// they're worth looking back at, but they aren't what anyone came here for.
+function renderGroupEvents(matches, q){
+  const box=document.getElementById('gEventResults');
+  if(!box) return;
+  const me=myPlace();
+  const withDist = matches.map(t=>{
+    const at=(t.event_lat!=null && t.event_lng!=null) ? {lat:t.event_lat, lng:t.event_lng} : null;
+    return Object.assign({}, t, {_km: (me && at) ? kmBetween(me, at) : null});
+  });
+  const upcoming = withDist.filter(e=>!eventIsOver(e))
+    .sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date)));
+  const past = withDist.filter(eventIsOver)
+    .sort((a,b)=>String(b.event_date).localeCompare(String(a.event_date)));
+  const anyEvents = publicGroups.some(isEventTeam);
+  const nothing = !anyEvents
+    ? 'No clean-up days yet. Any group can become one — give it a day and a meeting spot from My Area.'
+    : (q ? 'No clean-up matches "'+escHtml(q)+'".' : 'Nothing coming up right now.');
+  box.innerHTML = upcoming.length
+    ? upcoming.map(e=>eventCardHTML(e,false)).join('')
+    : '<p class="gs-note">'+nothing+'</p>';
+  const pbox=document.getElementById('gPastEventsBox');
+  if(!pbox) return;
+  pbox.style.display = past.length ? 'block' : 'none';
+  document.getElementById('gPastEventsCount').textContent = past.length===1 ? '1 of them' : past.length+' of them';
+  document.getElementById('gPastEventsList').innerHTML = past.map(e=>eventCardHTML(e,true)).join('');
 }
 async function openGroupProfile(id){
   const g=publicGroups.find(x=>x.id===id);
