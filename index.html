@@ -640,7 +640,10 @@ ZZO3_END_UNUSED
      lives in that column, and typing has to be the first thing you can reach. */
   .groups-layout{ display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
   .gev-col h3{ margin:0; font-size:20px; font-weight:800; letter-spacing:-0.01em; }
-  /* Group search — browsing public groups from the gallery */
+  /* Under the clean-up search, not beside it: at half the page width the two would
+     each end up too narrow to read a town name in. */
+  .gev-place{ width:100%; margin-top:8px; border:1.5px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; background:#fff; color:var(--text); }
+  .gev-place:focus{ outline:none; border-color:var(--green); }
   /* Group search — browsing public groups from the gallery */
   .gsearch{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:18px; }
   .gsearch-box{position:relative;}
@@ -1794,9 +1797,9 @@ ZZO3_END_UNUSED
     <div class="wrap-wide">
       <p class="eyebrow">Who's out there</p>
       <h2 style="margin-bottom:6px;">Find a group or a clean-up</h2>
-      <p class="lead">Search public groups and clean-up days by name or town. Private groups stay out of here.</p>
+      <p class="lead">Search public groups and clean-up days by name or town.</p>
 
-      <!-- Two columns off one search box: the standing groups on the left, the
+      <!-- Two columns, a search box each: the standing groups on the left, the
            clean-up days on the right. They were one list, where a Saturday that has
            been and gone sat between two groups you could still join. -->
       <div class="groups-layout" style="margin-top:18px;">
@@ -1804,7 +1807,7 @@ ZZO3_END_UNUSED
           <div class="gsearch">
             <div class="gsearch-box">
               <span class="gs-icon">🔍</span>
-              <input type="text" id="groupSearchInput" placeholder="Search groups and clean-ups — e.g. Kruisfontein" oninput="renderGroupResults()" autocomplete="off">
+              <input type="text" id="groupSearchInput" placeholder="Search groups — name or town" oninput="renderGroupResults()" autocomplete="off">
             </div>
             <div id="groupResults"></div>
           </div>
@@ -1817,16 +1820,27 @@ ZZO3_END_UNUSED
         </div>
 
         <!-- Every public clean-up, not just the ones near you — the home page is where
-             the 50km list lives. Same search box as the column beside it. -->
+             the 50km list lives. Which is why this side gets a place filter of its own:
+             a clean-up is worth travelling to, so "where" is the question people ask
+             about it, in a way they don't about a group. -->
         <aside class="gev-col">
           <p class="eyebrow">What's on</p>
           <h3>Clean-up days <span class="ev-badge" aria-hidden="true">📣</span></h3>
-          <p class="gs-note" style="padding-top:6px;">A group with a day and a meeting spot on it. Anyone can come — no pin needed. Your home page lists the ones within 50km of you.</p>
-          <div id="gEventResults"></div>
-          <details class="prefbox" id="gPastEventsBox" style="display:none; margin-top:12px;">
-            <summary>Finished<span class="pf-sub" id="gPastEventsCount"></span></summary>
-            <div class="pf-body" id="gPastEventsList"></div>
-          </details>
+          <p class="gs-note" style="padding-top:6px;">A group with a day and a meeting spot on it. Anyone can come — no pin needed.</p>
+          <div class="gsearch">
+            <div class="gsearch-box">
+              <span class="gs-icon">🔍</span>
+              <input type="text" id="eventSearchInput" placeholder="Search clean-ups — name or place" oninput="renderGroupResults()" autocomplete="off">
+            </div>
+            <!-- Filled from the clean-ups themselves, so it only ever offers a place
+                 that has one. -->
+            <select id="eventPlaceFilter" class="gev-place" onchange="renderGroupResults()" aria-label="Filter clean-ups by place"></select>
+            <div id="gEventResults"></div>
+            <details class="prefbox" id="gPastEventsBox" style="display:none; margin-top:12px;">
+              <summary>Finished<span class="pf-sub" id="gPastEventsCount"></span></summary>
+              <div class="pf-body" id="gPastEventsList"></div>
+            </details>
+          </div>
         </aside>
       </div>
     </div>
@@ -4900,18 +4914,21 @@ function groupAreas(g){
   const ids=new Set((g._members||[]).map(m=>m.user_id).filter(Boolean));
   return seedAreas.filter(a=>a.ownerId && ids.has(a.ownerId));
 }
-// One search box, two columns. A clean-up day is a group with a date on it, so both
-// lists come out of the same publicGroups array — filtered here rather than fetched
-// twice. Country-wide on this page: the 50km list is the home page's job.
+// A column each, a search box each. A clean-up day is a group with a date on it, so
+// both lists come out of the same publicGroups array — filtered here rather than
+// fetched twice. Country-wide on this page: the 50km list is the home page's job.
 function renderGroupResults(){
   const box=document.getElementById('groupResults');
   if(!box) return;
-  const input=document.getElementById('groupSearchInput');
-  const q=(input ? input.value : '').trim().toLowerCase();
-  const hit = g => !q || (g.name||'').toLowerCase().includes(q) || groupTownName(g).toLowerCase().includes(q);
-  const matches = publicGroups.filter(hit);
-  renderPlainGroupRows(box, matches.filter(g=>!isEventTeam(g)), q);
-  renderGroupEvents(matches.filter(isEventTeam), q);
+  const term = id => { const i=document.getElementById(id); return (i ? i.value : '').trim().toLowerCase(); };
+  const named = (g,t) => !t || (g.name||'').toLowerCase().includes(t) || groupTownName(g).toLowerCase().includes(t);
+  const q=term('groupSearchInput');
+  renderPlainGroupRows(box, publicGroups.filter(g=>!isEventTeam(g) && named(g,q)), q);
+  // The clean-up search reads the meeting spot as well — "slipway", "the dam" — which
+  // is how people say where a clean-up is when it isn't a town name.
+  const eq=term('eventSearchInput');
+  const evNamed = g => named(g,eq) || (!!eq && (g.event_place||'').toLowerCase().includes(eq));
+  renderGroupEvents(publicGroups.filter(g=>isEventTeam(g) && evNamed(g)), eq);
 }
 function renderPlainGroupRows(box, matches, q){
   const anyGroups = publicGroups.some(g=>!isEventTeam(g));
@@ -4952,6 +4969,31 @@ function renderPlainGroupRows(box, matches, q){
     box.appendChild(note);
   }
 }
+// The places on offer come from the clean-ups themselves, so the filter can never
+// offer somewhere with nothing on. Built from every clean-up rather than the ones
+// still matching the search — a list that shrank as you typed would take the option
+// you were reaching for away mid-reach.
+function fillEventPlaceFilter(all, me){
+  const sel=document.getElementById('eventPlaceFilter');
+  if(!sel) return '';
+  const towns=[];
+  all.forEach(e=>{
+    const name=groupTownName(e);
+    if(name && !towns.some(t=>t.id===e.town_id)) towns.push({id:e.town_id, name});
+  });
+  towns.sort((a,b)=>a.name.localeCompare(b.name));
+  const want=sel.value;
+  const html=['<option value="">Anywhere in the country</option>']
+    .concat(me ? ['<option value="near">Within '+EVENT_RADIUS_KM+'km of me</option>'] : [])
+    .concat(towns.map(t=>`<option value="town:${escHtml(t.id)}">${escHtml(t.name)}</option>`))
+    .join('');
+  // Rewriting the same options on every keystroke would shut the list mid-choice.
+  if(sel.innerHTML!==html) sel.innerHTML=html;
+  // "Within 50km of me" is gone the moment we stop knowing where you are; a town can
+  // go too, if its last clean-up was deleted. Either way, fall back to anywhere.
+  sel.value = Array.prototype.some.call(sel.options, o=>o.value===want) ? want : '';
+  return sel.value;
+}
 // Same cards as the home page, so a clean-up looks the same wherever you meet it —
 // distance included when we know where you are. Finished ones fold away underneath:
 // they're worth looking back at, but they aren't what anyone came here for.
@@ -4959,18 +5001,27 @@ function renderGroupEvents(matches, q){
   const box=document.getElementById('gEventResults');
   if(!box) return;
   const me=myPlace();
+  const allEvents=publicGroups.filter(isEventTeam);
+  const place=fillEventPlaceFilter(allEvents, me);
   const withDist = matches.map(t=>{
     const at=(t.event_lat!=null && t.event_lng!=null) ? {lat:t.event_lat, lng:t.event_lng} : null;
     return Object.assign({}, t, {_km: (me && at) ? kmBetween(me, at) : null});
   });
-  const upcoming = withDist.filter(e=>!eventIsOver(e))
+  // A clean-up with no meeting spot has no distance, so "within 50km" can't vouch for
+  // it — it stays out of that answer rather than being counted as nearby.
+  const here = e => !place
+    || (place==='near' ? (e._km!=null && e._km<=EVENT_RADIUS_KM) : ('town:'+e.town_id)===place);
+  const inPlace = withDist.filter(here);
+  const upcoming = inPlace.filter(e=>!eventIsOver(e))
     .sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date)));
-  const past = withDist.filter(eventIsOver)
+  const past = inPlace.filter(eventIsOver)
     .sort((a,b)=>String(b.event_date).localeCompare(String(a.event_date)));
-  const anyEvents = publicGroups.some(isEventTeam);
-  const nothing = !anyEvents
+  const nothing = !allEvents.length
     ? 'No clean-up days yet. Any group can become one — give it a day and a meeting spot from My Area.'
-    : (q ? 'No clean-up matches "'+escHtml(q)+'".' : 'Nothing coming up right now.');
+    : q && place ? 'No clean-up matches "'+escHtml(q)+'" there.'
+    : q           ? 'No clean-up matches "'+escHtml(q)+'".'
+    : place       ? 'Nothing coming up there right now.'
+    :               'Nothing coming up right now.';
   box.innerHTML = upcoming.length
     ? upcoming.map(e=>eventCardHTML(e,false)).join('')
     : '<p class="gs-note">'+nothing+'</p>';
